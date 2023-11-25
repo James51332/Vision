@@ -1,0 +1,7 @@
+# Builds
+build
+bin
+.o
+
+# MacOS
+.DS_Store
