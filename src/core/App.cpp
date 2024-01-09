@@ -42,12 +42,8 @@ void App::Run()
     m_PerspectiveCamera->Update(timestep);
 
     // Render
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // m_Renderer->BeginFrame(m_Camera, 20.0f);
-    // m_Renderer->DrawPoint({20.0f, 20.0f}, glm::vec4(1.0f), 5.0);
-    // m_Renderer->EndFrame();
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     m_Renderer->BeginScene(m_PerspectiveCamera);
     m_Renderer->DrawMesh(m_Mesh, m_WaterShader);
@@ -91,20 +87,60 @@ void App::Init()
   m_PerspectiveCamera = new PerspectiveCamera(static_cast<float>(w), static_cast<float>(h));
   m_PerspectiveCamera->SetPosition({0.0f, 0.0f, 3.0f});
 
-  // Create Mesh
+  // Create The Plane Mesh
+  constexpr std::size_t planeRes = 100;
+  constexpr float planeSize = 100.0f;
+
+  constexpr std::size_t numVertices = planeRes * planeRes;
+  constexpr std::size_t numIndices = 6 * (planeRes - 1) * (planeRes - 1); // 6 indices per quad
   {
     MeshDesc desc;
-    desc.NumVertices = 4;
-    desc.NumIndices = 6;
-    desc.Vertices = {
-      {{-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-      {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-      {{1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
-      {{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}
-    };
-    desc.Indices = {
-      0, 1, 2, 0, 2, 3
-    };
+    desc.NumVertices = numVertices;
+    desc.NumIndices = numIndices;
+
+    std::vector<MeshVertex> vertices(numVertices);
+    float x = -planeSize / 2.0f;
+    for (std::size_t i = 0; i < planeRes; i++)
+    {
+      float z = -planeSize / 2.0f;
+      for (std::size_t j = 0; j < planeRes; j++)
+      {
+        MeshVertex vertex;
+        vertex.Position = {x, -1.0f, z};
+        vertex.Normal = {0.0f, 1.0f, 0.0f};
+        vertex.Color = {0.2f, 0.2f, 0.6f, 1.0f};
+        vertex.UV = {static_cast<float>(i) / static_cast<float>(planeRes), static_cast<float>(j) / static_cast<float>(planeRes)};
+        vertices[i * planeRes + j] = vertex;
+
+        z += planeSize / static_cast<float>(planeRes);
+      }
+      x += planeSize / static_cast<float>(planeRes);
+    }
+    desc.Vertices = vertices;
+
+    std::vector<MeshIndex> indices(numIndices);
+    std::size_t index = 0;
+    for (std::size_t i = 0; i < planeRes - 1; i++)
+    {
+      for (std::size_t j = 0; j < planeRes - 1; j++)
+      {
+        MeshIndex current = static_cast<MeshIndex>(i * planeRes + j);
+        MeshIndex right = static_cast<MeshIndex>(current + 1);
+        MeshIndex above = static_cast<MeshIndex>(current + planeRes);
+        MeshIndex diagonal = static_cast<MeshIndex>(right + planeRes);
+
+        indices[index + 0] = current;
+        indices[index + 1] = right;
+        indices[index + 2] = diagonal;
+        indices[index + 3] = current;
+        indices[index + 4] = diagonal;
+        indices[index + 5] = above;
+
+        index += 6;
+      }
+    }
+    desc.Indices = indices;
+
     m_Mesh = new Mesh(desc);
   }
 
@@ -115,21 +151,36 @@ void App::Init()
 
   layout (location = 0) in vec3 a_Pos;
 
+  out vec3 v_Normal;
+
   uniform mat4 u_ViewProjection;
 
   void main()
   {
-    gl_Position = u_ViewProjection * vec4(a_Pos, 1.0);
+    float offset = sin(a_Pos.x) + sin(a_Pos.z);
+    vec3 gradientX = vec3(1.0, cos(a_Pos.x), 0.0);
+    vec3 gradientZ = vec3(0.0, cos(a_Pos.z), 1.0);
+    v_Normal = cross(gradientX, gradientZ);
+    v_Normal *= sign(v_Normal.y);
+
+    vec3 pos = a_Pos;
+    pos.y += offset;
+    gl_Position = u_ViewProjection * vec4(pos, 1.0);
   })";
 
   const char *fragment = R"(
   #version 330 core
 
+  in vec3 v_Normal;
+
   layout (location = 0) out vec4 f_FragColor;
 
   void main()
   {
-    f_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    float diffuse = max(dot(v_Normal, vec3(0.6, 1.0, 0.0)) * 0.3, 0);
+    float ambient = 0.3;
+    vec3 color = (diffuse + ambient) * vec3(0.2, 0.2, 0.6);
+    f_FragColor = vec4(color, 1.0);
   })";
 
   m_WaterShader = new Shader(vertex, fragment);
