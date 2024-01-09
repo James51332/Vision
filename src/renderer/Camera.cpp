@@ -220,7 +220,8 @@ bool PerspectiveCamera::HandleMoving(float timestep)
   glm::vec3 forwardDirection = -m_Transform[2];
   glm::vec3 rightDirection = m_Transform[0];
 
-  constexpr float moveSpeed = 3.0f;
+  float moveSpeed = 3.0f;
+  if (Input::KeyDown(SDL_SCANCODE_GRAVE)) moveSpeed = 10.0f;
 
   // Moving Up and Side to Side
   if (Input::KeyDown(SDL_SCANCODE_W)) 

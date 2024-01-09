@@ -160,7 +160,7 @@ void App::Init()
     float offset = sin(a_Pos.x) + sin(a_Pos.z);
     vec3 gradientX = vec3(1.0, cos(a_Pos.x), 0.0);
     vec3 gradientZ = vec3(0.0, cos(a_Pos.z), 1.0);
-    v_Normal = cross(gradientX, gradientZ);
+    v_Normal = normalize(cross(gradientX, gradientZ));
     v_Normal *= sign(v_Normal.y);
 
     vec3 pos = a_Pos;
@@ -177,7 +177,7 @@ void App::Init()
 
   void main()
   {
-    float diffuse = max(dot(v_Normal, vec3(0.6, 1.0, 0.0)) * 0.3, 0);
+    float diffuse = max(dot(v_Normal, vec3(0.0, 1.0, 0.0)) * 0.3, 0);
     float ambient = 0.3;
     vec3 color = (diffuse + ambient) * vec3(0.2, 0.2, 0.6);
     f_FragColor = vec4(color, 1.0);
