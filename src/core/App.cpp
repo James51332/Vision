@@ -42,7 +42,7 @@ void App::Run()
     m_PerspectiveCamera->Update(timestep);
 
     // Render
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.776f, 0.998f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     m_Renderer->BeginScene(m_PerspectiveCamera);
@@ -88,8 +88,8 @@ void App::Init()
   m_PerspectiveCamera->SetPosition({0.0f, 0.0f, 3.0f});
 
   // Create The Plane Mesh
-  constexpr std::size_t planeRes = 100;
-  constexpr float planeSize = 100.0f;
+  constexpr std::size_t planeRes = 150;
+  constexpr float planeSize = 40.0f;
 
   constexpr std::size_t numVertices = planeRes * planeRes;
   constexpr std::size_t numIndices = 6 * (planeRes - 1) * (planeRes - 1); // 6 indices per quad
@@ -151,35 +151,55 @@ void App::Init()
 
   layout (location = 0) in vec3 a_Pos;
 
+  out vec3 v_WorldPos;
   out vec3 v_Normal;
+  out vec3 v_CamPos;
 
   uniform mat4 u_ViewProjection;
+  uniform float u_Time;
+  uniform vec3 u_CameraPos;
 
   void main()
   {
-    float offset = sin(a_Pos.x) + sin(a_Pos.z);
-    vec3 gradientX = vec3(1.0, cos(a_Pos.x), 0.0);
-    vec3 gradientZ = vec3(0.0, cos(a_Pos.z), 1.0);
-    v_Normal = normalize(cross(gradientX, gradientZ));
-    v_Normal *= sign(v_Normal.y);
+    float offset = 0.4f * sin(a_Pos.x + u_Time) + 0.5f * sin(a_Pos.z + u_Time);
+    vec3 gradientX = vec3(1.0, 0.4f * cos(a_Pos.x + u_Time), 0.0);
+    vec3 gradientZ = vec3(0.0, 0.5f * cos(a_Pos.z + u_Time), 1.0);
+    v_Normal = cross(gradientZ, gradientX);
 
     vec3 pos = a_Pos;
     pos.y += offset;
+
+    v_WorldPos = pos;
+    v_CamPos = u_CameraPos;
+
     gl_Position = u_ViewProjection * vec4(pos, 1.0);
   })";
 
   const char *fragment = R"(
   #version 330 core
 
+  in vec3 v_WorldPos;
   in vec3 v_Normal;
+  in vec3 v_CamPos;
 
   layout (location = 0) out vec4 f_FragColor;
 
   void main()
   {
-    float diffuse = max(dot(v_Normal, vec3(0.0, 1.0, 0.0)) * 0.3, 0);
-    float ambient = 0.3;
-    vec3 color = (diffuse + ambient) * vec3(0.2, 0.2, 0.6);
+    vec3 lightPos = vec3(-2000.0, 2000.0, -2000.0);
+    vec3 norm = normalize(v_Normal);
+    vec3 lightDir = normalize(lightPos - v_WorldPos);  
+    vec3 lightColor = vec3(1.0, 1.0, 1.0);
+
+    vec3 diffuse = max(dot(norm, lightDir), 0) * 0.6 * lightColor;
+    vec3 ambient = 0.5 * lightColor;
+
+    vec3 viewDir = normalize(v_CamPos - v_WorldPos);
+    vec3 reflectDir = reflect(-lightDir, norm);  
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 4);
+    vec3 specular = 0.2f * spec * lightColor;  
+
+    vec3 color = (ambient + diffuse + specular) * vec3(0.2, 0.2, 0.6);
     f_FragColor = vec4(color, 1.0);
   })";
 

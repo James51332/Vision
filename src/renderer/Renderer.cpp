@@ -181,7 +181,9 @@ void Renderer::DrawMesh(Mesh* mesh, Shader* shader)
 
   shader->Use();
   shader->UploadUniformMat4(&m_SceneCamera->GetViewProjectionMatrix()[0][0], "u_ViewProjection");
-
+  shader->UploadUniformFloat(SDL_GetTicks() / 1000.0f, "u_Time");
+  shader->UploadUniformFloat3(&m_SceneCamera->GetPosition()[0], "u_CameraPos");
+  
   mesh->Bind();
   glDrawElements(GL_TRIANGLES, mesh->GetNumIndices(), GL_UNSIGNED_SHORT, nullptr);
 }

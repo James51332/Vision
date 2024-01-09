@@ -80,6 +80,12 @@ void Shader::UploadUniformFloat(const float value, const char* name)
   glUniform1f(location, value);
 }
 
+void Shader::UploadUniformFloat3(const float* value, const char* name)
+{
+  GLint location = glGetUniformLocation(m_ShaderProgram, name);
+  glUniform3fv(location, 1, value);
+}
+
 void Shader::UploadUniformFloat4(const float* value, const char *name)
 {
   GLint location = glGetUniformLocation(m_ShaderProgram, name);
