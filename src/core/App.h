@@ -4,6 +4,8 @@
 
 #include "renderer/Camera.h"
 #include "renderer/Renderer.h"
+#include "renderer/Mesh.h"
+#include "renderer/Shader.h"
 
 namespace Vision
 {
@@ -30,8 +32,11 @@ private:
   SDL_Window* m_Window;
   SDL_GLContext m_Context;
 
-  Camera* m_Camera;
+  OrthoCamera* m_Camera;
+  PerspectiveCamera* m_PerspectiveCamera;
   Renderer* m_Renderer;
+  Mesh* m_Mesh;
+  Shader* m_WaterShader;
 };
 
 }

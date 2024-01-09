@@ -119,8 +119,10 @@ Renderer::~Renderer()
   DestroyShaders();
 }
 
-void Renderer::BeginFrame(Camera* camera, float systemBoundSize)
+void Renderer::BeginFrame(OrthoCamera* camera, float systemBoundSize)
 {
+  SDL_assert(!m_InFrame && !m_InScene);
+
   m_InFrame = true;
   m_Camera = camera;
   
@@ -135,8 +137,18 @@ void Renderer::BeginFrame(Camera* camera, float systemBoundSize)
   glDrawElements(GL_TRIANGLES, sizeof(quadIndices) / sizeof(quadIndices[0]), GL_UNSIGNED_SHORT, nullptr);
 }
 
+void Renderer::BeginScene(PerspectiveCamera* camera)
+{
+  SDL_assert(!m_InFrame && !m_InScene);
+
+  m_InScene = true;
+  m_SceneCamera = camera;
+}
+
 void Renderer::DrawPoint(const glm::vec2& point, const glm::vec4& color, float radius)
 {
+  assert(m_InFrame);
+
   if (m_Points == m_MaxPoints)
     Flush();
   
@@ -146,10 +158,30 @@ void Renderer::DrawPoint(const glm::vec2& point, const glm::vec4& color, float r
 
 void Renderer::EndFrame()
 {
+  assert(m_InFrame);
   Flush();
   
   m_InFrame = false;
   m_Camera = nullptr;
+}
+
+void Renderer::EndScene()
+{
+  assert(m_InScene);
+
+  m_InScene = false;
+  m_SceneCamera = nullptr;
+}
+
+void Renderer::DrawMesh(Mesh* mesh, Shader* shader)
+{
+  assert(m_InScene);
+
+  shader->Use();
+  shader->UploadUniformMat4(&m_SceneCamera->GetViewProjectionMatrix()[0][0], "u_ViewProjection");
+
+  mesh->Bind();
+  glDrawElements(GL_TRIANGLES, mesh->GetNumIndices(), GL_UNSIGNED_SHORT, nullptr);
 }
 
 void Renderer::Flush()

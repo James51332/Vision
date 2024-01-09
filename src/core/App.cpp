@@ -1,13 +1,13 @@
 #include "App.h"
 
 #include "Input.h"
+#include "renderer/Mesh.h"
 
 namespace Vision
 {
 
 App::App()
 {
-
 }
 
 App::~App()
@@ -26,27 +26,32 @@ void App::Run()
   {
     // Calculate Timestep
     float timestep;
-    float time = SDL_GetTicks() / 1000;
+    float time = static_cast<float>(SDL_GetTicks()) / 1000.0f;
     if (lastTime != 0)
       timestep = time - lastTime;
     else
-      timestep = 0.16f;
+      timestep = 0.167f;
     lastTime = time;
 
     // Process Events
     Input::Update();
     ProcessEvents();
-    
+
     // Update Camera
     m_Camera->Update(timestep);
+    m_PerspectiveCamera->Update(timestep);
 
     // Render
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    m_Renderer->BeginFrame(m_Camera, 20.0f);
-    m_Renderer->DrawPoint({20.0f, 20.0f}, glm::vec4(1.0f), 5.0);
-    m_Renderer->EndFrame();
+    // m_Renderer->BeginFrame(m_Camera, 20.0f);
+    // m_Renderer->DrawPoint({20.0f, 20.0f}, glm::vec4(1.0f), 5.0);
+    // m_Renderer->EndFrame();
+
+    m_Renderer->BeginScene(m_PerspectiveCamera);
+    m_Renderer->DrawMesh(m_Mesh, m_WaterShader);
+    m_Renderer->EndScene();
 
     SDL_GL_SwapWindow(m_Window);
   }
@@ -82,7 +87,53 @@ void App::Init()
   // Initialize the renderer
   float displayScale = SDL_GetWindowDisplayScale(m_Window);
   m_Renderer = new Renderer(static_cast<float>(w), static_cast<float>(h), displayScale);
-  m_Camera = new Camera(static_cast<float>(w), static_cast<float>(h), 70.0f);
+  m_Camera = new OrthoCamera(static_cast<float>(w), static_cast<float>(h), 70.0f);
+  m_PerspectiveCamera = new PerspectiveCamera(static_cast<float>(w), static_cast<float>(h));
+  m_PerspectiveCamera->SetPosition({0.0f, 0.0f, 3.0f});
+
+  // Create Mesh
+  {
+    MeshDesc desc;
+    desc.NumVertices = 4;
+    desc.NumIndices = 6;
+    desc.Vertices = {
+      {{-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+      {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+      {{1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+      {{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}
+    };
+    desc.Indices = {
+      0, 1, 2, 0, 2, 3
+    };
+    m_Mesh = new Mesh(desc);
+  }
+
+  // Create Shader
+  {
+  const char *vertex = R"(
+  #version 330 core
+
+  layout (location = 0) in vec3 a_Pos;
+
+  uniform mat4 u_ViewProjection;
+
+  void main()
+  {
+    gl_Position = u_ViewProjection * vec4(a_Pos, 1.0);
+  })";
+
+  const char *fragment = R"(
+  #version 330 core
+
+  layout (location = 0) out vec4 f_FragColor;
+
+  void main()
+  {
+    f_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+  })";
+
+  m_WaterShader = new Shader(vertex, fragment);
+  }
 }
 
 void App::Shutdown()
@@ -105,6 +156,7 @@ void App::ProcessEvents()
         float height = static_cast<float>(event.window.data2);
         m_Camera->SetWindowSize(width, height);
         m_Renderer->Resize(width, height);
+        m_PerspectiveCamera->SetWindowSize(width, height);
         break;
       }
       case SDL_EVENT_QUIT:
