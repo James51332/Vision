@@ -276,6 +276,8 @@ bool PerspectiveCamera::HandleTurning(float timestep)
 
     m_Yaw -= dx / 3.0f;
     m_Pitch -= dy / 3.0f;
+    if (m_Pitch >= 90.0f) m_Pitch = 90.0f;
+    else if (m_Pitch <= -90.0f) m_Pitch = -90.0f;
   }
 
   return update;
