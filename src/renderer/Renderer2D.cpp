@@ -1,6 +1,7 @@
 #include "Renderer2D.h"
 
 #include <glm/glm.hpp>
+#include <glad/glad.h>
 
 namespace Vision
 {
@@ -86,10 +87,15 @@ void Renderer2D::Resize(float width, float height)
 
 void Renderer2D::Begin(OrthoCamera *camera)
 {
-  SDL_assert(!m_InFrame && !m_InScene);
+  assert(!m_InFrame);
 
   m_InFrame = true;
   m_Camera = camera;
+
+  // Enable Blending and Disable Depth Testing
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_DEPTH_TEST);
 }
 
 void Renderer2D::End()
@@ -112,7 +118,7 @@ void Renderer2D::DrawPoint(const glm::vec2 &point, const glm::vec4 &color, float
   m_Points++;
 }
 
-void Renderer::Flush()
+void Renderer2D::Flush()
 {
   // Upload the camera matrix and use the shader program
   m_PointShader->Use();

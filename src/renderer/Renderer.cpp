@@ -10,17 +10,8 @@ namespace Vision
 Renderer::Renderer(float width, float height, float displayScale)
   : m_Width(width), m_Height(height), m_PixelDensity(displayScale)
 {
-  // Load OpenGL function pointers
-  gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
-
   // Resize the viewport (no need to use Resize() because we've already done everything else it does)
   glViewport(0, 0, static_cast<GLsizei>(width * displayScale), static_cast<GLsizei>(height * displayScale));
-  
-  // Enable Blending and Depth Testing
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-  glEnable(GL_DEPTH_TEST);
 }
 
 void Renderer::Resize(float width, float height)
@@ -37,6 +28,11 @@ void Renderer::Begin(PerspectiveCamera* camera)
 
   m_InFrame = true;
   m_Camera = camera;
+
+  // Enable Blending and Depth Testing
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_DEPTH_TEST);
 }
 
 void Renderer::End()

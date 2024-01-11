@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Camera.h"
+#include "Buffer.h"
+#include "Shader.h"
+#include "VertexArray.h"
 
 namespace Vision
 {
@@ -14,8 +17,8 @@ public:
   void Resize(float width, float height);
 
   // 2D Renderer API
-  void BeginFrame(OrthoCamera *camera);
-  void EndFrame();
+  void Begin(OrthoCamera *camera);
+  void End();
 
   void DrawPoint(const glm::vec2 &position, const glm::vec4 &color, float radius);
 

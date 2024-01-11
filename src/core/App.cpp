@@ -3,6 +3,8 @@
 #include "Input.h"
 #include "renderer/Mesh.h"
 
+#include <imgui.h>
+
 namespace Vision
 {
 
@@ -48,6 +50,10 @@ void App::Run()
     m_Renderer->DrawMesh(m_Mesh, m_WaterShader);
     m_Renderer->End();
 
+    m_UIRenderer->Begin();
+    ImGui::ShowDemoWindow();
+    m_UIRenderer->End();
+
     SDL_GL_SwapWindow(m_Window);
   }
 
@@ -79,11 +85,14 @@ void App::Init()
   // Initialize Input System
   Input::Init();
 
+  // Load OpenGL function pointers
+  gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
+
   // Initialize the renderer
   float displayScale = SDL_GetWindowDisplayScale(m_Window);
   m_Renderer = new Renderer(static_cast<float>(w), static_cast<float>(h), displayScale);
+  m_UIRenderer = new ImGuiRenderer(static_cast<float>(w), static_cast<float>(h), displayScale);
   m_PerspectiveCamera = new PerspectiveCamera(static_cast<float>(w), static_cast<float>(h));
-  m_PerspectiveCamera->SetPosition({0.0f, 0.0f, 3.0f});
 
   // Create The Plane Mesh
   constexpr std::size_t planeRes = 150;
@@ -217,6 +226,9 @@ void App::ProcessEvents()
   SDL_Event event;
   while (SDL_PollEvent(&event))
   {
+    bool processed = UI::ProcessEvent(&event);
+    if (processed) continue;
+
     switch (event.type)
     {
       case SDL_EVENT_WINDOW_RESIZED:
@@ -224,6 +236,7 @@ void App::ProcessEvents()
         float width = static_cast<float>(event.window.data1);
         float height = static_cast<float>(event.window.data2);
         m_Renderer->Resize(width, height);
+        m_UIRenderer->Resize(width, height);
         m_PerspectiveCamera->SetWindowSize(width, height);
         break;
       }

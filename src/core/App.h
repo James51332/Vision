@@ -7,6 +7,9 @@
 #include "renderer/Mesh.h"
 #include "renderer/Shader.h"
 
+#include "ui/UIInput.h"
+#include "ui/ImGuiRenderer.h"
+
 namespace Vision
 {
 
@@ -34,6 +37,7 @@ private:
 
   PerspectiveCamera* m_PerspectiveCamera;
   Renderer* m_Renderer;
+  ImGuiRenderer* m_UIRenderer;
   Mesh* m_Mesh;
   Shader* m_WaterShader;
 };
