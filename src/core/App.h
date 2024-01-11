@@ -32,7 +32,6 @@ private:
   SDL_Window* m_Window;
   SDL_GLContext m_Context;
 
-  OrthoCamera* m_Camera;
   PerspectiveCamera* m_PerspectiveCamera;
   Renderer* m_Renderer;
   Mesh* m_Mesh;

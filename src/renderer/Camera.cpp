@@ -336,7 +336,7 @@ void PerspectiveCamera::CalculateMatrices()
 
   // Calculate the projection matrix (use glm::ortho)
   m_Aspect = m_WindowSize.x / m_WindowSize.y;
-  m_Projection = glm::perspective(1.0f, m_Aspect, 0.1f, 100.0f);
+  m_Projection = glm::perspective(glm::radians(m_FOV), m_Aspect, m_Near, m_Far);
 
   // Cache the view projection matrix in a variable as well (first view then projection-translate then stretch)
   m_ViewProjection = m_Projection * m_View;

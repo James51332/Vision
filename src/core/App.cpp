@@ -37,17 +37,16 @@ void App::Run()
     Input::Update();
     ProcessEvents();
 
-    // Update Camera
-    m_Camera->Update(timestep);
+    // Update Camera Controller
     m_PerspectiveCamera->Update(timestep);
 
     // Render
     glClearColor(0.776f, 0.998f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    m_Renderer->BeginScene(m_PerspectiveCamera);
+    m_Renderer->Begin(m_PerspectiveCamera);
     m_Renderer->DrawMesh(m_Mesh, m_WaterShader);
-    m_Renderer->EndScene();
+    m_Renderer->End();
 
     SDL_GL_SwapWindow(m_Window);
   }
@@ -83,7 +82,6 @@ void App::Init()
   // Initialize the renderer
   float displayScale = SDL_GetWindowDisplayScale(m_Window);
   m_Renderer = new Renderer(static_cast<float>(w), static_cast<float>(h), displayScale);
-  m_Camera = new OrthoCamera(static_cast<float>(w), static_cast<float>(h), 70.0f);
   m_PerspectiveCamera = new PerspectiveCamera(static_cast<float>(w), static_cast<float>(h));
   m_PerspectiveCamera->SetPosition({0.0f, 0.0f, 3.0f});
 
@@ -225,7 +223,6 @@ void App::ProcessEvents()
       {
         float width = static_cast<float>(event.window.data1);
         float height = static_cast<float>(event.window.data2);
-        m_Camera->SetWindowSize(width, height);
         m_Renderer->Resize(width, height);
         m_PerspectiveCamera->SetWindowSize(width, height);
         break;
