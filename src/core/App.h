@@ -23,6 +23,11 @@ public:
   void Stop() { m_Running = false; }
 
 private:
+  void GenerateWaves();
+  void GenerateMesh();
+  void GenerateShader();
+
+private:
   void Init();
   void Shutdown();
   void ProcessEvents();
@@ -40,6 +45,16 @@ private:
   ImGuiRenderer* m_UIRenderer;
   Mesh* m_Mesh;
   Shader* m_WaterShader;
+
+  struct Wave
+  {
+    glm::vec2 origin;
+    glm::vec2 direction;
+    glm::vec4 scale; // amplitude, period, frequency, dummy
+  };
+
+  Wave m_Waves[10];
+  Buffer* m_WaveBuffer;
 };
 
 }

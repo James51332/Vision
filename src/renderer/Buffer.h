@@ -19,6 +19,7 @@ struct BufferDesc
 
 class Buffer
 {
+  friend class Shader;
 public:
   Buffer(const BufferDesc& desc);
   ~Buffer();

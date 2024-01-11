@@ -5,3 +5,6 @@ bin
 
 # MacOS
 .DS_Store
+
+# ImGui
+.ini

@@ -98,4 +98,11 @@ void Shader::UploadUniformMat4(const float* value, const char *name)
   glUniformMatrix4fv(location, 1, GL_FALSE, value);
 }
 
+void Shader::SetUniformBlock(Buffer* uniform, const char* name, std::size_t binding)
+{
+  unsigned int waves_index = glGetUniformBlockIndex(m_ShaderProgram, name);
+  glUniformBlockBinding(m_ShaderProgram, waves_index, binding);
+  glBindBufferBase(GL_UNIFORM_BUFFER, binding, uniform->m_Object);
+}
+
 }

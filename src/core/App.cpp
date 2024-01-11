@@ -4,6 +4,7 @@
 #include "renderer/Mesh.h"
 
 #include <imgui.h>
+#include <glm/gtc/random.hpp>
 
 namespace Vision
 {
@@ -14,7 +15,6 @@ App::App()
 
 App::~App()
 {
-
 }
 
 void App::Run()
@@ -49,10 +49,6 @@ void App::Run()
     m_Renderer->Begin(m_PerspectiveCamera);
     m_Renderer->DrawMesh(m_Mesh, m_WaterShader);
     m_Renderer->End();
-
-    m_UIRenderer->Begin();
-    ImGui::ShowDemoWindow();
-    m_UIRenderer->End();
 
     SDL_GL_SwapWindow(m_Window);
   }
@@ -94,124 +90,9 @@ void App::Init()
   m_UIRenderer = new ImGuiRenderer(static_cast<float>(w), static_cast<float>(h), displayScale);
   m_PerspectiveCamera = new PerspectiveCamera(static_cast<float>(w), static_cast<float>(h));
 
-  // Create The Plane Mesh
-  constexpr std::size_t planeRes = 150;
-  constexpr float planeSize = 40.0f;
-
-  constexpr std::size_t numVertices = planeRes * planeRes;
-  constexpr std::size_t numIndices = 6 * (planeRes - 1) * (planeRes - 1); // 6 indices per quad
-  {
-    MeshDesc desc;
-    desc.NumVertices = numVertices;
-    desc.NumIndices = numIndices;
-
-    std::vector<MeshVertex> vertices(numVertices);
-    float x = -planeSize / 2.0f;
-    for (std::size_t i = 0; i < planeRes; i++)
-    {
-      float z = -planeSize / 2.0f;
-      for (std::size_t j = 0; j < planeRes; j++)
-      {
-        MeshVertex vertex;
-        vertex.Position = {x, -1.0f, z};
-        vertex.Normal = {0.0f, 1.0f, 0.0f};
-        vertex.Color = {0.2f, 0.2f, 0.6f, 1.0f};
-        vertex.UV = {static_cast<float>(i) / static_cast<float>(planeRes), static_cast<float>(j) / static_cast<float>(planeRes)};
-        vertices[i * planeRes + j] = vertex;
-
-        z += planeSize / static_cast<float>(planeRes);
-      }
-      x += planeSize / static_cast<float>(planeRes);
-    }
-    desc.Vertices = vertices;
-
-    std::vector<MeshIndex> indices(numIndices);
-    std::size_t index = 0;
-    for (std::size_t i = 0; i < planeRes - 1; i++)
-    {
-      for (std::size_t j = 0; j < planeRes - 1; j++)
-      {
-        MeshIndex current = static_cast<MeshIndex>(i * planeRes + j);
-        MeshIndex right = static_cast<MeshIndex>(current + 1);
-        MeshIndex above = static_cast<MeshIndex>(current + planeRes);
-        MeshIndex diagonal = static_cast<MeshIndex>(right + planeRes);
-
-        indices[index + 0] = current;
-        indices[index + 1] = right;
-        indices[index + 2] = diagonal;
-        indices[index + 3] = current;
-        indices[index + 4] = diagonal;
-        indices[index + 5] = above;
-
-        index += 6;
-      }
-    }
-    desc.Indices = indices;
-
-    m_Mesh = new Mesh(desc);
-  }
-
-  // Create Shader
-  {
-  const char *vertex = R"(
-  #version 330 core
-
-  layout (location = 0) in vec3 a_Pos;
-
-  out vec3 v_WorldPos;
-  out vec3 v_Normal;
-  out vec3 v_CamPos;
-
-  uniform mat4 u_ViewProjection;
-  uniform float u_Time;
-  uniform vec3 u_CameraPos;
-
-  void main()
-  {
-    float offset = 0.4f * sin(a_Pos.x + u_Time) + 0.5f * sin(a_Pos.z + u_Time);
-    vec3 gradientX = vec3(1.0, 0.4f * cos(a_Pos.x + u_Time), 0.0);
-    vec3 gradientZ = vec3(0.0, 0.5f * cos(a_Pos.z + u_Time), 1.0);
-    v_Normal = cross(gradientZ, gradientX);
-
-    vec3 pos = a_Pos;
-    pos.y += offset;
-
-    v_WorldPos = pos;
-    v_CamPos = u_CameraPos;
-
-    gl_Position = u_ViewProjection * vec4(pos, 1.0);
-  })";
-
-  const char *fragment = R"(
-  #version 330 core
-
-  in vec3 v_WorldPos;
-  in vec3 v_Normal;
-  in vec3 v_CamPos;
-
-  layout (location = 0) out vec4 f_FragColor;
-
-  void main()
-  {
-    vec3 lightPos = vec3(-2000.0, 2000.0, -2000.0);
-    vec3 norm = normalize(v_Normal);
-    vec3 lightDir = normalize(lightPos - v_WorldPos);  
-    vec3 lightColor = vec3(1.0, 1.0, 1.0);
-
-    vec3 diffuse = max(dot(norm, lightDir), 0) * 0.6 * lightColor;
-    vec3 ambient = 0.5 * lightColor;
-
-    vec3 viewDir = normalize(v_CamPos - v_WorldPos);
-    vec3 reflectDir = reflect(-lightDir, norm);  
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 4);
-    vec3 specular = 0.2f * spec * lightColor;  
-
-    vec3 color = (ambient + diffuse + specular) * vec3(0.2, 0.2, 0.6);
-    f_FragColor = vec4(color, 1.0);
-  })";
-
-  m_WaterShader = new Shader(vertex, fragment);
-  }
+  GenerateWaves();
+  GenerateMesh();
+  GenerateShader();
 }
 
 void App::Shutdown()
@@ -278,6 +159,181 @@ void App::ProcessEvents()
       default:
         break;
     }
+  }
+}
+
+void App::GenerateWaves()
+{
+  for (int i = 0; i < 10; i++)
+  {
+    Wave& wave = m_Waves[i];
+    wave.origin = glm::linearRand(glm::vec2(-5.0f, 5.0f), glm::vec2(-5.0f, 5.0f));
+    wave.direction = glm::circularRand(1.0f);
+
+    float size = 0.4f * static_cast<float>(i + 1);
+    float amplitude = size * glm::linearRand(0.05f, 0.15f);
+    float period = glm::linearRand(1.0f, 4.0f) / size;
+    float frequency = glm::linearRand(0.5f, 2.5f) / size / size;
+    wave.scale = {amplitude, period, frequency, 0.0f};
+  }
+  
+  BufferDesc desc;
+  desc.Size = 3 * sizeof(Wave);
+  desc.Type = GL_UNIFORM_BUFFER;
+  desc.Usage = GL_STATIC_DRAW;
+  desc.Data = (void*)m_Waves;
+  m_WaveBuffer = new Buffer(desc);
+}
+
+void App::GenerateMesh()
+{
+  // Create The Plane Mesh
+  constexpr std::size_t planeRes = 250;
+  constexpr float planeSize = 20.0f;
+
+  constexpr std::size_t numVertices = planeRes * planeRes;
+  constexpr std::size_t numIndices = 6 * (planeRes - 1) * (planeRes - 1); // 6 indices per quad
+  {
+    MeshDesc desc;
+    desc.NumVertices = numVertices;
+    desc.NumIndices = numIndices;
+
+    std::vector<MeshVertex> vertices(numVertices);
+    float x = -planeSize / 2.0f;
+    for (std::size_t i = 0; i < planeRes; i++)
+    {
+      float z = -planeSize / 2.0f;
+      for (std::size_t j = 0; j < planeRes; j++)
+      {
+        MeshVertex vertex;
+        vertex.Position = {x, -1.0f, z};
+        vertex.Normal = {0.0f, 1.0f, 0.0f};
+        vertex.Color = {0.2f, 0.2f, 0.6f, 1.0f};
+        vertex.UV = {static_cast<float>(i) / static_cast<float>(planeRes), static_cast<float>(j) / static_cast<float>(planeRes)};
+        vertices[i * planeRes + j] = vertex;
+
+        z += planeSize / static_cast<float>(planeRes);
+      }
+      x += planeSize / static_cast<float>(planeRes);
+    }
+    desc.Vertices = vertices;
+
+    std::vector<MeshIndex> indices(numIndices);
+    std::size_t index = 0;
+    for (std::size_t i = 0; i < planeRes - 1; i++)
+    {
+      for (std::size_t j = 0; j < planeRes - 1; j++)
+      {
+        MeshIndex current = static_cast<MeshIndex>(i * planeRes + j);
+        MeshIndex right = static_cast<MeshIndex>(current + 1);
+        MeshIndex above = static_cast<MeshIndex>(current + planeRes);
+        MeshIndex diagonal = static_cast<MeshIndex>(right + planeRes);
+
+        indices[index + 0] = current;
+        indices[index + 1] = right;
+        indices[index + 2] = diagonal;
+        indices[index + 3] = current;
+        indices[index + 4] = diagonal;
+        indices[index + 5] = above;
+
+        index += 6;
+      }
+    }
+    desc.Indices = indices;
+
+    m_Mesh = new Mesh(desc);
+  }
+}
+
+void App::GenerateShader()
+{
+  // Create Shader
+  {
+    const char *vertex = R"(
+    #version 410 core
+
+    layout (location = 0) in vec3 a_Pos;
+
+    out vec3 v_WorldPos;
+    out vec3 v_Normal;
+    out vec3 v_CamPos;
+
+    uniform mat4 u_ViewProjection;
+    uniform float u_Time;
+    uniform vec3 u_CameraPos;
+
+    struct Wave
+    {
+      vec2 origin;
+      vec2 direction;
+      vec4 scale;
+    };
+
+    layout (std140) uniform WaveProperties
+    { 
+      Wave waves[10];
+    } waves;
+
+    void main()
+    {
+      vec3 gradientX = vec3(1.0, 0.0, 0.0);
+      vec3 gradientZ = vec3(0.0, 0.0, 1.0);
+      float offset = 0.0;
+      for (int index = 0; index < 10; index++)
+      {
+        Wave wave = waves.waves[index];
+        vec2 relPos = a_Pos.xz - wave.origin;
+        float waveComponent = dot(relPos, wave.direction); // Get component of the position in the direction of the wave
+        float waveInput = wave.scale.y * waveComponent + wave.scale.z * u_Time;
+
+        // Offset the plane by the wave
+        offset += wave.scale.x * sin(waveInput);
+
+        // Calculate slope of tangent and resolve into x and z component
+        float tangentSlope = wave.scale.x * wave.scale.y * cos(waveInput); 
+        gradientX.y += tangentSlope * wave.direction.x;
+        gradientZ.y += tangentSlope  * wave.direction.y;
+      }
+
+      vec3 pos = a_Pos;
+      pos.y += offset;
+
+      v_Normal = cross(gradientZ, gradientX);
+      v_WorldPos = a_Pos;
+      v_CamPos = u_CameraPos;
+      gl_Position = u_ViewProjection * vec4(pos, 1.0);
+    })";
+
+    const char *fragment = R"(
+    #version 410 core
+
+    in vec3 v_WorldPos;
+    in vec3 v_Normal;
+    in vec3 v_CamPos;
+
+    layout (location = 0) out vec4 f_FragColor;
+
+    void main()
+    {
+      vec3 lightPos = vec3(-2000.0, 2000.0, -2000.0);
+      vec3 norm = normalize(v_Normal);
+      vec3 lightDir = normalize(lightPos - v_WorldPos);  
+      vec3 lightColor = vec3(1.0, 1.0, 1.0);
+
+      vec3 diffuse = max(dot(norm, lightDir), 0) * 0.6 * lightColor;
+      vec3 ambient = 0.5 * lightColor;
+
+      vec3 viewDir = normalize(v_CamPos - v_WorldPos);
+      vec3 reflectDir = reflect(-lightDir, norm);  
+      float spec = pow(max(dot(viewDir, reflectDir), 0.0), 4);
+      vec3 specular = 0.2f * spec * lightColor;  
+
+      vec3 color = (ambient + diffuse + specular) * vec3(0.2, 0.2, 0.6);
+      f_FragColor = vec4(color, 1.0);
+    })";
+
+    m_WaterShader = new Shader(vertex, fragment);
+    m_WaterShader->SetUniformBlock(m_WaveBuffer, "WaveProperties", 0);
   }
 }
 
