@@ -47,8 +47,17 @@ void App::Run()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     m_Renderer->Begin(m_PerspectiveCamera);
+    static int waves = 100;
+    m_WaterShader->Use();
+    m_WaterShader->UploadUniformInt(waves, "u_Waves");
     m_Renderer->DrawMesh(m_Mesh, m_WaterShader);
     m_Renderer->End();
+
+    // m_UIRenderer->Begin();
+    // ImGui::Begin("Waves");
+    // ImGui::DragInt("Num Waves", &waves, 1.0, 1, 100);
+    // ImGui::End();
+    // m_UIRenderer->End();
 
     SDL_GL_SwapWindow(m_Window);
   }
@@ -165,6 +174,10 @@ void App::ProcessEvents()
 void App::GenerateWaves()
 {
   srand(time(0));
+
+  float frequency = 5.0f;
+  float amplitude = 4.0f; 
+  float wavelength = 4.0f; 
   for (int i = 0; i < m_NumWaves; i++)
   {
     Wave& wave = m_Waves[i];
@@ -172,12 +185,11 @@ void App::GenerateWaves()
     wave.origin = glm::linearRand(glm::vec2(-50.0f, 50.0f), glm::vec2(-50.0f, 50.0f));
     wave.direction = glm::circularRand(1.0f);
 
-    float wavelength = 5.0f * pow(0.8f, static_cast<float>(i + 1)); // We want a few big waves and many short waves
-    float frequency = 2.0f / wavelength; // Bigger waves should move slower
-    float amplitude = wavelength / 50.0f; // Bigger waves should be taller
-    float phase = 0.0f; // Don't worry about this one for now 
-    
+    float phase = glm::linearRand(0.0f, static_cast<float>(2.0f * M_PI));
     wave.scale = { amplitude, wavelength, frequency, phase };
+    
+    wavelength *= 0.9f;
+    amplitude *= 0.82f;
   }
   
   BufferDesc desc;
@@ -191,8 +203,8 @@ void App::GenerateWaves()
 void App::GenerateMesh()
 {
   // Create The Plane Mesh
-  constexpr std::size_t planeRes = 2048; // I guess this is the most vertices my macbook can handle
-  constexpr float planeSize = 15.0f;
+  constexpr std::size_t planeRes = 512; // I guess this is the most vertices my macbook can handle
+  constexpr float planeSize = 10.0f;
 
   constexpr std::size_t numVertices = planeRes * planeRes;
   constexpr std::size_t numIndices = 6 * (planeRes - 1) * (planeRes - 1); // 6 indices per quad

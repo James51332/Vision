@@ -50,7 +50,7 @@ private:
   {
     glm::vec2 origin;
     glm::vec2 direction;
-    glm::vec4 scale; // amplitude, wavelength, frequency, phase
+    glm::vec4 scale; // amplitude, wavelength, angular frequency, phase
   };
 
   constexpr static std::size_t m_NumWaves = 100;

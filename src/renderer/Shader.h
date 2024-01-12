@@ -16,6 +16,7 @@ public:
 
   void Use();
 
+  void UploadUniformInt(const int, const char* name);
   void UploadUniformFloat(const float, const char* name);
   void UploadUniformFloat3(const float*, const char* name);
   void UploadUniformFloat4(const float*, const char *name);

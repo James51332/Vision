@@ -131,6 +131,12 @@ void Shader::Use()
   glUseProgram(m_ShaderProgram);
 }
 
+void Shader::UploadUniformInt(const int value, const char* name)
+{
+  GLint location = glGetUniformLocation(m_ShaderProgram, name);
+  glUniform1i(location, value);
+}
+
 void Shader::UploadUniformFloat(const float value, const char* name)
 {
   GLint location = glGetUniformLocation(m_ShaderProgram, name);
