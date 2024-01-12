@@ -13,6 +13,7 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 add_subdirectory(vendor/sdl2 EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glad EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
+add_subdirectory(vendor/SPIRV-Cross EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/imgui EXCLUDE_FROM_ALL)
 
 # Source Files
@@ -30,4 +31,6 @@ target_link_libraries(Vision
                           SDL3::SDL3
                           glad
                           glm::glm
-                          ImGui)
+                          ImGui
+                          spirv-cross-core
+                          spirv-cross-glsl)

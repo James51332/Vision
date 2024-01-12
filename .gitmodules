@@ -7,3 +7,6 @@
 [submodule "vendor/glm"]
 	path = vendor/glm
 	url = https://github.com/g-truc/glm
+[submodule "vendor/SPIRV-Cross"]
+	path = vendor/SPIRV-Cross
+	url = https://github.com/KhronosGroup/SPIRV-Cross

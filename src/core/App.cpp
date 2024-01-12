@@ -4,7 +4,11 @@
 #include "renderer/Mesh.h"
 
 #include <imgui.h>
+#include <vector>
+#include <iostream>
 #include <glm/gtc/random.hpp>
+#include "../../vendor/SPIRV-Cross/spirv_cross.hpp"
+#include "../../vendor/SPIRV-Cross/spirv_glsl.hpp"
 
 namespace Vision
 {
@@ -53,11 +57,11 @@ void App::Run()
     m_Renderer->DrawMesh(m_Mesh, m_WaterShader);
     m_Renderer->End();
 
-    // m_UIRenderer->Begin();
-    // ImGui::Begin("Waves");
-    // ImGui::DragInt("Num Waves", &waves, 1.0, 1, 100);
-    // ImGui::End();
-    // m_UIRenderer->End();
+    m_UIRenderer->Begin();
+    ImGui::Begin("Waves");
+    ImGui::DragInt("Num Waves", &waves, 1.0, 1, 100);
+    ImGui::End();
+    m_UIRenderer->End();
 
     SDL_GL_SwapWindow(m_Window);
   }
@@ -177,7 +181,7 @@ void App::GenerateWaves()
 
   float frequency = 5.0f;
   float amplitude = 4.0f; 
-  float wavelength = 4.0f; 
+  float wavelength = 10.0f; 
   for (int i = 0; i < m_NumWaves; i++)
   {
     Wave& wave = m_Waves[i];
@@ -203,8 +207,8 @@ void App::GenerateWaves()
 void App::GenerateMesh()
 {
   // Create The Plane Mesh
-  constexpr std::size_t planeRes = 512; // I guess this is the most vertices my macbook can handle
-  constexpr float planeSize = 10.0f;
+  constexpr std::size_t planeRes = 1024; // I guess this is the most vertices my macbook can handle
+  constexpr float planeSize = 50.0f;
 
   constexpr std::size_t numVertices = planeRes * planeRes;
   constexpr std::size_t numIndices = 6 * (planeRes - 1) * (planeRes - 1); // 6 indices per quad
@@ -262,7 +266,50 @@ void App::GenerateMesh()
 
 void App::GenerateShader()
 {
-  m_WaterShader = new Shader("resources/waveShader.glsl");
+  // This code aint good but it get its done for now.
+  std::string vert, frag;
+  {
+    // Read SPIR-V from disk or similar.
+    SDL_RWops* file = SDL_RWFromFile("resources/waterVertex.spv", "rb");
+    assert(file);
+    SDL_RWseek(file, 0, SDL_RW_SEEK_END);
+    std::size_t size = SDL_RWtell(file);
+    SDL_RWseek(file, 0, SDL_RW_SEEK_SET);
+    std::vector<uint32_t> spirv_binary(size / 4, 0);
+    SDL_RWread(file, spirv_binary.data(), size);
+    spirv_cross::CompilerGLSL glsl(spirv_binary);
+    // Set some options.
+    spirv_cross::CompilerGLSL::Options options;
+    options.version = 410;
+    options.es = false;
+    options.enable_420pack_extension = false;
+    glsl.set_common_options(options);
+    // Compile to GLSL, ready to give to GL driver.
+    vert = glsl.compile();
+  }
+
+  {
+    // Read SPIR-V from disk or similar.
+    SDL_RWops *file = SDL_RWFromFile("resources/waterFrag.spv", "rb");
+    assert(file);
+    SDL_RWseek(file, 0, SDL_RW_SEEK_END);
+    std::size_t size = SDL_RWtell(file);
+    std::cout << size << std::endl;
+    SDL_RWseek(file, 0, SDL_RW_SEEK_SET);
+    std::vector<uint32_t> spirv_binary(size / 4, 0);
+    SDL_RWread(file, spirv_binary.data(), size);
+    spirv_cross::CompilerGLSL glsl(spirv_binary);
+    // Set some options.
+    spirv_cross::CompilerGLSL::Options options;
+    options.version = 410;
+    options.es = false;
+    options.enable_420pack_extension = false;
+    glsl.set_common_options(options);
+    // Compile to GLSL, ready to give to GL driver.
+    frag = glsl.compile();
+  }
+
+  m_WaterShader = new Shader(vert.c_str(), frag.c_str());
   m_WaterShader->SetUniformBlock(m_WaveBuffer, "WaveProperties", 0);
 }
 

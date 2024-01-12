@@ -53,6 +53,8 @@ Shader::Shader(const char* path)
   }
 
   SDL_assert(shaders.size() == 2);
+  SDL_assert(shaders[GL_VERTEX_SHADER].size() != 0);
+  SDL_assert(shaders[GL_FRAGMENT_SHADER].size() != 0);
   CreateFromSources(shaders[GL_VERTEX_SHADER].c_str(), shaders[GL_FRAGMENT_SHADER].c_str());
 }
 
