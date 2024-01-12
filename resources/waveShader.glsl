@@ -30,7 +30,7 @@ void main()
   vec3 gradientZ = vec3(0.0, 0.0, 1.0);
     
   // Iterate over all waves
-  for (int index = 0; index < 20; index++)
+  for (int index = 0; index < 15; index++)
   {
     //if (index == 3) continue;
 
@@ -85,8 +85,8 @@ void main()
 
   // Specular
   vec3 reflectDir = reflect(-lightDir, norm);  
-  float spec = pow(max(dot(viewDir, reflectDir), 0.0), 4);
-  vec3 specular = 0.2 * spec * lightColor;  
+  float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64);
+  vec3 specular = 0.8 * spec * lightColor;  
 
   // Out Color
   vec3 color = (ambient + diffuse + specular) * vec3(0.2, 0.2, 0.6);
