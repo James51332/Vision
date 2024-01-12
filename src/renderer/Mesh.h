@@ -17,7 +17,7 @@ struct MeshVertex
   glm::vec2 UV;
 };
 
-using MeshIndex = std::uint16_t;
+using MeshIndex = std::uint32_t;
   
 struct MeshDesc
 {

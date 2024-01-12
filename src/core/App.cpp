@@ -164,21 +164,24 @@ void App::ProcessEvents()
 
 void App::GenerateWaves()
 {
-  for (int i = 0; i < 10; i++)
+  srand(time(0));
+  for (int i = 0; i < m_NumWaves; i++)
   {
     Wave& wave = m_Waves[i];
-    wave.origin = glm::linearRand(glm::vec2(-5.0f, 5.0f), glm::vec2(-5.0f, 5.0f));
+    
+    wave.origin = glm::linearRand(glm::vec2(-50.0f, 50.0f), glm::vec2(-50.0f, 50.0f));
     wave.direction = glm::circularRand(1.0f);
 
-    float size = 0.4f * static_cast<float>(i + 1);
-    float amplitude = size * glm::linearRand(0.05f, 0.15f);
-    float period = glm::linearRand(1.0f, 4.0f) / size;
-    float frequency = glm::linearRand(0.5f, 2.5f) / size / size;
-    wave.scale = {amplitude, period, frequency, 0.0f};
+    float wavelength = 5.0f * pow(0.8f, static_cast<float>(i + 1)); // We want a few big waves and many short waves
+    float frequency = 2.0f / wavelength; // Bigger waves should move slower
+    float amplitude = wavelength / 50.0f; // Bigger waves should be taller
+    float phase = 0.0f; // Don't worry about this one for now 
+    
+    wave.scale = { amplitude, wavelength, frequency, phase };
   }
   
   BufferDesc desc;
-  desc.Size = 3 * sizeof(Wave);
+  desc.Size = m_NumWaves * sizeof(Wave);
   desc.Type = GL_UNIFORM_BUFFER;
   desc.Usage = GL_STATIC_DRAW;
   desc.Data = (void*)m_Waves;
@@ -188,8 +191,8 @@ void App::GenerateWaves()
 void App::GenerateMesh()
 {
   // Create The Plane Mesh
-  constexpr std::size_t planeRes = 250;
-  constexpr float planeSize = 20.0f;
+  constexpr std::size_t planeRes = 2048; // I guess this is the most vertices my macbook can handle
+  constexpr float planeSize = 15.0f;
 
   constexpr std::size_t numVertices = planeRes * planeRes;
   constexpr std::size_t numIndices = 6 * (planeRes - 1) * (planeRes - 1); // 6 indices per quad
@@ -206,7 +209,7 @@ void App::GenerateMesh()
       for (std::size_t j = 0; j < planeRes; j++)
       {
         MeshVertex vertex;
-        vertex.Position = {x, -1.0f, z};
+        vertex.Position = {x, 0.0f, z};
         vertex.Normal = {0.0f, 1.0f, 0.0f};
         vertex.Color = {0.2f, 0.2f, 0.6f, 1.0f};
         vertex.UV = {static_cast<float>(i) / static_cast<float>(planeRes), static_cast<float>(j) / static_cast<float>(planeRes)};
@@ -247,94 +250,8 @@ void App::GenerateMesh()
 
 void App::GenerateShader()
 {
-  // Create Shader
-  {
-    const char *vertex = R"(
-    #version 410 core
-
-    layout (location = 0) in vec3 a_Pos;
-
-    out vec3 v_WorldPos;
-    out vec3 v_Normal;
-    out vec3 v_CamPos;
-
-    uniform mat4 u_ViewProjection;
-    uniform float u_Time;
-    uniform vec3 u_CameraPos;
-
-    struct Wave
-    {
-      vec2 origin;
-      vec2 direction;
-      vec4 scale;
-    };
-
-    layout (std140) uniform WaveProperties
-    { 
-      Wave waves[10];
-    } waves;
-
-    void main()
-    {
-      vec3 gradientX = vec3(1.0, 0.0, 0.0);
-      vec3 gradientZ = vec3(0.0, 0.0, 1.0);
-      float offset = 0.0;
-      for (int index = 0; index < 10; index++)
-      {
-        Wave wave = waves.waves[index];
-        vec2 relPos = a_Pos.xz - wave.origin;
-        float waveComponent = dot(relPos, wave.direction); // Get component of the position in the direction of the wave
-        float waveInput = wave.scale.y * waveComponent + wave.scale.z * u_Time;
-
-        // Offset the plane by the wave
-        offset += wave.scale.x * sin(waveInput);
-
-        // Calculate slope of tangent and resolve into x and z component
-        float tangentSlope = wave.scale.x * wave.scale.y * cos(waveInput); 
-        gradientX.y += tangentSlope * wave.direction.x;
-        gradientZ.y += tangentSlope  * wave.direction.y;
-      }
-
-      vec3 pos = a_Pos;
-      pos.y += offset;
-
-      v_Normal = cross(gradientZ, gradientX);
-      v_WorldPos = a_Pos;
-      v_CamPos = u_CameraPos;
-      gl_Position = u_ViewProjection * vec4(pos, 1.0);
-    })";
-
-    const char *fragment = R"(
-    #version 410 core
-
-    in vec3 v_WorldPos;
-    in vec3 v_Normal;
-    in vec3 v_CamPos;
-
-    layout (location = 0) out vec4 f_FragColor;
-
-    void main()
-    {
-      vec3 lightPos = vec3(-2000.0, 2000.0, -2000.0);
-      vec3 norm = normalize(v_Normal);
-      vec3 lightDir = normalize(lightPos - v_WorldPos);  
-      vec3 lightColor = vec3(1.0, 1.0, 1.0);
-
-      vec3 diffuse = max(dot(norm, lightDir), 0) * 0.6 * lightColor;
-      vec3 ambient = 0.5 * lightColor;
-
-      vec3 viewDir = normalize(v_CamPos - v_WorldPos);
-      vec3 reflectDir = reflect(-lightDir, norm);  
-      float spec = pow(max(dot(viewDir, reflectDir), 0.0), 4);
-      vec3 specular = 0.2f * spec * lightColor;  
-
-      vec3 color = (ambient + diffuse + specular) * vec3(0.2, 0.2, 0.6);
-      f_FragColor = vec4(color, 1.0);
-    })";
-
-    m_WaterShader = new Shader(vertex, fragment);
-    m_WaterShader->SetUniformBlock(m_WaveBuffer, "WaveProperties", 0);
-  }
+  m_WaterShader = new Shader("resources/waveShader.glsl");
+  m_WaterShader->SetUniformBlock(m_WaveBuffer, "WaveProperties", 0);
 }
 
 }

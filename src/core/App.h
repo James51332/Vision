@@ -50,10 +50,11 @@ private:
   {
     glm::vec2 origin;
     glm::vec2 direction;
-    glm::vec4 scale; // amplitude, period, frequency, dummy
+    glm::vec4 scale; // amplitude, wavelength, frequency, phase
   };
 
-  Wave m_Waves[10];
+  constexpr static std::size_t m_NumWaves = 100;
+  Wave m_Waves[m_NumWaves];
   Buffer* m_WaveBuffer;
 };
 

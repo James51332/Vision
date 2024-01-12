@@ -4,6 +4,8 @@
 #include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "core/Input.h"
+
 namespace Vision
 {
 
@@ -49,11 +51,18 @@ void Renderer::DrawMesh(Mesh* mesh, Shader* shader)
 
   shader->Use();
   shader->UploadUniformMat4(&m_Camera->GetViewProjectionMatrix()[0][0], "u_ViewProjection");
-  shader->UploadUniformFloat(SDL_GetTicks() / 1000.0f, "u_Time");
   shader->UploadUniformFloat3(&m_Camera->GetPosition()[0], "u_CameraPos");
+
+  static float time = SDL_GetTicks() / 1000.0f;
+  static float lastTime = SDL_GetTicks() / 1000.0f;
+  float curTime = SDL_GetTicks() / 1000.0f;
+  if (!Input::KeyDown(SDL_SCANCODE_Q))
+    time += curTime - lastTime;
+  lastTime = curTime;
+  shader->UploadUniformFloat(time, "u_Time");
   
   mesh->Bind();
-  glDrawElements(GL_TRIANGLES, mesh->GetNumIndices(), GL_UNSIGNED_SHORT, nullptr);
+  glDrawElements(GL_TRIANGLES, mesh->GetNumIndices(), GL_UNSIGNED_INT, nullptr);
 }
 
 }

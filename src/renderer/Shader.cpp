@@ -1,11 +1,68 @@
 #include "Shader.h"
 
 #include <iostream>
+#include <sstream>
+#include <unordered_map>
+
+#include <SDL.h>
 
 namespace Vision
 {
 
+static GLenum ShaderTypeFromString(const std::string &type)
+{
+  if (type == "vertex")
+    return GL_VERTEX_SHADER;
+  if (type == "fragment" || type == "pixel")
+    return GL_FRAGMENT_SHADER;
+
+  SDL_assert(false);
+  return 0;
+}
+
+Shader::Shader(const char* path)
+{
+  SDL_RWops *shader = SDL_RWFromFile(path, "r+");
+  if (!shader)
+  {
+    SDL_Log("Failed to open shader: %s", SDL_GetError());
+  }
+
+  size_t size = SDL_RWsize(shader);
+  std::string buffer(size, ' ');
+  SDL_RWread(shader, &buffer[0], size);
+
+  std::unordered_map<GLenum, std::string> shaders;
+
+  // System from TheCherno/Hazel
+  const char* typeToken = "#type";
+  size_t typeTokenLength = strlen(typeToken);
+  std::size_t pos = buffer.find(typeToken, 0);
+  while (pos != std::string::npos)
+  {
+    size_t eol = buffer.find_first_of("\r\n", pos); // End of shader type declaration line
+    SDL_assert(eol != std::string::npos);
+    size_t begin = pos + typeTokenLength + 1; // Start of shader type name (after "#type " keyword)
+    std::string type = buffer.substr(begin, eol - begin);
+
+    size_t nextLinePos = buffer.find_first_not_of("\r\n", eol); // Start of shader code after shader type declaration line
+    SDL_assert(nextLinePos != std::string::npos);
+    pos = buffer.find(typeToken, nextLinePos); // Start of next shader type declaration line
+
+    shaders[ShaderTypeFromString(type)] = (pos == std::string::npos) ? buffer.substr(nextLinePos) : buffer.substr(nextLinePos, pos - nextLinePos);
+  }
+
+  SDL_assert(shaders.size() == 2);
+  CreateFromSources(shaders[GL_VERTEX_SHADER].c_str(), shaders[GL_FRAGMENT_SHADER].c_str());
+}
+
 Shader::Shader(const char* vertex, const char* fragment)
+{
+  CreateFromSources(vertex, fragment);
+}
+
+
+void Shader::CreateFromSources(const char* vertex, const char* fragment)
 {
   // Create two shaders with our given shader source code
   GLuint vs, fs;
