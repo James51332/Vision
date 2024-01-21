@@ -1,7 +1,6 @@
 #include "Renderer.h"
 
 #include <SDL.h>
-#include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "core/Input.h"
