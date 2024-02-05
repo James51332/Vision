@@ -9,15 +9,15 @@ add_subdirectory(vendor/imgui EXCLUDE_FROM_ALL)
 # Source Files
 file(GLOB_RECURSE SRC_FILES CMAKE_CONFIGURE_DEPENDS "engine/*.cpp" "engine/*.h")
 
-# Define the include directory for the program
-include_directories(Vision ${CMAKE_SOURCE_DIR}/engine)
-
 # Define the executable for the program
 add_library(Vision ${SRC_FILES})
 
+# Define the include directory for the program
+target_include_directories(Vision PUBLIC "engine")
+
 # Link to the SDL library
 target_link_libraries(Vision
-                        PRIVATE
+                        PUBLIC
                           SDL3::SDL3
                           glad
                           glm::glm

@@ -7,10 +7,4 @@ add_executable(Waves ${SRC_FILES})
 
 target_link_libraries(Waves 
                         PRIVATE
-                          Vision
-                          SDL3::SDL3
-                          glad
-                          glm::glm
-                          ImGui
-                          spirv-cross-core
-                          spirv-cross-glsl)
+                          Vision)
