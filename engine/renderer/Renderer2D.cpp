@@ -62,6 +62,34 @@ void main()
 	FragColor = vec4(v_Color.xyz, v_Color.w * alpha);
 })";
 
+const char* quadVertex = R"(
+#version 410 core
+
+layout (location = 0) in vec3 a_Position;
+layout (location = 1) in vec2 a_UV;
+
+layout (location = 0) out vec2 v_UV;
+
+void main()
+{  
+  gl_Position = vec4(a_Position, 1.0);
+  v_UV = a_UV;
+})";
+
+const char *quadFragment = R"(
+#version 410 core
+
+layout (location = 0) in vec2 v_UV;
+
+out vec4 FragColor;
+
+uniform sampler2D u_Texture;
+
+void main()
+{
+  FragColor = texture(u_Texture, v_UV);
+})";
+
 Renderer2D::Renderer2D(float width, float height, float pixelDensity)
 : m_Width(width), m_Height(height), m_PixelDensity(pixelDensity)
 {
@@ -116,6 +144,20 @@ void Renderer2D::DrawPoint(const glm::vec2 &point, const glm::vec4 &color, float
 
   m_InstancedBuffer[m_Points] = {point, color, radius};
   m_Points++;
+}
+
+void Renderer2D::DrawFullscreenQuad(const Texture2D* texture)
+{  
+  
+  m_QuadShader->Use();
+  m_QuadShader->UploadUniformInt(0, "u_Texture");
+  
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texture->m_TextureID);
+  
+  m_QuadVAO->Bind();
+  m_QuadIBO->Bind();
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, nullptr);
 }
 
 void Renderer2D::Flush()
@@ -186,11 +228,15 @@ void Renderer2D::GenerateArrays()
   m_PointsVAO = new VertexArray();
   m_PointsVAO->AttachBuffer(m_QuadVBO);
   m_PointsVAO->AttachBuffer(m_InstancedVBO);
+
+  m_QuadVAO = new VertexArray();
+  m_QuadVAO->AttachBuffer(m_QuadVBO);
 }
 
 void Renderer2D::GenerateShaders()
 {
   m_PointShader = new Shader(particleVertex, particleFragment);
+  m_QuadShader = new Shader(quadVertex, quadFragment);
 }
 
 void Renderer2D::DestroyBuffers()
@@ -202,11 +248,13 @@ void Renderer2D::DestroyBuffers()
 void Renderer2D::DestroyArrays()
 {
   delete m_PointsVAO;
+  delete m_QuadVAO;
 }
 
 void Renderer2D::DestroyShaders()
 {
   delete m_PointShader;
+  delete m_QuadShader;
 }
 
 }

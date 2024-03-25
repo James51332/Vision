@@ -4,6 +4,7 @@
 #include "Buffer.h"
 #include "Shader.h"
 #include "VertexArray.h"
+#include "Texture.h"
 
 namespace Vision
 {
@@ -22,6 +23,8 @@ public:
 
   void DrawPoint(const glm::vec2 &position, const glm::vec4 &color, float radius);
 
+  void DrawFullscreenQuad(const Texture2D* texture);
+
 private:
   void Flush();
 
@@ -36,8 +39,9 @@ private:
 private:
   // 2D Points Rendering Data
   Buffer *m_QuadVBO, *m_QuadIBO;
-  VertexArray *m_PointsVAO;
+  VertexArray *m_PointsVAO, *m_QuadVAO;
   Shader *m_PointShader;
+  Shader *m_QuadShader;
 
   // Point Instancing Data
   struct InstancedVertex

@@ -71,6 +71,8 @@ void ImGuiRenderer::End()
   glm::mat4 projection = glm::ortho(L, R, B, T);
   m_Shader->UploadUniformMat4(&projection[0][0], "u_ViewProjection");
 
+  m_Shader->UploadUniformInt(0, "u_Texture");
+
   // Calculate our clip rect offset and scale
   glm::vec2 clipOff = { drawData->DisplayPos.x, drawData->DisplayPos.y };
   glm::vec2 clipScale = { drawData->FramebufferScale.x, drawData->FramebufferScale.y };
@@ -128,9 +130,9 @@ void ImGuiRenderer::End()
       {
         glActiveTexture(GL_TEXTURE0);
         if (command->TextureId == 0)
-          glBindTexture(GL_TEXTURE0, m_FontTexture);
+          glBindTexture(GL_TEXTURE_2D, m_FontTexture);
         else
-          glBindTexture(GL_TEXTURE0, (GLuint)(intptr_t)command->TextureId);
+          glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)command->TextureId);
         
         glDrawElements(GL_TRIANGLES, command->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, reinterpret_cast<void*>(command->IdxOffset * sizeof(ImDrawIdx)));
       }
