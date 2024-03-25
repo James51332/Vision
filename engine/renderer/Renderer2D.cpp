@@ -138,6 +138,29 @@ void Renderer2D::Flush()
 
 void Renderer2D::GenerateBuffers()
 {
+  // Create our quad vertex buffer and index buffer
+  {
+    Vision::BufferDesc vboDesc;
+    vboDesc.Type = GL_ARRAY_BUFFER;
+    vboDesc.Usage = GL_STATIC_DRAW;
+    vboDesc.Size = sizeof(quadVertices);
+    vboDesc.Data = (void *)quadVertices;
+    vboDesc.Layout = {
+      { Vision::ShaderDataType::Float3, "a_Position" },
+      { Vision::ShaderDataType::Float2, "a_UV" }
+    };
+
+    m_QuadVBO = new Vision::Buffer(vboDesc);
+
+    Vision::BufferDesc iboDesc;
+    iboDesc.Type = GL_ELEMENT_ARRAY_BUFFER;
+    iboDesc.Usage = GL_STATIC_DRAW;
+    iboDesc.Size = sizeof(quadIndices);
+    iboDesc.Data = (void *)quadIndices;
+
+    m_QuadIBO = new Vision::Buffer(iboDesc);
+  }
+
   // Create our particle instance vertex buffers
   {
     BufferDesc instancedDesc;
