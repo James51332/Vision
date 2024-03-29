@@ -8,8 +8,31 @@
 namespace Vision
 {
 
+// ----- Camera -----
+
+void Camera::SetPosition(const glm::vec3& position)
+{
+  m_Position = position;
+  CalculateMatrices();
+}
+
+void Camera::SetRotation(const glm::vec3& rotation)
+{
+  m_Rotation = rotation;
+  CalculateMatrices();
+}
+
+void Camera::SetWindowSize(float width, float height)
+{
+  m_WindowSize = { width, height };
+  m_Aspect = height / width;
+  CalculateMatrices();
+}
+
+// ----- OrthoCamera -----
+
 OrthoCamera::OrthoCamera(float windowWidth, float windowHeight, float size)
-  : Camera({windowWidth, windowHeight}), m_Aspect(windowWidth / windowHeight), m_OrthographicSize(size)
+  : Camera(windowWidth, windowHeight), m_OrthographicSize(size)
 {
   CalculateMatrices();
 }
@@ -26,31 +49,6 @@ void OrthoCamera::Update(float timestep)
   // Recalculate matrices as needed
   if (shouldUpdateMatrices)
     CalculateMatrices();
-}
-
-void OrthoCamera::SetPosition(const glm::vec3& position)
-{
-  m_Position = position;
-  CalculateMatrices();
-}
-
-void OrthoCamera::SetRotation(float rotation)
-{
-  m_Rotation = rotation;
-  CalculateMatrices();
-}
-
-void OrthoCamera::SetOrthographicSize(float size)
-{
-  m_OrthographicSize = size;
-  CalculateMatrices();
-}
-
-void OrthoCamera::SetWindowSize(float windowWidth, float windowHeight)
-{
-  m_WindowSize = { windowWidth, windowHeight };
-  m_Aspect = windowWidth / windowHeight;
-  CalculateMatrices();
 }
 
 glm::vec2 OrthoCamera::GetMouseInWorldSpace() const
@@ -100,12 +98,12 @@ bool OrthoCamera::HandleMoving(float timestep)
   float rotationSpeed = 200.0f;
   if (Input::KeyDown(SDL_SCANCODE_LEFT))
   {
-    m_Rotation += rotationSpeed * timestep;
+    m_Rotation.z += rotationSpeed * timestep;
     shouldUpdateMatrices = true;
   }
   if (Input::KeyDown(SDL_SCANCODE_RIGHT))
   {
-    m_Rotation -= rotationSpeed * timestep;
+    m_Rotation.z -= rotationSpeed * timestep;
     shouldUpdateMatrices = true;
   }
   
@@ -172,10 +170,13 @@ bool OrthoCamera::HandleZooming(float timestep)
 void OrthoCamera::CalculateMatrices()
 {
   // Calculate the view matrix (translates from world space to camera space-inverse of camera's transform)
-  glm::mat4 transform = glm::translate(glm::mat4(1.0f), m_Position)
-                      * glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation), glm::vec3(0.0f, 0.0f, 1.0f)); // rotate and then translate
-  
-  m_View = glm::inverse(transform);
+  m_Transform = glm::translate(glm::mat4(1.0f), m_Position)
+              * glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f)) // yaw
+              * glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f)) // pitch
+              * glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f)); // roll
+              
+              
+  m_View = glm::inverse(m_Transform);
 
   // Calculate the projection matrix (use glm::ortho)
   float left, right, top, bottom;
@@ -193,9 +194,10 @@ void OrthoCamera::CalculateMatrices()
   m_ViewProjectionInverse = glm::inverse(m_ViewProjection);
 }
 
-// Perspective Camera
+// ----- PerspectiveCamera -----
+
 PerspectiveCamera::PerspectiveCamera(float windowWidth, float windowHeight, float near, float far)
-  : Camera({windowWidth, windowHeight}), m_Near(near), m_Far(far)
+  : Camera(windowWidth, windowHeight), m_Near(near), m_Far(far)
 {
   CalculateMatrices();
 }
@@ -211,6 +213,39 @@ void PerspectiveCamera::Update(float timestep)
   // Recalculate matrices as needed
   if (shouldUpdateMatrices)
     CalculateMatrices();
+}
+
+void PerspectiveCamera::SetFOV(float fov)
+{
+  m_FOV = fov;
+  CalculateMatrices();
+}
+
+void PerspectiveCamera::SetClip(float near, float far)
+{
+  m_Near = near;
+  m_Far = far;
+  CalculateMatrices();
+}
+
+void PerspectiveCamera::SetMoveSpeed(float moveSpeed)
+{
+  m_MoveSpeed = moveSpeed;
+}
+
+glm::vec3 PerspectiveCamera::GetMouseDirectionInWorldSpace() const
+{
+  // Step 1: Normalize Mouse Coords
+  glm::vec2 mouseCoordinates = {Input::GetMouseX(), m_WindowSize.y - Input::GetMouseY()};            // (0, width); (0, height)
+  mouseCoordinates = {(mouseCoordinates.x / m_WindowSize.x), (mouseCoordinates.y / m_WindowSize.y)}; // (0, 1); (0, 1)
+  mouseCoordinates = 2.0f * mouseCoordinates - 1.0f;                                                 // (-1, 1); (-1, 1)
+
+  // Step 2: Unproject to World Space
+  glm::vec4 mouseCoord4 = m_ViewProjectionInverse * glm::vec4(mouseCoordinates, 0.0f, 1.0f);
+  
+  // Step 3: Normalize Direction
+  glm::vec3 mouseDir = glm::vec3(mouseCoord4.x, mouseCoord4.y, mouseCoord4.z) / mouseCoord4.z;
+  return mouseDir;
 }
 
 bool PerspectiveCamera::HandleMoving(float timestep)
@@ -274,70 +309,22 @@ bool PerspectiveCamera::HandleTurning(float timestep)
   {
     update = true;
 
-    m_Yaw -= dx / 3.0f;
-    m_Pitch -= dy / 3.0f;
-    if (m_Pitch >= 90.0f) m_Pitch = 90.0f;
-    else if (m_Pitch <= -90.0f) m_Pitch = -90.0f;
+    m_Rotation.y -= dx / 3.0f;
+    m_Rotation.x -= dy / 3.0f;
+    if (m_Rotation.x >= 90.0f) m_Rotation.x = 90.0f;
+    else if (m_Rotation.x <= -90.0f) m_Rotation.x = -90.0f;
   }
 
   return update;
-}
-
-void PerspectiveCamera::SetPosition(const glm::vec3 &position)
-{
-  m_Position = position;
-  CalculateMatrices();
-}
-
-void PerspectiveCamera::SetPitch(float pitch)
-{
-  m_Pitch = pitch;
-  CalculateMatrices();
-}
-
-void PerspectiveCamera::SetYaw(float yaw)
-{
-  m_Yaw = yaw;
-  CalculateMatrices();
-}
-
-void PerspectiveCamera::SetFOV(float fov)
-{
-  m_FOV = fov;
-  CalculateMatrices();
-}
-
-void PerspectiveCamera::SetClip(float near, float far)
-{
-  m_Near = near;
-  m_Far = far;
-  CalculateMatrices();
-}
-
-void PerspectiveCamera::SetMoveSpeed(float moveSpeed)
-{
-  m_MoveSpeed = moveSpeed;
-}
-
-void PerspectiveCamera::SetWindowSize(float windowWidth, float windowHeight)
-{
-  m_WindowSize = {windowWidth, windowHeight};
-  CalculateMatrices();
-}
-
-glm::vec3 PerspectiveCamera::GetMouseDirectionInWorldSpace() const
-{
-  // TODO
-
-  return { 0.0f, 0.0f, 1.0f };
 }
 
 void PerspectiveCamera::CalculateMatrices()
 {
   // Calculate the view matrix (translates from world space to camera space-inverse of camera's transform)
   m_Transform = glm::translate(glm::mat4(1.0f), m_Position)
-                      * glm::rotate(glm::mat4(1.0f), glm::radians(m_Yaw), glm::vec3(0.0f, 1.0f, 0.0f)) // yaw
-                      * glm::rotate(glm::mat4(1.0f), glm::radians(m_Pitch), glm::vec3(1.0f, 0.0f, 0.0f)); // pitch
+              * glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f)) // yaw
+              * glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f)) // pitch
+              * glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f)); // roll
 
   m_View = glm::inverse(m_Transform);
 
