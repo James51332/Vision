@@ -23,7 +23,7 @@ void Renderer::Resize(float width, float height)
   glViewport(0, 0, static_cast<GLsizei>(width * m_PixelDensity), static_cast<GLsizei>(height * m_PixelDensity));
 }
 
-void Renderer::Begin(PerspectiveCamera* camera)
+void Renderer::Begin(Camera* camera)
 {
   assert(!m_InFrame);
 

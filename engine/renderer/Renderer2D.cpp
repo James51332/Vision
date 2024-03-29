@@ -113,7 +113,7 @@ void Renderer2D::Resize(float width, float height)
   glViewport(0, 0, static_cast<GLsizei>(width * m_PixelDensity), static_cast<GLsizei>(height * m_PixelDensity));
 }
 
-void Renderer2D::Begin(OrthoCamera *camera)
+void Renderer2D::Begin(Camera *camera)
 {
   assert(!m_InFrame);
 

@@ -9,7 +9,7 @@ namespace Vision
 {
 
 OrthoCamera::OrthoCamera(float windowWidth, float windowHeight, float size)
-  : m_WindowSize(windowWidth, windowHeight), m_Aspect(windowWidth / windowHeight), m_OrthographicSize(size)
+  : Camera({windowWidth, windowHeight}), m_Aspect(windowWidth / windowHeight), m_OrthographicSize(size)
 {
   CalculateMatrices();
 }
@@ -195,7 +195,7 @@ void OrthoCamera::CalculateMatrices()
 
 // Perspective Camera
 PerspectiveCamera::PerspectiveCamera(float windowWidth, float windowHeight, float near, float far)
-  : m_WindowSize({windowWidth, windowHeight}), m_Near(near), m_Far(far)
+  : Camera({windowWidth, windowHeight}), m_Near(near), m_Far(far)
 {
   CalculateMatrices();
 }

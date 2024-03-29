@@ -18,7 +18,7 @@ public:
   void Resize(float width, float height);
 
   // 2D Renderer API
-  void Begin(OrthoCamera *camera);
+  void Begin(Camera *camera);
   void End();
 
   void DrawPoint(const glm::vec2 &position, const glm::vec4 &color, float radius);
@@ -58,7 +58,7 @@ private:
 
   // General Rendering Data
   bool m_InFrame = false;
-  OrthoCamera *m_Camera = nullptr;
+  Camera *m_Camera = nullptr;
   float m_PixelDensity = 1.0f;
   float m_Width, m_Height;
 };
