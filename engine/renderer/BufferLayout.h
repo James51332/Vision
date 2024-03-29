@@ -12,6 +12,7 @@ namespace Vision
 // We can add more to this in the future
 enum class ShaderDataType
 {
+  Int,
   Float,
   Float2,
   Float3,
@@ -23,6 +24,7 @@ inline float ShaderDataTypeSize(ShaderDataType type)
 {
   switch (type)
   {
+    case ShaderDataType::Int:
     case ShaderDataType::Float:
       return 4;
     case ShaderDataType::Float2:
@@ -42,6 +44,7 @@ inline GLint ShaderDataTypeCount(ShaderDataType type)
 {
   switch (type)
   {
+    case ShaderDataType::Int:
     case ShaderDataType::Float:
       return 1;
     case ShaderDataType::Float2:

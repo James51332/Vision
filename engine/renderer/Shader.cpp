@@ -139,6 +139,12 @@ void Shader::UploadUniformInt(const int value, const char* name)
   glUniform1i(location, value);
 }
 
+void Shader::UploadUniformIntArray(const int* value, std::size_t numElements, const char* name)
+{
+  GLint location = glGetUniformLocation(m_ShaderProgram, name);
+  glUniform1iv(location, static_cast<GLsizei>(numElements), value);
+}
+
 void Shader::UploadUniformFloat(const float value, const char* name)
 {
   GLint location = glGetUniformLocation(m_ShaderProgram, name);

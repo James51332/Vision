@@ -22,6 +22,8 @@ static GLenum GLenumFromShaderDataType(ShaderDataType type)
 {
   switch (type)
   {
+    case ShaderDataType::Int:
+      return GL_INT;
     case ShaderDataType::Float: 
     case ShaderDataType::Float2:
     case ShaderDataType::Float3:
