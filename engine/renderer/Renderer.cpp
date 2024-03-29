@@ -44,12 +44,13 @@ void Renderer::End()
   m_Camera = nullptr;
 }
 
-void Renderer::DrawMesh(Mesh* mesh, Shader* shader)
+void Renderer::DrawMesh(Mesh* mesh, Shader* shader, const glm::mat4& transform)
 {
   assert(m_InFrame);
 
   shader->Use();
   shader->UploadUniformMat4(&m_Camera->GetViewProjectionMatrix()[0][0], "u_ViewProjection");
+  shader->UploadUniformMat4(&transform[0][0], "u_Transform");
   shader->UploadUniformFloat3(&m_Camera->GetPosition()[0], "u_CameraPos");
 
   static float time = SDL_GetTicks() / 1000.0f;

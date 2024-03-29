@@ -87,7 +87,7 @@ uniform sampler2D u_Texture;
 
 void main()
 {
-  FragColor = texture(u_Texture, v_UV);
+  FragColor = texture(u_Texture, v_UV.st);
 })";
 
 Renderer2D::Renderer2D(float width, float height, float pixelDensity)

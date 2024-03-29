@@ -16,6 +16,7 @@ public:
   void Reset(float width, float height);
 
   Texture2D* GetColorAttachment() { return m_ColorAttachment; }
+  Texture2D* GetDepthAttachment() { return m_DepthStencilAttachment; }
 
   // If a framebuffer is bound, all rendering will occur on that framebuffer
   void Bind();

@@ -4,12 +4,12 @@
 #include <glm/gtc/random.hpp>
 #include <imgui.h>
 #include <vector>
-#include <spirv_cross.hpp>
-#include <spirv_glsl.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
 #include "renderer/Camera.h"
 #include "renderer/Renderer.h"
 #include "renderer/Mesh.h"
+#include "renderer/MeshGenerator.h"
 #include "renderer/Shader.h"
 
 #include "ui/ImGuiRenderer.h"
@@ -58,7 +58,7 @@ public:
     {
       m_WaterShader->Use();
       m_WaterShader->UploadUniformInt(waves, "u_Waves");
-      m_Renderer->DrawMesh(m_Mesh, m_WaterShader);
+      m_Renderer->DrawMesh(m_Mesh, m_WaterShader, glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), {1.0f, 0.0f, 0.0f}));
     }
     m_Renderer->End();
 
@@ -110,113 +110,12 @@ private:
 
   void GenerateMesh()
   {
-    // Create The Plane Mesh
-    constexpr std::size_t planeRes = 1024; // I guess this is the most vertices my macbook can handle
-    constexpr float planeSize = 50.0f;
-
-    constexpr std::size_t numVertices = planeRes * planeRes;
-    constexpr std::size_t numIndices = 6 * (planeRes - 1) * (planeRes - 1); // 6 indices per quad
-    {
-      Vision::MeshDesc desc;
-      desc.NumVertices = numVertices;
-      desc.NumIndices = numIndices;
-
-      std::vector<Vision::MeshVertex> vertices(numVertices);
-      float x = -planeSize / 2.0f;
-      for (std::size_t i = 0; i < planeRes; i++)
-      {
-        float z = -planeSize / 2.0f;
-        for (std::size_t j = 0; j < planeRes; j++)
-        {
-          Vision::MeshVertex vertex;
-          vertex.Position = {x, 0.0f, z};
-          vertex.Normal = {0.0f, 1.0f, 0.0f};
-          vertex.Color = {0.2f, 0.2f, 0.6f, 1.0f};
-          vertex.UV = {static_cast<float>(i) / static_cast<float>(planeRes), static_cast<float>(j) / static_cast<float>(planeRes)};
-          vertices[i * planeRes + j] = vertex;
-
-          z += planeSize / static_cast<float>(planeRes);
-        }
-        x += planeSize / static_cast<float>(planeRes);
-      }
-      desc.Vertices = vertices;
-
-      std::vector<Vision::MeshIndex> indices(numIndices);
-      std::size_t index = 0;
-      for (std::size_t i = 0; i < planeRes - 1; i++)
-      {
-        for (std::size_t j = 0; j < planeRes - 1; j++)
-        {
-          Vision::MeshIndex current = static_cast<Vision::MeshIndex>(i * planeRes + j);
-          Vision::MeshIndex right = static_cast<Vision::MeshIndex>(current + 1);
-          Vision::MeshIndex above = static_cast<Vision::MeshIndex>(current + planeRes);
-          Vision::MeshIndex diagonal = static_cast<Vision::MeshIndex>(right + planeRes);
-
-          indices[index + 0] = current;
-          indices[index + 1] = right;
-          indices[index + 2] = diagonal;
-          indices[index + 3] = current;
-          indices[index + 4] = diagonal;
-          indices[index + 5] = above;
-
-          index += 6;
-        }
-      }
-      desc.Indices = indices;
-
-      m_Mesh = new Vision::Mesh(desc);
-    }
+    m_Mesh = Vision::MeshGenerator::CreatePlaneMesh(50.0f, 50.0f, 512, 512);
   }
 
   void GenerateShader()
   {
-    // This code aint good but it get its done for now.
-    std::string vert, frag;
-    {
-      // Read SPIR-V from disk or similar.
-      SDL_RWops* file = SDL_RWFromFile("resources/waterVertex.spv", "rb");
-      assert(file);
-      SDL_RWseek(file, 0, SDL_RW_SEEK_END);
-      std::size_t size = SDL_RWtell(file);
-      SDL_RWseek(file, 0, SDL_RW_SEEK_SET);
-      std::vector<uint32_t> spirv_binary(size / 4, 0);
-      SDL_RWread(file, spirv_binary.data(), size);
-      spirv_cross::CompilerGLSL glsl(spirv_binary);
-
-      // Set some options.
-      spirv_cross::CompilerGLSL::Options options;
-      options.version = 410;
-      options.es = false;
-      options.enable_420pack_extension = false;
-      glsl.set_common_options(options);
-
-      // Compile to GLSL, ready to give to GL driver.
-      vert = glsl.compile();
-    }
-
-    {
-      // Read SPIR-V from disk or similar.
-      SDL_RWops *file = SDL_RWFromFile("resources/waterFrag.spv", "rb");
-      assert(file);
-      SDL_RWseek(file, 0, SDL_RW_SEEK_END);
-      std::size_t size = SDL_RWtell(file);
-      SDL_RWseek(file, 0, SDL_RW_SEEK_SET);
-      std::vector<uint32_t> spirv_binary(size / 4, 0);
-      SDL_RWread(file, spirv_binary.data(), size);
-      spirv_cross::CompilerGLSL glsl(spirv_binary);
-
-      // Set some options.
-      spirv_cross::CompilerGLSL::Options options;
-      options.version = 410;
-      options.es = false;
-      options.enable_420pack_extension = false;
-      glsl.set_common_options(options);
-
-      // Compile to GLSL, ready to give to GL driver.
-      frag = glsl.compile();
-    }
-
-    m_WaterShader = new Vision::Shader(vert.c_str(), frag.c_str());
+    m_WaterShader = new Vision::Shader("resources/waveShader.glsl");
     m_WaterShader->SetUniformBlock(m_WaveBuffer, "WaveProperties", 0); 
   }
 

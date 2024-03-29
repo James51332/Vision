@@ -22,7 +22,7 @@ public:
   void Begin(PerspectiveCamera* camera);
   void End();
 
-  void DrawMesh(Mesh* mesh, Shader* shader);
+  void DrawMesh(Mesh* mesh, Shader* shader, const glm::mat4& transform = glm::mat4(1.0f));
 
 private:  
   bool m_InFrame = false;

@@ -35,7 +35,7 @@ void Framebuffer::Reset(float width, float height)
   glGenFramebuffers(1, &m_FramebufferID);
 
   m_ColorAttachment = new Texture2D(m_Width, m_Height, PixelType::RGBA32, false);
-  m_DepthStencilAttachment = new Texture2D(m_Width, m_Height, PixelType::Depth24Stencil8, true);
+  m_DepthStencilAttachment = new Texture2D(m_Width, m_Height, PixelType::Depth32, false);
 
   glBindFramebuffer(GL_FRAMEBUFFER, m_FramebufferID);
   
@@ -45,10 +45,11 @@ void Framebuffer::Reset(float width, float height)
                          m_ColorAttachment->m_TextureID, 
                          0);
 
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-                            GL_DEPTH_STENCIL_ATTACHMENT,
-                            GL_RENDERBUFFER,
-                            m_DepthStencilAttachment->m_TextureID);
+  glFramebufferTexture2D(GL_FRAMEBUFFER,
+                         GL_DEPTH_ATTACHMENT,
+                         GL_TEXTURE_2D,
+                         m_DepthStencilAttachment->m_TextureID,
+                         0);
 
   if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     SDL_Log("Failed to complete framebuffer!");

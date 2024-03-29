@@ -81,8 +81,11 @@ void App::ProcessEvents()
   SDL_Event event;
   while (SDL_PollEvent(&event))
   {
-    bool processed = UI::ProcessEvent(&event);
-    if (processed) continue;
+    if (ImGui::GetCurrentContext())
+    {
+      bool processed = UI::ProcessEvent(&event);
+      if (processed) continue;
+    }
 
     switch (event.type)
     {

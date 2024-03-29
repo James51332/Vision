@@ -6,6 +6,7 @@ layout (location = 0) in vec3 a_Pos;
 uniform mat4 u_ViewProjection;
 uniform vec3 u_CameraPos;
 uniform float u_Time;
+uniform mat4 u_Transform;
 uniform int u_Waves;
 
 out vec3 v_WorldPos;
@@ -28,7 +29,7 @@ void main()
 {
   float offset = 0.0;
   vec3 gradientX = vec3(1.0, 0.0, 0.0);
-  vec3 gradientZ = vec3(0.0, 0.0, 1.0);
+  vec3 gradientY = vec3(0.0, 1.0, 0.0);
   float ampSum = 0.0;
   vec3 pos = a_Pos;
     
@@ -38,8 +39,7 @@ void main()
     Wave wave = waves.waves[index];
 
     // Get component of the position in the direction of the wave
-    vec2 relPos = pos.xz - wave.origin;
-    float wavePos = dot(relPos, wave.direction); 
+    float wavePos = dot(pos.xy - wave.origin, wave.direction); 
 
     // Offset the plane by the wave
     float waveInput = (6.283 / wave.scale.y) * wavePos - (wave.scale.z * u_Time) + wave.scale.w;
@@ -49,23 +49,23 @@ void main()
 
     // Calculate slope of tangent and resolve into x and z component
     float tangentSlope = waveHeight * cos(waveInput) * (6.283 / wave.scale.y); 
-    gradientX.y += tangentSlope * wave.direction.x;
-    gradientZ.y += tangentSlope * wave.direction.y;
+    gradientX.z += tangentSlope * wave.direction.x;
+    gradientY.z += tangentSlope * wave.direction.y;
 
     // Domain warping
     pos.x += tangentSlope * wave.direction.x / 100;
-    pos.z += tangentSlope * wave.direction.y / 100;
+    pos.y += tangentSlope * wave.direction.y / 100;
   }
 
   offset /= ampSum;
-  gradientX.y /= ampSum;
-  gradientZ.y /= ampSum;
-  pos.y += offset;
+  gradientX.z /= ampSum;
+  gradientY.z /= ampSum;
+  pos.z += offset;
 
-  v_Normal = cross(gradientZ, gradientX);
-  v_WorldPos = pos;
+  v_Normal = cross(gradientY, gradientX);
+  v_WorldPos = (u_Transform * vec4(pos, 1.0)).xyz;
   v_CamPos = u_CameraPos;
-  gl_Position = u_ViewProjection * vec4(pos, 1.0);
+  gl_Position = u_ViewProjection * u_Transform * vec4(pos, 1.0);
 }
 
 #type fragment
@@ -87,14 +87,14 @@ void main()
   vec3 norm = normalize(v_Normal);
 
   // Diffuse
-  vec3 diffuse =max(dot(norm, lightDir), 0) * 1.0 * lightColor;
+  vec3 diffuse = max(dot(norm, lightDir), 0) * 1.0 * lightColor;
   
   // Ambient
   vec3 ambient = 0.4 * lightColor;
 
   // Specular
   vec3 reflectDir = reflect(-lightDir, norm);  
-  float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+  float spec = pow(max(dot(viewDir, reflectDir), 0.0), 128);
   vec3 specular = 0.5 * spec * lightColor;  
 
   // Out Color
