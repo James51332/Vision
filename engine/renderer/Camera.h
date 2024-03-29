@@ -94,6 +94,7 @@ public:
   void SetYaw(float yaw);
   void SetFOV(float fov);
   void SetClip(float near, float far);
+  void SetMoveSpeed(float speed);
   void SetWindowSize(float windowWidth, float windowHeight);
 
   float GetPitch() const { return m_Pitch; }
@@ -101,6 +102,7 @@ public:
   float GetFOV() const { return m_FOV; }
   float GetNear() const { return m_Near; }
   float GetFar() const { return m_Far; }
+  float GetMoveSpeed() const { return m_MoveSpeed; }
 
   glm::vec3 GetMouseDirectionInWorldSpace() const;
 
@@ -120,6 +122,8 @@ private:
   float m_Pitch = 0.0f, m_Yaw = 0.0f;
   float m_FOV = 45.0f;
   float m_Near = 0.1f, m_Far = 100.0f;
+
+  float m_MoveSpeed = 3.0f;
 
   // We'll cache the aspect ratio too.
   float m_Aspect;

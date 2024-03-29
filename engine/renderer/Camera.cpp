@@ -220,8 +220,8 @@ bool PerspectiveCamera::HandleMoving(float timestep)
   glm::vec3 forwardDirection = -m_Transform[2];
   glm::vec3 rightDirection = m_Transform[0];
 
-  float moveSpeed = 3.0f;
-  if (Input::KeyDown(SDL_SCANCODE_GRAVE)) moveSpeed = 10.0f;
+  float moveSpeed = m_MoveSpeed;
+  if (Input::KeyDown(SDL_SCANCODE_GRAVE)) moveSpeed *= 5.0f;
 
   // Moving Up and Side to Side
   if (Input::KeyDown(SDL_SCANCODE_W)) 
@@ -312,6 +312,11 @@ void PerspectiveCamera::SetClip(float near, float far)
   m_Near = near;
   m_Far = far;
   CalculateMatrices();
+}
+
+void PerspectiveCamera::SetMoveSpeed(float moveSpeed)
+{
+  m_MoveSpeed = moveSpeed;
 }
 
 void PerspectiveCamera::SetWindowSize(float windowWidth, float windowHeight)
