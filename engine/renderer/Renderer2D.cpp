@@ -50,17 +50,15 @@ void Renderer2D::Resize(float width, float height)
   glViewport(0, 0, static_cast<GLsizei>(width * m_PixelDensity), static_cast<GLsizei>(height * m_PixelDensity));
 }
 
-void Renderer2D::Begin(Camera *camera)
+void Renderer2D::Begin(Camera *camera, bool useTransform, const glm::mat4& globalTransform)
 {
   assert(!m_InFrame);
 
   m_InFrame = true;
   m_Camera = camera;
 
-  // Enable Blending and Disable Depth Testing
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glDisable(GL_DEPTH_TEST);
+  m_UseGlobalTransform = useTransform;
+  m_GlobalTransform = globalTransform;
 }
 
 void Renderer2D::End()
@@ -71,7 +69,6 @@ void Renderer2D::End()
   m_InFrame = false;
   m_Camera = nullptr;
 }
-
 
 // Renderer 2D API
 
@@ -103,7 +100,7 @@ void Renderer2D::DrawTexturedQuad(const glm::mat4 &transform, const glm::vec4 &c
   if (texture)
   {
     // look to see if already usiig
-    for (std::size_t i = 0; i < m_NumTextures; i++)
+    for (std::size_t i = 0; i < m_NumUserTextures; i++)
     {
       if (m_Textures[i]->m_TextureID == texture->m_TextureID)
       {
@@ -113,12 +110,12 @@ void Renderer2D::DrawTexturedQuad(const glm::mat4 &transform, const glm::vec4 &c
     }
 
     // if no more texture slots, flush
-    if (textureID == 0 && m_NumTextures == m_MaxTextures)
+    if (textureID == 0 && m_NumUserTextures == m_MaxTextures)
       Flush();
 
-    m_Textures[m_NumTextures] = texture;
-    textureID = m_NumTextures;
-    m_NumTextures++;
+    m_Textures[m_NumUserTextures] = texture;
+    m_NumUserTextures++;
+    textureID = m_NumUserTextures;
   }
 
   // draw the quad by adding the next four vertices to the buffer
@@ -214,6 +211,8 @@ void Renderer2D::Flush()
   // TODO: Right now, the most recent quads will draw over each other, and the points will draw over quads
   // maybe some form a z-value to sort by draw order? We could have an API to push layer to the render 2D.
   glDisable(GL_DEPTH_TEST);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Quads
   if (m_NumQuads != 0)
@@ -223,6 +222,11 @@ void Renderer2D::Flush()
 
     m_QuadShader->Use();
     m_QuadShader->UploadUniformMat4(&m_Camera->GetViewProjectionMatrix()[0][0], "u_ViewProjection");
+
+    glm::mat4 transform(1.0f);
+    if (m_UseGlobalTransform)
+      transform = m_GlobalTransform;
+    m_QuadShader->UploadUniformMat4(&transform[0][0], "u_Transform");
 
     // Bind Textures
     glActiveTexture(GL_TEXTURE0);
@@ -243,7 +247,7 @@ void Renderer2D::Flush()
   
   m_QuadBufferHead = m_QuadBuffer;
   m_NumQuads = 0;
-  m_NumTextures = 1;
+  m_NumUserTextures = 0;
 
   // Points
   if (m_NumPoints != 0)
@@ -252,6 +256,11 @@ void Renderer2D::Flush()
 
     m_PointShader->Use();
     m_PointShader->UploadUniformMat4(&m_Camera->GetViewProjectionMatrix()[0][0], "u_ViewProjection");
+
+    glm::mat4 transform(1.0f);
+    if (m_UseGlobalTransform)
+      transform = m_GlobalTransform;
+    m_PointShader->UploadUniformMat4(&transform[0][0], "u_Transform");
 
     m_PointVAO->Bind();
     m_QuadIBO->Bind();
@@ -350,10 +359,11 @@ out vec4 v_Color;
 flat out int v_TextureID;
 
 uniform mat4 u_ViewProjection;
+uniform mat4 u_Transform;
 
 void main()
 {  
-  gl_Position = u_ViewProjection * vec4(a_Position, 0.0, 1.0);
+  gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 0.0, 1.0);
   
   v_UV = a_UV * a_TilingFactor;
   v_Color = a_Color;
@@ -389,10 +399,11 @@ out vec4 v_Color;
 out float v_Border;
 
 uniform mat4 u_ViewProjection;
+uniform mat4 u_Transform;
 
 void main()
 {  
-  gl_Position = u_ViewProjection * vec4(a_Position, 0.0, 1.0);
+  gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 0.0, 1.0);
 
   v_Color = a_Color;
   v_UVNorm = a_UV * 2.0 - 1.0; // normalize from -1 to 1

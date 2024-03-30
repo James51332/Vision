@@ -6,6 +6,7 @@
 #include "renderer/Mesh.h"
 #include "renderer/MeshGenerator.h"
 #include "renderer/Shader.h"
+#include "renderer/Framebuffer.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -18,26 +19,16 @@ public:
   Lumina()
   {
     // Initialize the renderer
-    m_Renderer = new Vision::Renderer(m_DisplayWidth, m_DisplayHeight, m_DisplayScale);
     m_Renderer2D = new Vision::Renderer2D(m_DisplayWidth, m_DisplayHeight, m_DisplayScale);
     m_PerspectiveCamera = new Vision::PerspectiveCamera(m_DisplayWidth, m_DisplayHeight);
-    m_PerspectiveCamera->SetPosition({0.0f, 2.0f, 3.0f});
-
-    GenerateMesh();
-    GenerateShader();
+    m_PerspectiveCamera->SetPosition({0.0f, 5.0f, 0.0f});
+    m_PerspectiveCamera->SetRotation({-90.0f, 0.0f, 0.0f});
   }
 
   ~Lumina()
   {
-    delete m_Renderer;
     delete m_Renderer2D;
     delete m_PerspectiveCamera;
-
-    delete m_Plane;
-    delete m_Cube;
-
-    delete m_PhongShader;
-    delete m_GridShader;
   }
 
   void OnUpdate(float timestep)
@@ -46,49 +37,43 @@ public:
     m_PerspectiveCamera->Update(timestep);
 
     // Render
+    static float radius = 0.0f;
     {
       glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      m_Renderer2D->Begin(m_PerspectiveCamera);
 
-      m_Renderer2D->DrawQuad(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)), glm::vec4(0.0f, 1.0, 0.0f, 1.0f));
-      m_Renderer2D->DrawCircle({5.0f, 0.0f}, {1.0f, 1.0f, 0.0f, 1.0f }, 3.0f);
-      m_Renderer2D->DrawLine({5.0f, 0.0f}, {0.0f, -5.0f});
-      m_Renderer2D->DrawBox({0.0f, 0.0f}, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), 4.0f);
+      m_Renderer2D->Begin(m_PerspectiveCamera, true, glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), { 1.0f, 0.0f, 0.0f }));
+      {
+        for (float x = -10.0f; x <= 10.0f; x++)
+        {
+          for (float y = -10.0f; y <= 10.0f; y++)
+          {
+            glm::vec4 color(1.0f);
+            if (glm::length(glm::vec2(x, y)) >= radius)
+            {
+              color = glm::vec4((x + 10.0f) / 20.0f, (y + 10.0f) / 20.0f, 0.0f, 1.0f);
+            }
+            m_Renderer2D->DrawPoint({x, y}, color, 0.25f);
+          }
+        }
 
+        m_Renderer2D->DrawCircle({0.0f, 0.0f}, glm::vec4(1.0f), radius, 0.25f);
+      }
       m_Renderer2D->End();
     }
+
+    radius += timestep;
   }
 
   void OnResize()
   {
-    m_Renderer->Resize(m_DisplayWidth, m_DisplayHeight);
+    m_Renderer2D->Resize(m_DisplayWidth, m_DisplayHeight);
     m_PerspectiveCamera->SetWindowSize(m_DisplayWidth, m_DisplayHeight);
   }
 
 private:
-  void GenerateMesh()
-  {
-    //m_Plane = Vision::MeshGenerator::CreatePlaneMesh(2.0f, 2.0f, 1, 1); // generate quad for plane
-    m_Cube = Vision::MeshGenerator::CreateCubeMesh(1.0f);
-  }
-
-  void GenerateShader()
-  {
-    //m_PhongShader = new Vision::Shader("resources/phongShader.glsl");
-    //m_GridShader = new Vision::Shader("resources/gridShader.glsl");
-  }
-
-private:
-  Vision::Renderer *m_Renderer;
   Vision::Renderer2D *m_Renderer2D;
   Vision::PerspectiveCamera *m_PerspectiveCamera;
-
-  Vision::Mesh *m_Plane;
-  Vision::Mesh *m_Cube;
-
-  Vision::Shader *m_GridShader;
-  Vision::Shader *m_PhongShader;
 };
 
 }

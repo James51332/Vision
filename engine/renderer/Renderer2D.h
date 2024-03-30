@@ -36,7 +36,7 @@ public:
   void Resize(float width, float height);
 
   // 2D Renderer API
-  void Begin(Camera *camera);
+  void Begin(Camera *camera, bool useTransform = false, const glm::mat4& globalTransform = glm::mat4(1.0f));
   void End();
 
   // Shapes
@@ -71,7 +71,8 @@ private:
   float m_Width, m_Height;
 
   // Mode
-  bool m_QuadMode = true;
+  bool m_UseGlobalTransform = false;
+  glm::mat4 m_GlobalTransform = glm::mat4(1.0f);
 
   // Quad Info
   const std::size_t m_MaxQuads = 10000;
@@ -85,7 +86,7 @@ private:
   const std::size_t m_MaxTextures = 15;
   Texture2D* m_WhiteTexture;
   std::vector<Texture2D*> m_Textures;
-  std::size_t m_NumTextures = 1;
+  std::size_t m_NumUserTextures = 0;
 
   // Point Info
   const std::size_t m_MaxPoints = 10000;
