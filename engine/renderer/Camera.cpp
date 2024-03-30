@@ -25,7 +25,7 @@ void Camera::SetRotation(const glm::vec3& rotation)
 void Camera::SetWindowSize(float width, float height)
 {
   m_WindowSize = { width, height };
-  m_Aspect = height / width;
+  m_Aspect = width / height;
   CalculateMatrices();
 }
 

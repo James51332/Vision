@@ -9,7 +9,7 @@ class Camera
 {
 public:
   Camera(float windowWidth, float windowHeight)
-    : m_WindowSize({windowWidth, windowHeight}), m_Aspect(windowHeight / windowWidth) {}
+    : m_WindowSize({windowWidth, windowHeight}), m_Aspect(windowWidth / windowHeight) {}
   virtual ~Camera() = default;
 
   // Update Movement
