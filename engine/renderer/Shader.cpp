@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <sstream>
-#include <unordered_map>
 
 #include <SDL.h>
 
@@ -15,6 +14,10 @@ static GLenum ShaderTypeFromString(const std::string &type)
     return GL_VERTEX_SHADER;
   if (type == "fragment" || type == "pixel")
     return GL_FRAGMENT_SHADER;
+  if (type == "tesselation_control" || type == "tcs")
+    return GL_TESS_CONTROL_SHADER;
+  if (type == "tesselation_evaluation" || type == "tes")
+    return GL_TESS_EVALUATION_SHADER;
 
   SDL_assert(false);
   return 0;
@@ -55,72 +58,81 @@ Shader::Shader(const char* path)
   SDL_assert(shaders.size() == 2);
   SDL_assert(shaders[GL_VERTEX_SHADER].size() != 0);
   SDL_assert(shaders[GL_FRAGMENT_SHADER].size() != 0);
-  CreateFromSources(shaders[GL_VERTEX_SHADER].c_str(), shaders[GL_FRAGMENT_SHADER].c_str());
+  CreateFromSources(shaders);
 }
 
 Shader::Shader(const char* vertex, const char* fragment)
 {
-  CreateFromSources(vertex, fragment);
+  std::unordered_map<GLenum, std::string> shaders;
+  shaders[GL_VERTEX_SHADER] = vertex;
+  shaders[GL_FRAGMENT_SHADER] = fragment;
+
+  CreateFromSources(shaders);
 }
 
-
-void Shader::CreateFromSources(const char* vertex, const char* fragment)
+void Shader::CreateFromSources(std::unordered_map<GLenum, std::string>& shaders)
 {
-  // Create two shaders with our given shader source code
-  GLuint vs, fs;
+  std::unordered_map<GLenum, GLuint> shaderIDs;
+  
+  // Compile all shaders
+  for (auto pair : shaders)
   {
-    vs = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vs, 1, &vertex, nullptr);
-    glCompileShader(vs);
+    GLenum type = pair.first;
+    std::string text = pair.second;
+    const char *c_str = text.c_str();
 
-    fs = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fs, 1, &fragment, nullptr);
-    glCompileShader(fs);
-  }
+    // give the source code to gl compiler
+    GLuint id = glCreateShader(type);
+    glShaderSource(id, 1, &c_str, nullptr);
+    glCompileShader(id);
 
-  // Check for compilation success of these two shader
-  constexpr static std::size_t bufferSize = 512;
-  int success;
-  char infoLog[bufferSize];
-  {
-    glGetShaderiv(vs, GL_COMPILE_STATUS, &success);
+    // check compile status
+    int success;
+    glGetShaderiv(id, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-      glGetShaderInfoLog(vs, bufferSize, NULL, infoLog);
-      std::cout << "Failed to compile vertex shader:" << std::endl;
+      constexpr static std::size_t bufferSize = 512;
+      char infoLog[bufferSize];
+
+      glGetShaderInfoLog(id, bufferSize, nullptr, infoLog);
+      std::cout << "Failed to compile shader:" << std::endl;
       std::cout << infoLog << std::endl;
     }
 
-    glGetShaderiv(fs, GL_COMPILE_STATUS, &success);
-    if (!success)
+    // insert the id into our map
+    if (shaderIDs[type])
     {
-      glGetShaderInfoLog(fs, bufferSize, NULL, infoLog);
-      std::cout << "Failed to compile fragment shader:" << std::endl;
-      std::cout << infoLog << std::endl;
+      SDL_assert(false);
+      std::cout << "Failed to link program! Cannot have more than one of each shader type!" << std::endl;
     }
+
+    shaderIDs[type] = id;
   }
 
-  // Combine the shaders into a program and link it
+  // attach the shaders to a program and link it
   m_ShaderProgram = glCreateProgram();
   {
-    glAttachShader(m_ShaderProgram, vs);
-    glAttachShader(m_ShaderProgram, fs);
+    for (auto pair : shaderIDs)
+      glAttachShader(m_ShaderProgram, pair.second);
+
     glLinkProgram(m_ShaderProgram);
 
+    int success;
     glGetProgramiv(m_ShaderProgram, GL_LINK_STATUS, &success);
     if (!success)
     {
-      glGetProgramInfoLog(m_ShaderProgram, 512, NULL, infoLog);
+      constexpr static std::size_t bufferSize = 512;
+      char infoLog[bufferSize];
+
+      glGetProgramInfoLog(m_ShaderProgram, bufferSize, nullptr, infoLog);
       std::cout << "Failed to link shader program:" << std::endl;
       std::cout << infoLog << std::endl;
     }
   }
 
-  // Delete our shaders now that we have linked
-  {
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-  }
+  // delete our shaders now that we have linked
+  for (auto pair : shaderIDs)
+    glDeleteShader(pair.second);
 }
 
 Shader::~Shader()

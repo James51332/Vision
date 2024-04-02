@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <unordered_map>
 
 #include "Buffer.h"
 
@@ -12,6 +13,7 @@ class Shader
 public:
   Shader(const char* path);
   Shader(const char* vertex, const char* fragment);
+  Shader(const char* vs, const char* tcs, const char* tes, const char* fs);
   ~Shader();
 
   void Use();
@@ -26,7 +28,7 @@ public:
   void SetUniformBlock(Buffer* buffer, const char* name, std::size_t binding);
 
 private:
-  void CreateFromSources(const char* vertex, const char* fragment); 
+  void CreateFromSources(std::unordered_map<GLenum, std::string>& shaders);
 
 private:
   GLuint m_ShaderProgram;
