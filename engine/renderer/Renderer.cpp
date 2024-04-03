@@ -62,7 +62,7 @@ void Renderer::DrawMesh(Mesh* mesh, Shader* shader, const glm::mat4& transform)
   shader->UploadUniformFloat(time, "u_Time");
   
   mesh->Bind();
-  glDrawElements(GL_TRIANGLES, mesh->GetNumIndices(), GL_UNSIGNED_INT, nullptr);
+  glDrawElements(GL_PATCHES, mesh->GetNumIndices(), GL_UNSIGNED_INT, nullptr);
 }
 
 }

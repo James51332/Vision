@@ -57,12 +57,18 @@ namespace Lumina
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, m_HeightMap->m_TextureID);
 
+      float value = 16.0f;
+      glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, &value);
+      glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, &value);
+      glPatchParameteri(GL_PATCH_VERTICES, 3);
+
       m_TesselationShader->Use();
       m_TesselationShader->UploadUniformInt(0, "heightMap");
 
       glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), {1.0f, 0.0f, 0.0f});
 
       m_Renderer->Begin(m_PerspectiveCamera);
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
       m_Renderer->DrawMesh(m_PlaneMesh, m_TesselationShader, rotation);
       m_Renderer->End();
     }
