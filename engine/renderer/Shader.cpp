@@ -17,10 +17,8 @@ static const char* StringFromShaderType(GLenum type)
     case GL_TESS_CONTROL_SHADER: return "tesselation_control";
     case GL_TESS_EVALUATION_SHADER: return "tesselation_evaluation";
     default:
-      break;
+      return "unknown";
   }
-
-  SDL_assert(false);
 }
 
 static GLenum ShaderTypeFromString(const std::string &type)
@@ -145,6 +143,10 @@ void Shader::CreateFromSources(std::unordered_map<GLenum, std::string>& shaders)
       std::cout << infoLog << std::endl;
     }
   }
+
+  // if our shader worked, and we have a tes, then we're a tesselation shader
+  if (shaderIDs[GL_TESS_EVALUATION_SHADER])
+    m_UseTesselation = true;
 
   // delete our shaders now that we have linked
   for (auto pair : shaderIDs)

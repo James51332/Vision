@@ -30,6 +30,7 @@ struct MeshDesc
 
 class Mesh
 {
+  friend class Renderer;
 public:
   Mesh(const MeshDesc& desc);
 

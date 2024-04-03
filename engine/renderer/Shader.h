@@ -18,6 +18,8 @@ public:
 
   void Use();
 
+  bool UsesTesselation() const { return m_UseTesselation; }
+
   void UploadUniformInt(const int, const char* name);
   void UploadUniformIntArray(const int*, std::size_t numElements, const char* name);
   void UploadUniformFloat(const float, const char* name);
@@ -32,6 +34,7 @@ private:
 
 private:
   GLuint m_ShaderProgram;
+  bool m_UseTesselation = false;
 };
 
 }

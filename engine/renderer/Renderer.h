@@ -8,6 +8,7 @@
 #include "Buffer.h"
 #include "VertexArray.h"
 #include "Mesh.h"
+#include "RenderCommand.h"
 
 namespace Vision
 {
@@ -23,6 +24,8 @@ public:
   void End();
 
   void DrawMesh(Mesh* mesh, Shader* shader, const glm::mat4& transform = glm::mat4(1.0f));
+
+  void Submit(const RenderCommand& command);
 
 private:  
   bool m_InFrame = false;

@@ -48,10 +48,57 @@ void Renderer::DrawMesh(Mesh* mesh, Shader* shader, const glm::mat4& transform)
 {
   assert(m_InFrame);
 
-  shader->Use();
-  shader->UploadUniformMat4(&m_Camera->GetViewProjectionMatrix()[0][0], "u_ViewProjection");
-  shader->UploadUniformMat4(&transform[0][0], "u_Transform");
-  shader->UploadUniformFloat3(&m_Camera->GetPosition()[0], "u_CameraPos");
+  RenderCommand command;
+  command.VertexArray = mesh->m_VertexArray;
+  command.IndexBuffer = mesh->m_IndexBuffer;
+  command.NumVertices = mesh->GetNumIndices() == 0 ? mesh->GetNumVertices() : mesh->GetNumIndices();
+  command.IndexType = IndexType::U32;
+  command.Transform = transform;
+  command.Shader = shader;
+  command.UseTesselation = shader->UsesTesselation();
+
+  if (command.UseTesselation)
+  {
+    command.Type = PrimitiveType::Patch;
+    command.PatchSize = 4; // TODO: Other patch sizes
+  }
+  else
+  {
+    command.Type = PrimitiveType::Triangle;
+  }
+
+  Submit(command);
+}
+
+static GLenum IndexTypeToGLenum(IndexType type)
+{
+  switch (type)
+  {
+    case IndexType::U8: return GL_UNSIGNED_BYTE;
+    case IndexType::U16: return GL_UNSIGNED_SHORT;
+    case IndexType::U32: return GL_UNSIGNED_INT;
+  }
+}
+
+static GLenum PrimitiveTypeToGLenum(PrimitiveType type)
+{
+  switch (type)
+  {
+    case PrimitiveType::Triangle: return GL_TRIANGLES;
+    case PrimitiveType::TriangleStrip: return GL_TRIANGLE_STRIP;
+    case PrimitiveType::Patch: return GL_PATCHES;
+  }
+}
+
+void Renderer::Submit(const RenderCommand& command)
+{
+  assert(m_InFrame);
+  
+  // bind the shader and upload uniforms
+  command.Shader->Use();
+  command.Shader->UploadUniformMat4(&m_Camera->GetViewProjectionMatrix()[0][0], "u_ViewProjection");
+  command.Shader->UploadUniformMat4(&command.Transform[0][0], "u_Transform");
+  command.Shader->UploadUniformFloat3(&m_Camera->GetPosition()[0], "u_CameraPos");
 
   static float time = SDL_GetTicks() / 1000.0f;
   static float lastTime = SDL_GetTicks() / 1000.0f;
@@ -59,10 +106,37 @@ void Renderer::DrawMesh(Mesh* mesh, Shader* shader, const glm::mat4& transform)
   if (!Input::KeyDown(SDL_SCANCODE_Q))
     time += curTime - lastTime;
   lastTime = curTime;
-  shader->UploadUniformFloat(time, "u_Time");
+  command.Shader->UploadUniformFloat(time, "u_Time");
+
+  // bind the textures
+  int index = 0;
+  for (auto texture : command.Textures)
+  {
+    glActiveTexture(GL_TEXTURE0 + index);
+    glBindTexture(GL_TEXTURE_2D, texture->m_TextureID);
+
+    index++;
+  }
+
+  // choose the primitive type and index type
+  GLenum primitive = PrimitiveTypeToGLenum(command.Type);
+
+  // bind the vertex array
+  command.VertexArray->Bind();
   
-  mesh->Bind();
-  glDrawElements(GL_PATCHES, mesh->GetNumIndices(), GL_UNSIGNED_INT, nullptr);
+  // draw
+  if (command.IndexBuffer)
+  {
+    GLenum indexType = IndexTypeToGLenum(command.IndexType);
+    command.IndexBuffer->Bind();
+    
+    // TODO: Vtx Offsets
+    glDrawElements(primitive, command.NumVertices, indexType, nullptr);
+  }
+  else
+  {
+    glDrawArrays(primitive, 0, command.NumVertices);
+  }
 }
 
 }
