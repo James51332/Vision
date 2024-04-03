@@ -3,6 +3,7 @@ project(Vision)
 add_subdirectory(vendor/sdl2 EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glad EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
+add_subdirectory(vendor/stb EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/SPIRV-Cross EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/imgui EXCLUDE_FROM_ALL)
 
@@ -20,6 +21,7 @@ target_link_libraries(Vision
                         PUBLIC
                           SDL3::SDL3
                           glad
+                          stb
                           glm::glm
                           ImGui
                           spirv-cross-core

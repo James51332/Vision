@@ -2,78 +2,88 @@
 
 #include "renderer/Camera.h"
 #include "renderer/Renderer.h"
-#include "renderer/Renderer2D.h"
 #include "renderer/Mesh.h"
 #include "renderer/MeshGenerator.h"
 #include "renderer/Shader.h"
-#include "renderer/Framebuffer.h"
+#include "renderer/Texture.h"
 
+#include <string>
 #include <glm/gtc/matrix_transform.hpp>
+#include <iostream>
 
 namespace Lumina
 {
-
-class Lumina : public Vision::App
-{
-public:
-  Lumina()
+  class Lumina : public Vision::App
   {
-    // Initialize the renderer
-    m_Renderer2D = new Vision::Renderer2D(m_DisplayWidth, m_DisplayHeight, m_DisplayScale);
-    m_PerspectiveCamera = new Vision::PerspectiveCamera(m_DisplayWidth, m_DisplayHeight);
-    m_PerspectiveCamera->SetPosition({0.0f, 5.0f, 0.0f});
-    m_PerspectiveCamera->SetRotation({-90.0f, 0.0f, 0.0f});
-  }
-
-  ~Lumina()
-  {
-    delete m_Renderer2D;
-    delete m_PerspectiveCamera;
-  }
-
-  void OnUpdate(float timestep)
-  {
-    // Update Camera Controller
-    m_PerspectiveCamera->Update(timestep);
-
-    // Render
-    static float radius = 0.0f;
+  public:
+    Lumina()
     {
+      // Initialize the renderer
+      m_Renderer = new Vision::Renderer(m_DisplayWidth, m_DisplayHeight, m_DisplayScale);
+      m_PerspectiveCamera = new Vision::PerspectiveCamera(m_DisplayWidth, m_DisplayHeight, 0.1f, 100.0f);
+
+      m_PlaneMesh = Vision::MeshGenerator::CreatePlaneMesh(5.0f, 5.0f, 100, 100);
+      m_CubeMesh = Vision::MeshGenerator::CreateCubeMesh(1.0f);
+
+      m_PhongShader = new Vision::Shader("resources/phongShader.glsl");
+      m_TesselationShader = new Vision::Shader("resources/distShader.glsl");
+
+      m_HeightMap = new Vision::Texture2D("resources/iceland_heightmap.png");
+    }
+
+    ~Lumina()
+    {
+      delete m_Renderer;
+      delete m_PerspectiveCamera;
+
+      delete m_PlaneMesh;
+      delete m_CubeMesh;
+      
+      delete m_PhongShader;
+      delete m_TesselationShader;
+
+      delete m_HeightMap;
+    }
+
+    void OnUpdate(float timestep)
+    {
+      // Update Camera Controller
+      m_PerspectiveCamera->Update(timestep);
+
+      // Render
       glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      m_Renderer2D->Begin(m_PerspectiveCamera, true, glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), { 1.0f, 0.0f, 0.0f }));
-      {
-        for (float x = -10.0f; x <= 10.0f; x++)
-        {
-          for (float y = -10.0f; y <= 10.0f; y++)
-          {
-            glm::vec4 color(1.0f);
-            if (glm::length(glm::vec2(x, y)) >= radius)
-            {
-              color = glm::vec4((x + 10.0f) / 20.0f, (y + 10.0f) / 20.0f, 0.0f, 1.0f);
-            }
-            m_Renderer2D->DrawPoint({x, y}, color, 0.25f);
-          }
-        }
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, m_HeightMap->m_TextureID);
 
-        m_Renderer2D->DrawCircle({0.0f, 0.0f}, glm::vec4(1.0f), radius, 0.25f);
-      }
-      m_Renderer2D->End();
+      m_TesselationShader->Use();
+      m_TesselationShader->UploadUniformInt(0, "heightMap");
+
+      glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), {1.0f, 0.0f, 0.0f});
+
+      m_Renderer->Begin(m_PerspectiveCamera);
+      m_Renderer->DrawMesh(m_PlaneMesh, m_TesselationShader, rotation);
+      m_Renderer->End();
     }
 
-    radius += timestep;
-  }
+    void OnResize()
+    {
+      m_Renderer->Resize(m_DisplayWidth, m_DisplayHeight);
+      m_PerspectiveCamera->SetWindowSize(m_DisplayWidth, m_DisplayHeight);
+    }
 
-  void OnResize()
-  {
-    m_Renderer2D->Resize(m_DisplayWidth, m_DisplayHeight);
-    m_PerspectiveCamera->SetWindowSize(m_DisplayWidth, m_DisplayHeight);
-  }
+  private:
+    Vision::Renderer *m_Renderer;
+    Vision::PerspectiveCamera *m_PerspectiveCamera;
 
-private:
-  Vision::Renderer2D *m_Renderer2D;
-  Vision::PerspectiveCamera *m_PerspectiveCamera;
+    Vision::Mesh* m_PlaneMesh;
+    Vision::Mesh* m_CubeMesh;
+
+    Vision::Shader* m_PhongShader;
+    Vision::Shader* m_TesselationShader;
+
+    Vision::Texture2D* m_HeightMap;
 };
 
 }

@@ -8,6 +8,21 @@
 namespace Vision
 {
 
+static const char* StringFromShaderType(GLenum type)
+{
+  switch (type)
+  {
+    case GL_VERTEX_SHADER: return "vertex";
+    case GL_FRAGMENT_SHADER: return "fragment";
+    case GL_TESS_CONTROL_SHADER: return "tesselation_control";
+    case GL_TESS_EVALUATION_SHADER: return "tesselation_evaluation";
+    default:
+      break;
+  }
+
+  SDL_assert(false);
+}
+
 static GLenum ShaderTypeFromString(const std::string &type)
 {
   if (type == "vertex")
@@ -55,9 +70,10 @@ Shader::Shader(const char* path)
     shaders[ShaderTypeFromString(type)] = (pos == std::string::npos) ? buffer.substr(nextLinePos) : buffer.substr(nextLinePos, pos - nextLinePos);
   }
 
-  SDL_assert(shaders.size() == 2);
+  // ensure we have a vertex and fragment shader
   SDL_assert(shaders[GL_VERTEX_SHADER].size() != 0);
   SDL_assert(shaders[GL_FRAGMENT_SHADER].size() != 0);
+
   CreateFromSources(shaders);
 }
 
@@ -95,7 +111,7 @@ void Shader::CreateFromSources(std::unordered_map<GLenum, std::string>& shaders)
       char infoLog[bufferSize];
 
       glGetShaderInfoLog(id, bufferSize, nullptr, infoLog);
-      std::cout << "Failed to compile shader:" << std::endl;
+      std::cout << "Failed to compile shader: " << StringFromShaderType(type) << std::endl;
       std::cout << infoLog << std::endl;
     }
 

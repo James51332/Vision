@@ -7,6 +7,9 @@ namespace Vision
 
 enum class PixelType
 {
+  R8,
+  RG16,
+  RGB24,
   RGBA32,
   Depth32,
   Depth24Stencil8,
@@ -19,6 +22,7 @@ class Texture2D
   friend class Renderer2D;
 public:
   Texture2D(float width, float height, PixelType pixelType, bool renderbuffer = false);
+  Texture2D(const char* filePath);
   ~Texture2D();
 
   void Resize(float width, float height);
