@@ -20,7 +20,7 @@ namespace Lumina
       m_Renderer = new Vision::Renderer(m_DisplayWidth, m_DisplayHeight, m_DisplayScale);
       m_PerspectiveCamera = new Vision::PerspectiveCamera(m_DisplayWidth, m_DisplayHeight, 0.1f, 1000.0f);
 
-      m_PlaneMesh = Vision::MeshGenerator::CreatePlaneMesh(50.0f, 50.0f, 10, 10, true, false);
+      m_PlaneMesh = Vision::MeshGenerator::CreatePlaneMesh(50.0f, 50.0f, 128, 128, true, false);
       m_TesselationShader = new Vision::Shader("resources/distShader.glsl");
 
       m_HeightMap = new Vision::Texture2D("resources/iceland_heightmap.png");

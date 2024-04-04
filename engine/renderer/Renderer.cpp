@@ -96,17 +96,24 @@ void Renderer::Submit(const RenderCommand& command)
   
   // bind the shader and upload uniforms
   command.Shader->Use();
-  command.Shader->UploadUniformMat4(&m_Camera->GetViewProjectionMatrix()[0][0], "u_ViewProjection");
-  command.Shader->UploadUniformMat4(&command.Transform[0][0], "u_Transform");
-  command.Shader->UploadUniformFloat3(&m_Camera->GetPosition()[0], "u_CameraPos");
-
-  static float time = SDL_GetTicks() / 1000.0f;
-  static float lastTime = SDL_GetTicks() / 1000.0f;
-  float curTime = SDL_GetTicks() / 1000.0f;
-  if (!Input::KeyDown(SDL_SCANCODE_Q))
-    time += curTime - lastTime;
-  lastTime = curTime;
-  command.Shader->UploadUniformFloat(time, "u_Time");
+  {
+    command.Shader->UploadUniformMat4(&m_Camera->GetViewProjectionMatrix()[0][0], "u_ViewProjection");
+    command.Shader->UploadUniformMat4(&m_Camera->GetViewMatrix()[0][0], "u_View");
+    command.Shader->UploadUniformMat4(&m_Camera->GetProjectionMatrix()[0][0], "u_Projection");
+    command.Shader->UploadUniformMat4(&command.Transform[0][0], "u_Transform");
+    command.Shader->UploadUniformFloat3(&m_Camera->GetPosition()[0], "u_CameraPos");
+  
+    glm::vec2 viewport = { m_Width, m_Height };
+    command.Shader->UploadUniformFloat2(&viewport[0], "u_ViewportSize");
+    
+    static float time = SDL_GetTicks() / 1000.0f;
+    static float lastTime = SDL_GetTicks() / 1000.0f;
+    float curTime = SDL_GetTicks() / 1000.0f;
+    if (!Input::KeyDown(SDL_SCANCODE_Q))
+      time += curTime - lastTime;
+    lastTime = curTime;
+    command.Shader->UploadUniformFloat(time, "u_Time");
+  }
 
   // bind the textures
   int index = 0;

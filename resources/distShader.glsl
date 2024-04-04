@@ -23,27 +23,73 @@ layout(vertices = 4) out;
 
 out vec2 UV[];
 
+uniform sampler2D heightMap;
+uniform mat4 u_View;
+uniform mat4 u_Projection;
+uniform mat4 u_Transform;
+uniform vec2 u_ViewportSize;
+
+float distanceTess(vec4 p0, vec4 p1, vec2 t0, vec2 t1)
+{
+  float g_TriangleTargetWidth = 20.0;
+
+  // calculate the y coordinates to get dist
+  p0.y += texture(heightMap, t0).r * 2.0;
+  p1.y += texture(heightMap, t1).r * 2.0;
+
+  // find center
+  vec4 center = (p0 + p1) * 0.5;
+  float radius = distance(p0, p1) / 2.0;
+
+  // transform points to eye space
+  vec4 sc0 = u_View * u_Transform * center;
+	vec4 sc1 = sc0;
+	sc0.x -= radius;
+	sc1.x += radius;
+  
+	// project to clip space
+	vec4 clip0 = u_Projection * sc0;
+	vec4 clip1 = u_Projection * sc1;
+
+  // normalize
+	clip0 /= clip0.w;
+	clip1 /= clip1.w;
+
+  // convert to pixel space
+	clip0.xy *= u_ViewportSize;
+	clip1.xy *= u_ViewportSize;
+
+  // find distance
+	float d = distance(clip0, clip1);
+
+	// g_tessellatedTriWidth is desired pixels per tri edge
+	return clamp(d / g_TriangleTargetWidth, 0,64);
+}
+
 void main()
 {
+  // pass through texture coordinates and world coordinates
   gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
   UV[gl_InvocationID] = v_UV[gl_InvocationID];
 
+  // only run the tesselation computation for one vertex in the patch
   if (gl_InvocationID == 0)
   {
-    gl_TessLevelInner[0] = 16.0;
-    gl_TessLevelInner[1] = 16.0;
+    gl_TessLevelOuter[1] = distanceTess(gl_in[0].gl_Position, gl_in[1].gl_Position, v_UV[0], v_UV[1]);
+    gl_TessLevelOuter[2] = distanceTess(gl_in[1].gl_Position, gl_in[2].gl_Position, v_UV[1], v_UV[2]);
+    gl_TessLevelOuter[3] = distanceTess(gl_in[2].gl_Position, gl_in[3].gl_Position, v_UV[2], v_UV[3]);
+    gl_TessLevelOuter[0] = distanceTess(gl_in[3].gl_Position, gl_in[0].gl_Position, v_UV[3], v_UV[0]);
 
-    gl_TessLevelOuter[0] = 16.0;
-    gl_TessLevelOuter[1] = 16.0;
-    gl_TessLevelOuter[2] = 16.0;
-    gl_TessLevelOuter[3] = 16.0;
+    // take average of opposite edges to get inside
+    gl_TessLevelInner[0] = (gl_TessLevelOuter[1] + gl_TessLevelOuter[3]) * 0.5;
+    gl_TessLevelInner[1] = (gl_TessLevelOuter[0] + gl_TessLevelOuter[2]) * 0.5;
   }
 }
 
 #type tes
 #version 410 core
 
-layout(quads, equal_spacing, ccw) in;
+layout(quads, fractional_odd_spacing, ccw) in;
 
 in vec2 UV[];
 
@@ -84,7 +130,7 @@ void main()
   vec4 pos = (p1 - p0) * v + p0;
 
   // displace point along normal
-  pos.y += height * 5.0;
+  pos.y += height * 2.0;
 
   // transform to clip space
   gl_Position = u_ViewProjection * pos;
