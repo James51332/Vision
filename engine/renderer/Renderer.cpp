@@ -124,6 +124,9 @@ void Renderer::Submit(const RenderCommand& command)
   // bind the vertex array
   command.VertexArray->Bind();
   
+  // set the patch size
+  glPatchParameteri(GL_PATCH_VERTICES, command.PatchSize);
+
   // draw
   if (command.IndexBuffer)
   {

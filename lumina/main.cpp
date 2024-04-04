@@ -1,15 +1,13 @@
 #include "core/App.h"
 
+#include "core/Input.h"
+
 #include "renderer/Camera.h"
 #include "renderer/Renderer.h"
 #include "renderer/Mesh.h"
 #include "renderer/MeshGenerator.h"
 #include "renderer/Shader.h"
 #include "renderer/Texture.h"
-
-#include <string>
-#include <glm/gtc/matrix_transform.hpp>
-#include <iostream>
 
 namespace Lumina
 {
@@ -20,12 +18,9 @@ namespace Lumina
     {
       // Initialize the renderer
       m_Renderer = new Vision::Renderer(m_DisplayWidth, m_DisplayHeight, m_DisplayScale);
-      m_PerspectiveCamera = new Vision::PerspectiveCamera(m_DisplayWidth, m_DisplayHeight, 0.1f, 100.0f);
+      m_PerspectiveCamera = new Vision::PerspectiveCamera(m_DisplayWidth, m_DisplayHeight, 0.1f, 1000.0f);
 
-      m_PlaneMesh = Vision::MeshGenerator::CreatePlaneMesh(5.0f, 5.0f, 100, 100);
-      m_CubeMesh = Vision::MeshGenerator::CreateCubeMesh(1.0f);
-
-      m_PhongShader = new Vision::Shader("resources/phongShader.glsl");
+      m_PlaneMesh = Vision::MeshGenerator::CreatePlaneMesh(50.0f, 50.0f, 10, 10, true, false);
       m_TesselationShader = new Vision::Shader("resources/distShader.glsl");
 
       m_HeightMap = new Vision::Texture2D("resources/iceland_heightmap.png");
@@ -37,11 +32,7 @@ namespace Lumina
       delete m_PerspectiveCamera;
 
       delete m_PlaneMesh;
-      delete m_CubeMesh;
-      
-      delete m_PhongShader;
       delete m_TesselationShader;
-
       delete m_HeightMap;
     }
 
@@ -57,19 +48,17 @@ namespace Lumina
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, m_HeightMap->m_TextureID);
 
-      float value = 16.0f;
-      glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, &value);
-      glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, &value);
-      glPatchParameteri(GL_PATCH_VERTICES, 3);
-
       m_TesselationShader->Use();
       m_TesselationShader->UploadUniformInt(0, "heightMap");
 
-      glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), {1.0f, 0.0f, 0.0f});
-
+      // for debugging
+      if (Vision::Input::KeyDown(SDL_SCANCODE_TAB))
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+      else
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+      
       m_Renderer->Begin(m_PerspectiveCamera);
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      m_Renderer->DrawMesh(m_PlaneMesh, m_TesselationShader, rotation);
+      m_Renderer->DrawMesh(m_PlaneMesh, m_TesselationShader);
       m_Renderer->End();
     }
 
@@ -84,11 +73,7 @@ namespace Lumina
     Vision::PerspectiveCamera *m_PerspectiveCamera;
 
     Vision::Mesh* m_PlaneMesh;
-    Vision::Mesh* m_CubeMesh;
-
-    Vision::Shader* m_PhongShader;
     Vision::Shader* m_TesselationShader;
-
     Vision::Texture2D* m_HeightMap;
 };
 

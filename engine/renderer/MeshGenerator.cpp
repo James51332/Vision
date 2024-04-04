@@ -3,13 +3,13 @@
 namespace Vision::MeshGenerator
 {
 
-Mesh* CreatePlaneMesh(float width, float height, float rows, float columns)
+Mesh* CreatePlaneMesh(float width, float height, float rows, float columns, bool xzCoord, bool divideQuads)
 {
   // calculate general info about the mesh
   std::size_t verticesX = rows + 1;
   std::size_t verticesY = columns + 1;
   std::size_t numVertices = verticesX * verticesY;
-  std::size_t numIndices = 6 * rows * columns; // 6 indices per quad
+  std::size_t numIndices = (divideQuads ? 6 : 4) * rows * columns; // 6/4 indices per quad
 
   // generate the vertices
   std::vector<Vision::MeshVertex> vertices(numVertices);
@@ -20,10 +20,14 @@ Mesh* CreatePlaneMesh(float width, float height, float rows, float columns)
     for (std::size_t j = 0; j < verticesY; j++)
     {
       Vision::MeshVertex vertex;
-      vertex.Position = {x, y, 0.0f};
+      if (!xzCoord)
+        vertex.Position = {x, y, 0.0f};
+      else  
+        vertex.Position = {x, 0.0f, y};
+
       vertex.Normal = {0.0f, 1.0f, 0.0f};
       vertex.Color = {0.2f, 0.2f, 0.6f, 1.0f};
-      vertex.UV = {static_cast<float>(i) / static_cast<float>(verticesX), static_cast<float>(j) / static_cast<float>(verticesY)};
+      vertex.UV = {static_cast<float>(i) / static_cast<float>(verticesX - 1), static_cast<float>(j) / static_cast<float>(verticesY - 1)};
       vertices[i * verticesX + j] = vertex;
 
       y += height / static_cast<float>(columns);
@@ -43,14 +47,26 @@ Mesh* CreatePlaneMesh(float width, float height, float rows, float columns)
       Vision::MeshIndex above = static_cast<Vision::MeshIndex>(current + verticesX);
       Vision::MeshIndex diagonal = static_cast<Vision::MeshIndex>(right + verticesX);
 
-      indices[index + 0] = current;
-      indices[index + 1] = right;
-      indices[index + 2] = diagonal;
-      indices[index + 3] = current;
-      indices[index + 4] = diagonal;
-      indices[index + 5] = above;
+      if (divideQuads)
+      {
+        indices[index + 0] = current;
+        indices[index + 1] = right;
+        indices[index + 2] = diagonal;
+        indices[index + 3] = current;
+        indices[index + 4] = diagonal;
+        indices[index + 5] = above;
 
-      index += 6;
+        index += 6;
+      }
+      else
+      {
+        indices[index + 0] = current;
+        indices[index + 1] = right;
+        indices[index + 2] = diagonal;
+        indices[index + 3] = above;
+        
+        index += 4;
+      }
     }
   }
 
@@ -59,7 +75,7 @@ Mesh* CreatePlaneMesh(float width, float height, float rows, float columns)
   desc.Vertices = vertices;
   desc.NumVertices = numVertices;
   desc.Indices = indices;
-  desc.NumIndices = numIndices;
+  desc.NumIndices = index;
 
   // return the new mesh
   return new Vision::Mesh(desc);
