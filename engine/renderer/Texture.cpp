@@ -158,4 +158,80 @@ void Texture2D::SetData(uint8_t* data)
   }
 }
 
+void Texture2D::Bind(uint32_t index)
+{
+  glActiveTexture(GL_TEXTURE0 + index);
+  glBindTexture(GL_TEXTURE_2D, m_TextureID);
+}
+
+void Texture2D::Unbind()
+{
+  glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+// ----- Cubemap -----
+
+Cubemap::Cubemap(const CubemapDesc& desc)
+{
+  SDL_assert(desc.Textures.size() == 6);
+  
+  // generate our texture
+  glGenTextures(1, &m_CubemapID);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, m_CubemapID);
+
+  // attach the sides to each
+  int side = 0;
+  for (auto file : desc.Textures)
+  {
+    int w, h, channels;
+    unsigned char *data = stbi_load(file.c_str(), &w, &h, &channels, 0);
+
+    if (!data)
+    {
+      std::cout << "Failed to load image:" << std::endl;
+      std::cout << stbi_failure_reason() << std::endl;
+    }
+
+    PixelType pixelType = ChannelsToPixelType(channels);
+
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + side, 
+                 0, 
+                 PixelTypeToGLInternalFormat(pixelType),
+                 w,
+                 h,
+                 0,
+                 PixelTypeTOGLFormat(pixelType),
+                 GL_UNSIGNED_BYTE,
+                 data);
+
+    side++;
+    stbi_image_free(data);
+  }
+
+  // set the mag/min params
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+  glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+}
+
+Cubemap::~Cubemap()
+{
+  glDeleteTextures(1, &m_CubemapID);
+}
+
+void Cubemap::Bind(uint32_t index)
+{
+  glActiveTexture(GL_TEXTURE0 + index);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, m_CubemapID);
+}
+
+void Cubemap::Unbind()
+{
+  glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+}
+
 }

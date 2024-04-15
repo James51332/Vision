@@ -119,9 +119,7 @@ void Renderer::Submit(const RenderCommand& command)
   int index = 0;
   for (auto texture : command.Textures)
   {
-    glActiveTexture(GL_TEXTURE0 + index);
-    glBindTexture(GL_TEXTURE_2D, texture->m_TextureID);
-
+    texture->Bind(index);
     index++;
   }
 
