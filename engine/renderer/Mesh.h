@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-#include "VertexArray.h"
+#include "opengl/VertexArray.h"
 #include "Buffer.h"
 
 namespace Vision
@@ -40,7 +40,7 @@ public:
   std::size_t GetNumVertices() const { return m_NumVertices; }
 
 private:
-  VertexArray* m_VertexArray;
+  GLVertexArray* m_VertexArray;
   Buffer* m_VertexBuffer;
   Buffer* m_IndexBuffer;
 

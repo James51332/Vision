@@ -25,7 +25,7 @@ Mesh::Mesh(const MeshDesc& desc)
 
   // Create vertex array
   {
-    m_VertexArray = new VertexArray();
+    m_VertexArray = new GLVertexArray();
     m_VertexArray->AttachBuffer(m_VertexBuffer);
   }
 

@@ -3,17 +3,17 @@
 namespace Vision
 {
 
-VertexArray::VertexArray()
+GLVertexArray::GLVertexArray()
 {
   glGenVertexArrays(1, &m_Object);
 }
 
-VertexArray::~VertexArray()
+GLVertexArray::~GLVertexArray()
 {
   glDeleteVertexArrays(1, &m_Object);
 }
 
-void VertexArray::Bind()
+void GLVertexArray::Bind()
 {
   glBindVertexArray(m_Object);
 }
@@ -36,7 +36,7 @@ static GLenum GLenumFromShaderDataType(ShaderDataType type)
   }
 }
 
-void VertexArray::AttachBuffer(Buffer* buffer)
+void GLVertexArray::AttachBuffer(Buffer* buffer)
 {
   const BufferLayout& layout = buffer->GetLayout();
   

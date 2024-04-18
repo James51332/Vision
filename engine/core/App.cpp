@@ -5,7 +5,8 @@
 namespace Vision
 {
 
-App::App()
+App::App(const std::string& title)
+  : m_Title(title)
 {
   Init();
 }
@@ -46,7 +47,7 @@ void App::Run()
 
 void App::Init()
 {
-  m_Window = SDL_CreateWindow("Vision", m_DisplayWidth, m_DisplayHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN);
+  m_Window = SDL_CreateWindow(m_Title.c_str(), displayWidth, displayHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN);
   m_DisplayScale = SDL_GetWindowDisplayScale(m_Window);
 
   // Get our OpenGL surface to draw on
@@ -67,10 +68,19 @@ void App::Init()
 
   // Load OpenGL function pointers
   gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
+
+  // Initialize
+  renderer = new Renderer(displayWidth, displayHeight, m_DisplayScale);
+  renderer2D = new Renderer2D(displayWidth, displayHeight, m_DisplayScale);
+  uiRenderer = new ImGuiRenderer(displayWidth, displayHeight, m_DisplayScale);
 }
 
 void App::Shutdown()
 {
+  delete renderer;
+  delete renderer2D;
+  delete uiRenderer;
+
   SDL_DestroyWindow(m_Window);
 
   m_Window = nullptr;
@@ -81,19 +91,21 @@ void App::ProcessEvents()
   SDL_Event event;
   while (SDL_PollEvent(&event))
   {
-    if (ImGui::GetCurrentContext())
-    {
-      bool processed = UI::ProcessEvent(&event);
-      if (processed) continue;
-    }
+    bool processed = UI::ProcessEvent(&event);
+    if (processed) continue;
 
     switch (event.type)
     {
       case SDL_EVENT_WINDOW_RESIZED:
       {
-        m_DisplayWidth = static_cast<float>(event.window.data1);
-        m_DisplayHeight = static_cast<float>(event.window.data2);
-        OnResize();
+        displayWidth = static_cast<float>(event.window.data1);
+        displayHeight = static_cast<float>(event.window.data2);
+
+        renderer->Resize(displayWidth, displayHeight);
+        renderer2D->Resize(displayWidth, displayHeight);
+        uiRenderer->Resize(displayWidth, displayHeight);
+
+        OnResize(displayWidth, displayHeight);
         break;
       }
       case SDL_EVENT_QUIT:

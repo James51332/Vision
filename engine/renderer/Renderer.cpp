@@ -49,7 +49,7 @@ void Renderer::DrawMesh(Mesh* mesh, Shader* shader, const glm::mat4& transform)
   assert(m_InFrame);
 
   RenderCommand command;
-  command.VertexArray = mesh->m_VertexArray;
+  command.GLVertexArray = mesh->m_VertexArray;
   command.IndexBuffer = mesh->m_IndexBuffer;
   command.NumVertices = mesh->GetNumIndices() == 0 ? mesh->GetNumVertices() : mesh->GetNumIndices();
   command.IndexType = IndexType::U32;
@@ -127,7 +127,7 @@ void Renderer::Submit(const RenderCommand& command)
   GLenum primitive = PrimitiveTypeToGLenum(command.Type);
 
   // bind the vertex array
-  command.VertexArray->Bind();
+  command.GLVertexArray->Bind();
   
   // set the patch size
   glPatchParameteri(GL_PATCH_VERTICES, command.PatchSize);

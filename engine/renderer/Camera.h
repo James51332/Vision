@@ -8,7 +8,7 @@ namespace Vision
 class Camera
 {
 public:
-  Camera(float windowWidth, float windowHeight)
+  Camera(float windowWidth = 1.0f, float windowHeight = 1.0f)
     : m_WindowSize({windowWidth, windowHeight}), m_Aspect(windowWidth / windowHeight) {}
   virtual ~Camera() = default;
 
@@ -50,7 +50,7 @@ protected:
 class OrthoCamera : public Camera
 {
 public:
-  OrthoCamera(float windowWidth, float windowHeight, float size = 5.0f);
+  OrthoCamera(float windowWidth = 1.0f, float windowHeight = 1.0f, float size = 5.0f);
 
   // Updates the camera based on user input
   void Update(float timestep);
@@ -77,7 +77,7 @@ private:
 class PerspectiveCamera : public Camera
 {
 public:
-  PerspectiveCamera(float windowWidth, float windowHeight, float near = 0.1f, float far = 100.0f);
+  PerspectiveCamera(float windowWidth = 1.0f, float windowHeight = 1.0f, float near = 0.1f, float far = 100.0f);
 
   // Updates the camera based on user input
   void Update(float timestep);

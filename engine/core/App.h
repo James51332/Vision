@@ -5,13 +5,16 @@
 #include "ui/UIInput.h"
 #include "ui/ImGuiRenderer.h"
 
+#include "renderer/Renderer.h"
+#include "renderer/Renderer2D.h"
+
 namespace Vision
 {
 
 class App
 {
 public:
-  App();
+  App(const std::string& title = "Vision");
   ~App();
 
   void Run();
@@ -19,7 +22,7 @@ public:
 
 protected:
   virtual void OnUpdate(float timestep) = 0;
-  virtual void OnResize() {} // Not mandatory to implement
+  virtual void OnResize(float width, float height) {} // Not mandatory to implement
 
 private:
   void Init();
@@ -32,11 +35,18 @@ private:
 
   // Platform Data
   SDL_Window* m_Window;
+  float m_DisplayScale = 1.0f; // Used for retina rendering
+  std::string m_Title;
+  
+  // TODO: Other contexts.
   SDL_GLContext m_Context;
 
 protected:
-  float m_DisplayWidth = 1280.0f, m_DisplayHeight = 720.0f;
-  float m_DisplayScale = 1.0f; // Used for retina rendering
+  float displayWidth = 1280.0f, displayHeight = 720.0f;
+
+  Renderer* renderer;
+  Renderer2D* renderer2D;
+  ImGuiRenderer* uiRenderer;
 };
 
 }

@@ -2,16 +2,16 @@
 
 #include <glad/glad.h>
 
-#include "Buffer.h"
+#include "../Buffer.h"
 
 namespace Vision
 {
 
-class VertexArray
+class GLVertexArray
 {
 public:
-  VertexArray();
-  ~VertexArray();
+  GLVertexArray();
+  ~GLVertexArray();
 
   void Bind();
 

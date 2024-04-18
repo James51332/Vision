@@ -178,7 +178,7 @@ void ImGuiRenderer::GenerateBuffers()
 
 void ImGuiRenderer::GenerateArrays()
 {
-  m_VertexArray = new VertexArray();
+  m_VertexArray = new GLVertexArray();
   m_VertexArray->AttachBuffer(m_VBO);
 }
 

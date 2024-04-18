@@ -3,9 +3,9 @@
 #include <glm/glm.hpp>
 
 #include "Buffer.h"
-#include "VertexArray.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "opengl/VertexArray.h"
 
 namespace Vision
 {
@@ -27,7 +27,7 @@ enum class PrimitiveType
 struct RenderCommand
 {
   // Data
-  VertexArray* VertexArray = nullptr;
+  GLVertexArray* GLVertexArray = nullptr;
   Buffer* IndexBuffer = nullptr;
   Shader* Shader;
   std::vector<Texture2D*> Textures;

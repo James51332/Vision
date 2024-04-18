@@ -6,7 +6,7 @@
 
 #include "renderer/Buffer.h"
 #include "renderer/Shader.h"
-#include "renderer/VertexArray.h"
+#include "renderer/opengl/VertexArray.h"
 
 namespace Vision
 {
@@ -35,7 +35,7 @@ private:
 
 private:
   Buffer *m_VBO, *m_IBO;
-  VertexArray *m_VertexArray;
+  GLVertexArray *m_VertexArray;
   Shader *m_Shader;
   GLuint m_FontTexture;
 

@@ -3,8 +3,8 @@
 #include "Camera.h"
 #include "Buffer.h"
 #include "Shader.h"
-#include "VertexArray.h"
 #include "Texture.h"
+#include "opengl/VertexArray.h"
 
 namespace Vision
 {
@@ -79,7 +79,7 @@ private:
   std::size_t m_NumQuads = 0;
   QuadVertex *m_QuadBuffer, *m_QuadBufferHead;
   Buffer *m_QuadVBO, *m_QuadIBO;
-  VertexArray* m_QuadVAO;
+  GLVertexArray* m_QuadVAO;
   Shader* m_QuadShader;
   
   // Texture Info
@@ -93,7 +93,7 @@ private:
   std::size_t m_NumPoints = 0;
   PointVertex *m_PointBuffer, *m_PointBufferHead;
   Buffer* m_PointVBO; // We can use the same ibo because the indices for points are the same
-  VertexArray* m_PointVAO;
+  GLVertexArray* m_PointVAO;
   Shader* m_PointShader;
 };
 

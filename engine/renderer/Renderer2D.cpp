@@ -337,11 +337,11 @@ void Renderer2D::GenerateBuffers()
 void Renderer2D::GenerateArrays()
 {
   // Quads
-  m_QuadVAO = new VertexArray();
+  m_QuadVAO = new GLVertexArray();
   m_QuadVAO->AttachBuffer(m_QuadVBO);
 
   // Point
-  m_PointVAO = new VertexArray();
+  m_PointVAO = new GLVertexArray();
   m_PointVAO->AttachBuffer(m_PointVBO);
 }
 

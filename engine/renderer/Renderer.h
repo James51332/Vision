@@ -6,7 +6,7 @@
 #include "Camera.h"
 #include "Shader.h"
 #include "Buffer.h"
-#include "VertexArray.h"
+#include "opengl/VertexArray.h"
 #include "Mesh.h"
 #include "RenderCommand.h"
 
