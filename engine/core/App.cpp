@@ -70,16 +70,18 @@ void App::Init()
   gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
 
   // Initialize
+  RenderDevice::Init(RenderAPI::OpenGL);
   renderer = new Renderer(displayWidth, displayHeight, m_DisplayScale);
-  renderer2D = new Renderer2D(displayWidth, displayHeight, m_DisplayScale);
+  //renderer2D = new Renderer2D(displayWidth, displayHeight, m_DisplayScale);
   uiRenderer = new ImGuiRenderer(displayWidth, displayHeight, m_DisplayScale);
 }
 
 void App::Shutdown()
 {
   delete renderer;
-  delete renderer2D;
+ // delete renderer2D;
   delete uiRenderer;
+  RenderDevice::Shutdown();
 
   SDL_DestroyWindow(m_Window);
 
@@ -102,7 +104,7 @@ void App::ProcessEvents()
         displayHeight = static_cast<float>(event.window.data2);
 
         renderer->Resize(displayWidth, displayHeight);
-        renderer2D->Resize(displayWidth, displayHeight);
+        //renderer2D->Resize(displayWidth, displayHeight);
         uiRenderer->Resize(displayWidth, displayHeight);
 
         OnResize(displayWidth, displayHeight);

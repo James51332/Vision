@@ -19,7 +19,7 @@ struct BufferDesc
 
 class Buffer
 {
-  friend class Shader;
+  friend class GLProgram;
 public:
   Buffer(const BufferDesc& desc);
   ~Buffer();
@@ -31,8 +31,8 @@ public:
 
   const BufferLayout& GetLayout() const { return m_Desc.Layout; }
 
-private:
   GLuint m_Object;
+private:
   BufferDesc m_Desc;
 };
 

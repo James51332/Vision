@@ -14,8 +14,8 @@ ImGuiRenderer::ImGuiRenderer(float width, float height, float displayScale)
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO();
 
-  io.BackendRendererName = "Specks Renderer";
-  io.BackendPlatformName = "Specks Engine";
+  io.BackendRendererName = "Vision Renderer";
+  io.BackendPlatformName = "Vision Engine";
 
   io.DisplaySize = { width, height };
   io.DisplayFramebufferScale = { displayScale, displayScale };
@@ -218,7 +218,10 @@ void main()
 
 void ImGuiRenderer::GenerateShaders()
 {
-  m_Shader = new Shader(vertexShader, fragmentShader);
+  std::unordered_map<ShaderStage, std::string> stages;
+  stages.emplace(ShaderStage::Vertex, vertexShader);
+  stages.emplace(ShaderStage::Pixel, fragmentShader);
+  m_Shader = new GLProgram(stages);
 }
 
 void ImGuiRenderer::GenerateTextures()

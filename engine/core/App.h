@@ -5,6 +5,7 @@
 #include "ui/UIInput.h"
 #include "ui/ImGuiRenderer.h"
 
+#include "renderer/RenderDevice.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
 
@@ -45,7 +46,7 @@ protected:
   float displayWidth = 1280.0f, displayHeight = 720.0f;
 
   Renderer* renderer;
-  Renderer2D* renderer2D;
+ // Renderer2D* renderer2D;
   ImGuiRenderer* uiRenderer;
 };
 

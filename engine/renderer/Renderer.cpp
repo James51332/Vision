@@ -8,11 +8,29 @@
 namespace Vision
 {
 
+struct PushConstant
+{
+  glm::mat4 view;
+  glm::mat4 proj;
+  glm::mat4 viewProj;
+  glm::vec2 viewSize;
+  float time;
+};
+
 Renderer::Renderer(float width, float height, float displayScale)
   : m_Width(width), m_Height(height), m_PixelDensity(displayScale)
 {
   // Resize the viewport (no need to use Resize() because we've already done everything else it does)
   glViewport(0, 0, static_cast<GLsizei>(width * displayScale), static_cast<GLsizei>(height * displayScale));
+
+  BufferDesc desc;
+  desc.Type = GL_UNIFORM_BUFFER;
+  desc.Usage = GL_DYNAMIC_DRAW;
+  desc.Size = sizeof(PushConstant);
+  desc.Data = nullptr;
+
+  // TODO: This is leaked (but it's fine for now)
+  pushConstants = new Buffer(desc);
 }
 
 void Renderer::Resize(float width, float height)
@@ -44,107 +62,46 @@ void Renderer::End()
   m_Camera = nullptr;
 }
 
-void Renderer::DrawMesh(Mesh* mesh, Shader* shader, const glm::mat4& transform)
+void Renderer::DrawMesh(Mesh* mesh, ID pipeline, const glm::mat4& transform)
 {
   assert(m_InFrame);
 
-  RenderCommand command;
-  command.GLVertexArray = mesh->m_VertexArray;
+  DrawCommand command;
+  command.Pipeline = pipeline;
+  command.VertexBuffers = { mesh->m_VertexBuffer };
   command.IndexBuffer = mesh->m_IndexBuffer;
   command.NumVertices = mesh->GetNumIndices() == 0 ? mesh->GetNumVertices() : mesh->GetNumIndices();
   command.IndexType = IndexType::U32;
   command.Transform = transform;
-  command.Shader = shader;
-  command.UseTesselation = shader->UsesTesselation();
+  command.PatchSize = 4; // TODO: Other patch sizes
 
-  if (command.UseTesselation)
-  {
-    command.Type = PrimitiveType::Patch;
-    command.PatchSize = 4; // TODO: Other patch sizes
-  }
-  else
-  {
-    command.Type = PrimitiveType::Triangle;
-  }
-
-  Submit(command);
+  Renderer::Submit(command);
 }
 
-static GLenum IndexTypeToGLenum(IndexType type)
-{
-  switch (type)
-  {
-    case IndexType::U8: return GL_UNSIGNED_BYTE;
-    case IndexType::U16: return GL_UNSIGNED_SHORT;
-    case IndexType::U32: return GL_UNSIGNED_INT;
-  }
-}
-
-static GLenum PrimitiveTypeToGLenum(PrimitiveType type)
-{
-  switch (type)
-  {
-    case PrimitiveType::Triangle: return GL_TRIANGLES;
-    case PrimitiveType::TriangleStrip: return GL_TRIANGLE_STRIP;
-    case PrimitiveType::Patch: return GL_PATCHES;
-  }
-}
-
-void Renderer::Submit(const RenderCommand& command)
+void Renderer::Submit(const DrawCommand& command)
 {
   assert(m_InFrame);
-  
-  // bind the shader and upload uniforms
-  command.Shader->Use();
-  {
-    command.Shader->UploadUniformMat4(&m_Camera->GetViewProjectionMatrix()[0][0], "u_ViewProjection");
-    command.Shader->UploadUniformMat4(&m_Camera->GetViewMatrix()[0][0], "u_View");
-    command.Shader->UploadUniformMat4(&m_Camera->GetProjectionMatrix()[0][0], "u_Projection");
-    command.Shader->UploadUniformMat4(&command.Transform[0][0], "u_Transform");
-    command.Shader->UploadUniformFloat3(&m_Camera->GetPosition()[0], "u_CameraPos");
-  
-    glm::vec2 viewport = { m_Width, m_Height };
-    command.Shader->UploadUniformFloat2(&viewport[0], "u_ViewportSize");
-    
-    static float time = SDL_GetTicks() / 1000.0f;
-    static float lastTime = SDL_GetTicks() / 1000.0f;
-    float curTime = SDL_GetTicks() / 1000.0f;
-    if (!Input::KeyDown(SDL_SCANCODE_Q))
-      time += curTime - lastTime;
-    lastTime = curTime;
-    command.Shader->UploadUniformFloat(time, "u_Time");
-  }
 
-  // bind the textures
-  int index = 0;
-  for (auto texture : command.Textures)
-  {
-    texture->Bind(index);
-    index++;
-  }
+  static float time = SDL_GetTicks() / 1000.0f;
+  static float lastTime = SDL_GetTicks() / 1000.0f;
+  float curTime = SDL_GetTicks() / 1000.0f;
+  if (!Input::KeyDown(SDL_SCANCODE_Q))
+    time += curTime - lastTime;
+  lastTime = curTime;
 
-  // choose the primitive type and index type
-  GLenum primitive = PrimitiveTypeToGLenum(command.Type);
+  // upload push constants
+  // which we are gonna write as a uniform buffer for opengl.
+  PushConstant data;
+  data.view = m_Camera->GetViewMatrix();
+  data.viewProj = m_Camera->GetViewProjectionMatrix();
+  data.proj = m_Camera->GetProjectionMatrix();
+  data.viewSize = { m_Width, m_Height};
+  data.time = time;
+  pushConstants->SetData(&data, sizeof(PushConstant));
+  glBindBufferBase(GL_UNIFORM_BUFFER, 0, pushConstants->m_Object);
 
-  // bind the vertex array
-  command.GLVertexArray->Bind();
-  
-  // set the patch size
-  glPatchParameteri(GL_PATCH_VERTICES, command.PatchSize);
-
-  // draw
-  if (command.IndexBuffer)
-  {
-    GLenum indexType = IndexTypeToGLenum(command.IndexType);
-    command.IndexBuffer->Bind();
-    
-    // TODO: Vtx Offsets
-    glDrawElements(primitive, command.NumVertices, indexType, nullptr);
-  }
-  else
-  {
-    glDrawArrays(primitive, 0, command.NumVertices);
-  }
+  // device submit
+  RenderDevice::Submit(command);
 }
 
 }

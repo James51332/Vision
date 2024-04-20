@@ -14,7 +14,7 @@ void main()
   v_UV = a_UV;
 }
 
-#type tcs
+#type hull
 #version 410 core
 
 in vec2 v_UV[];
@@ -24,10 +24,15 @@ layout(vertices = 4) out;
 out vec2 UV[];
 
 uniform sampler2D heightMap;
-uniform mat4 u_View;
-uniform mat4 u_Projection;
-uniform mat4 u_Transform;
-uniform vec2 u_ViewportSize;
+
+layout (std140) uniform pushConstants
+{
+  mat4 u_View;
+  mat4 u_Projection;
+  mat4 u_ViewProjection;
+  vec2 u_ViewportSize;
+  float u_Time;
+};
 
 float distanceTess(vec4 p0, vec4 p1, vec2 t0, vec2 t1)
 {
@@ -42,7 +47,7 @@ float distanceTess(vec4 p0, vec4 p1, vec2 t0, vec2 t1)
   float radius = distance(p0, p1) / 2.0;
 
   // transform points to eye space
-  vec4 sc0 = u_View * u_Transform * center;
+  vec4 sc0 = u_View * center;
 	vec4 sc1 = sc0;
 	sc0.x -= radius;
 	sc1.x += radius;
@@ -73,7 +78,7 @@ void main()
   UV[gl_InvocationID] = v_UV[gl_InvocationID];
 
   // only run the tesselation computation for one vertex in the patch
-  if (gl_InvocationID == 0)
+  //if (gl_InvocationID == 0)
   {
     gl_TessLevelOuter[1] = distanceTess(gl_in[0].gl_Position, gl_in[1].gl_Position, v_UV[0], v_UV[1]);
     gl_TessLevelOuter[2] = distanceTess(gl_in[1].gl_Position, gl_in[2].gl_Position, v_UV[1], v_UV[2]);
@@ -86,14 +91,22 @@ void main()
   }
 }
 
-#type tes
+#type domain
 #version 410 core
 
 layout(quads, fractional_odd_spacing, ccw) in;
 
 in vec2 UV[];
 
-uniform mat4 u_ViewProjection;
+layout (std140) uniform pushConstants
+{
+  mat4 u_View;
+  mat4 u_Projection;
+  mat4 u_ViewProjection;
+  vec2 u_ViewportSize;
+  float u_Time;
+};
+
 uniform sampler2D heightMap;
 
 out float height;

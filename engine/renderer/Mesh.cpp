@@ -23,11 +23,11 @@ Mesh::Mesh(const MeshDesc& desc)
     m_VertexBuffer = new Buffer(bufferDesc);
   }
 
-  // Create vertex array
-  {
-    m_VertexArray = new GLVertexArray();
-    m_VertexArray->AttachBuffer(m_VertexBuffer);
-  }
+  // // Create vertex array
+  // {
+  //   m_VertexArray = new GLVertexArray();
+  //   m_VertexArray->AttachBuffer(m_VertexBuffer);
+  // }
 
   // Create index buffer
   {
@@ -43,7 +43,7 @@ Mesh::Mesh(const MeshDesc& desc)
 
 void Mesh::Bind()
 {
-  m_VertexArray->Bind();
+  //m_VertexArray->Bind();
   m_IndexBuffer->Bind();
 }
 

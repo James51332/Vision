@@ -4,9 +4,9 @@
 
 #include <glad/glad.h>
 
-#include "renderer/Buffer.h"
-#include "renderer/Shader.h"
-#include "renderer/opengl/VertexArray.h"
+#include "renderer/primitive/Buffer.h"
+#include "renderer/primitive/Shader.h"
+#include "renderer/opengl/GLVertexArray.h"
 
 namespace Vision
 {
@@ -36,7 +36,7 @@ private:
 private:
   Buffer *m_VBO, *m_IBO;
   GLVertexArray *m_VertexArray;
-  Shader *m_Shader;
+  GLProgram *m_Shader;
   GLuint m_FontTexture;
 
   std::size_t m_MaxVertices = 1000000; // 5MB GPU buffer

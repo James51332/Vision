@@ -6,8 +6,8 @@
 #include "renderer/Renderer.h"
 #include "renderer/Mesh.h"
 #include "renderer/MeshGenerator.h"
-#include "renderer/Shader.h"
-#include "renderer/Texture.h"
+#include "renderer/primitive/Shader.h"
+#include "renderer/primitive/Texture.h"
 
 namespace Lumina
 {
@@ -21,9 +21,18 @@ namespace Lumina
       perspectiveCamera = Vision::PerspectiveCamera(displayWidth, displayHeight, 0.1f, 1000.0f);
 
       planeMesh = Vision::MeshGenerator::CreatePlaneMesh(50.0f, 50.0f, 128, 128, true, false);
-      tesselationShader = new Vision::Shader("resources/distShader.glsl");
-      tesselationShader->Use();
-      tesselationShader->UploadUniformInt(0, "heightMap");
+      Vision::ShaderDesc sd1;
+      sd1.filePath = "resources/distShader.glsl";
+      tesselationShader = Vision::RenderDevice::CreateShader(sd1);
+
+      Vision::PipelineDesc p1;
+      p1.Layouts = { planeMesh->m_VertexBuffer->GetLayout() };
+      p1.Shader = tesselationShader;
+      tesselationPS = Vision::RenderDevice::CreatePipeline(p1);
+
+      // We're cooked until we figure out how to do this without breaking everything.
+      // tesselationShader->Use();
+      // tesselationShader->UploadUniformInt(0, "heightMap");
 
       heightMap = new Vision::Texture2D("resources/iceland_heightmap.png");
 
@@ -36,22 +45,31 @@ namespace Lumina
         "resources/skybox/front.jpg",
         "resources/skybox/back.jpg"
       };
-      skyboxMesh = Vision::MeshGenerator::CreateCubeMesh(1.0f);
       skyboxTexture = new Vision::Cubemap(desc);
-      skyboxShader = new Vision::Shader("resources/skyShader.glsl");
-      skyboxShader->Use();
-      skyboxShader->UploadUniformInt(0, "skybox");
+
+      skyboxMesh = Vision::MeshGenerator::CreateCubeMesh(1.0f);
+
+      Vision::ShaderDesc sd;
+      sd.filePath = "resources/skyShader.glsl";
+      skyboxShader = Vision::RenderDevice::CreateShader(sd);
+      // skyboxShader->Use();
+      // skyboxShader->UploadUniformInt(0, "skybox");
+
+      Vision::PipelineDesc p2;
+      p2.Layouts = { skyboxMesh->m_VertexBuffer->GetLayout() };
+      p2.Shader = skyboxShader;
+      skyboxPS = Vision::RenderDevice::CreatePipeline(p2);
     }
 
     ~Lumina()
     {
       delete planeMesh;
-      delete tesselationShader;
+      Vision::RenderDevice::DestroyShader(tesselationShader);
       delete heightMap;
 
       delete skyboxMesh;
       delete skyboxTexture;
-      delete skyboxShader;
+      Vision::RenderDevice::DestroyShader(skyboxShader);
     }
 
     void OnUpdate(float timestep)
@@ -72,12 +90,12 @@ namespace Lumina
       renderer->Begin(&perspectiveCamera);
 
       heightMap->Bind();
-      renderer->DrawMesh(planeMesh, tesselationShader);
+      renderer->DrawMesh(planeMesh, tesselationPS);
 
       // Skybox
-      glDepthFunc(GL_LEQUAL);
-      skyboxTexture->Bind();      
-      renderer->DrawMesh(skyboxMesh, skyboxShader);
+      // glDepthFunc(GL_LEQUAL);
+      // skyboxTexture->Bind();      
+      // renderer->DrawMesh(skyboxMesh, skyboxPS);
 
       renderer->End();
     }
@@ -91,12 +109,14 @@ namespace Lumina
     Vision::PerspectiveCamera perspectiveCamera;
 
     Vision::Mesh* planeMesh;
-    Vision::Shader* tesselationShader;
+    Vision::ID tesselationShader;
+    Vision::ID tesselationPS;
     Vision::Texture2D* heightMap;
 
     Vision::Cubemap* skyboxTexture;
     Vision::Mesh* skyboxMesh;
-    Vision::Shader* skyboxShader;
+    Vision::ID skyboxPS;
+    Vision::ID skyboxShader;
 };
 
 }

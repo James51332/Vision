@@ -3,8 +3,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-#include "opengl/VertexArray.h"
-#include "Buffer.h"
+#include "primitive/Buffer.h"
 
 namespace Vision
 {
@@ -39,9 +38,9 @@ public:
   std::size_t GetNumIndices() const { return m_NumIndices; }
   std::size_t GetNumVertices() const { return m_NumVertices; }
 
-private:
-  GLVertexArray* m_VertexArray;
+  // TODO: Make this private in the GLDevice API
   Buffer* m_VertexBuffer;
+private:
   Buffer* m_IndexBuffer;
 
   std::size_t m_NumVertices;

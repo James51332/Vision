@@ -12,6 +12,7 @@ namespace Vision
 
 enum class RenderAPI
 {
+  None,
   OpenGL,
   Metal,
   Vulkan,
