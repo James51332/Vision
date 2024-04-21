@@ -1,35 +1,26 @@
-#include "Texture.h"
+#include "GLTexture.h"
 
 #include <SDL.h>
 #include <stb_image.h>
 #include <iostream>
 
+#include "GLTypes.h"
+
 namespace Vision
 {
 
-Texture2D::Texture2D(float width, float height, PixelType pixelType, bool writeOnly)
+// ----- GLTexture2D -----
+
+GLTexture2D::GLTexture2D(float width, float height, PixelType pixelType, bool writeOnly)
   : m_PixelType(pixelType), m_TextureID(0), m_Renderbuffer(writeOnly)
 {
   Resize(width, height);
 }
 
-static PixelType ChannelsToPixelType(int channels)
-{
-  switch (channels)
-  {
-    case 1: return PixelType::R8;
-    case 2: return PixelType::RG16;
-    case 3: return PixelType::RGB24;
-    case 4: 
-    default:
-      return PixelType::RGBA32;
-  }
-}
-
-Texture2D::Texture2D(const char* filePath)
+GLTexture2D::GLTexture2D(const char *filePath)
 {
   int w, h, channels;
-  unsigned char* data = stbi_load(filePath, &w, &h, &channels, 0);
+  unsigned char *data = stbi_load(filePath, &w, &h, &channels, 0);
 
   if (!data)
   {
@@ -51,7 +42,7 @@ Texture2D::Texture2D(const char* filePath)
   stbi_image_free(data);
 }
 
-Texture2D::~Texture2D()
+GLTexture2D::~GLTexture2D()
 {
   if (!m_Renderbuffer)
     glDeleteTextures(1, &m_TextureID);
@@ -59,33 +50,7 @@ Texture2D::~Texture2D()
     glDeleteRenderbuffers(1, &m_TextureID);
 }
 
-static GLenum PixelTypeToGLInternalFormat(PixelType type)
-{
-  switch (type)
-  {
-    case PixelType::R8: return GL_R8;
-    case PixelType::RG16: return GL_RG8;
-    case PixelType::RGB24: return GL_RGB8;
-    case PixelType::RGBA32: return GL_RGBA8;
-    case PixelType::Depth32: return GL_DEPTH_COMPONENT32;
-    case PixelType::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
-  }
-}
-
-static GLenum PixelTypeTOGLFormat(PixelType type)
-{
-  switch (type)
-  {
-    case PixelType::R8: return GL_RED;
-    case PixelType::RG16: return GL_RG;
-    case PixelType::RGB24: return GL_RGB;
-    case PixelType::RGBA32: return GL_RGBA;
-    case PixelType::Depth32: return GL_DEPTH_COMPONENT;
-    case PixelType::Depth24Stencil8: return GL_DEPTH_STENCIL;
-  }
-}
-
-void Texture2D::Resize(float width, float height)
+void GLTexture2D::Resize(float width, float height)
 {
   if (m_TextureID)
   {
@@ -101,11 +66,10 @@ void Texture2D::Resize(float width, float height)
   if (!m_Renderbuffer)
   {
     glGenTextures(1, &m_TextureID);
-    
     glBindTexture(GL_TEXTURE_2D, m_TextureID);
     
-    glTexImage2D(GL_TEXTURE_2D, 
-                 0, 
+    glTexImage2D(GL_TEXTURE_2D,
+                 0,
                  PixelTypeToGLInternalFormat(m_PixelType),
                  static_cast<GLsizei>(m_Width),
                  static_cast<GLsizei>(m_Height),
@@ -113,28 +77,24 @@ void Texture2D::Resize(float width, float height)
                  PixelTypeTOGLFormat(m_PixelType),
                  GL_UNSIGNED_BYTE,
                  nullptr);
-
     // TODO: Expose these parameters to the API
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
     glBindTexture(GL_TEXTURE_2D, 0);
   }
   else
   {
     glGenRenderbuffers(1, &m_TextureID);
     glBindRenderbuffer(GL_RENDERBUFFER, m_TextureID);
-
-    glRenderbufferStorage(GL_RENDERBUFFER, 
+    glRenderbufferStorage(GL_RENDERBUFFER,
                           PixelTypeToGLInternalFormat(m_PixelType),
                           static_cast<GLsizei>(m_Width),
                           static_cast<GLsizei>(m_Height));
-
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
   }
 }
 
-void Texture2D::SetData(uint8_t* data)
+void GLTexture2D::SetData(uint8_t *data)
 {
   if (!m_Renderbuffer)
   {
@@ -147,7 +107,7 @@ void Texture2D::SetData(uint8_t* data)
                     static_cast<GLsizei>(m_Height),
                     PixelTypeTOGLFormat(m_PixelType),
                     GL_UNSIGNED_BYTE,
-                    static_cast<void*>(data));
+                    static_cast<void *>(data));
 
     glBindTexture(GL_TEXTURE0, 0);
   }
@@ -158,23 +118,23 @@ void Texture2D::SetData(uint8_t* data)
   }
 }
 
-void Texture2D::Bind(uint32_t index)
+void GLTexture2D::Bind(uint32_t index)
 {
   glActiveTexture(GL_TEXTURE0 + index);
   glBindTexture(GL_TEXTURE_2D, m_TextureID);
 }
 
-void Texture2D::Unbind()
+void GLTexture2D::Unbind()
 {
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-// ----- Cubemap -----
+// ----- GLCubemap -----
 
-Cubemap::Cubemap(const CubemapDesc& desc)
+GLCubemap::GLCubemap(const CubemapDesc &desc)
 {
   SDL_assert(desc.Textures.size() == 6);
-  
+
   // generate our texture
   glGenTextures(1, &m_CubemapID);
   glBindTexture(GL_TEXTURE_CUBE_MAP, m_CubemapID);
@@ -185,17 +145,14 @@ Cubemap::Cubemap(const CubemapDesc& desc)
   {
     int w, h, channels;
     unsigned char *data = stbi_load(file.c_str(), &w, &h, &channels, 0);
-
     if (!data)
     {
       std::cout << "Failed to load image:" << std::endl;
       std::cout << stbi_failure_reason() << std::endl;
     }
-
     PixelType pixelType = ChannelsToPixelType(channels);
-
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + side, 
-                 0, 
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + side,
+                 0,
                  PixelTypeToGLInternalFormat(pixelType),
                  w,
                  h,
@@ -203,12 +160,12 @@ Cubemap::Cubemap(const CubemapDesc& desc)
                  PixelTypeTOGLFormat(pixelType),
                  GL_UNSIGNED_BYTE,
                  data);
-
     side++;
     stbi_image_free(data);
   }
 
   // set the mag/min params
+  // TODO: expose to API
   glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -218,18 +175,18 @@ Cubemap::Cubemap(const CubemapDesc& desc)
   glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
 
-Cubemap::~Cubemap()
+GLCubemap::~GLCubemap()
 {
   glDeleteTextures(1, &m_CubemapID);
 }
 
-void Cubemap::Bind(uint32_t index)
+void GLCubemap::Bind(uint32_t index)
 {
   glActiveTexture(GL_TEXTURE0 + index);
   glBindTexture(GL_TEXTURE_CUBE_MAP, m_CubemapID);
 }
 
-void Cubemap::Unbind()
+void GLCubemap::Unbind()
 {
   glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }

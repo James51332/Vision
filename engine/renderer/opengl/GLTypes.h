@@ -82,4 +82,49 @@ static GLenum BufferUsageToGLenum(BufferUsage usage)
   return 0;
 }
 
+static PixelType ChannelsToPixelType(int channels)
+{
+  switch (channels)
+  {
+    case 1: return PixelType::R8;
+    case 2: return PixelType::RG16;
+    case 3: return PixelType::RGB24;
+    case 4:
+    default:
+      return PixelType::RGBA32;
+  }
+}
+
+static GLenum PixelTypeToGLInternalFormat(PixelType type)
+{
+  switch (type)
+  {
+    case PixelType::R8: return GL_R8;
+    case PixelType::RG16: return GL_RG8;
+    case PixelType::RGB24: return GL_RGB8;
+    case PixelType::RGBA32: return GL_RGBA8;
+    case PixelType::Depth32: return GL_DEPTH_COMPONENT32;
+    case PixelType::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
+  }
+  
+  SDL_assert(false);
+  return 0;
+}
+
+static GLenum PixelTypeTOGLFormat(PixelType type)
+{
+  switch (type)
+  {
+    case PixelType::R8: return GL_RED;
+    case PixelType::RG16: return GL_RG;
+    case PixelType::RGB24: return GL_RGB;
+    case PixelType::RGBA32: return GL_RGBA;
+    case PixelType::Depth32: return GL_DEPTH_COMPONENT;
+    case PixelType::Depth24Stencil8: return GL_DEPTH_STENCIL;
+  }
+
+  SDL_assert(false);
+  return 0;
+}
+
 }

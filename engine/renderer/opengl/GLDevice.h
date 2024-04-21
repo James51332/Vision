@@ -7,6 +7,7 @@
 #include "GLProgram.h"
 #include "GLVertexArray.h"
 #include "GLBuffer.h"
+#include "GLTexture.h"
 
 namespace Vision
 {
@@ -29,12 +30,26 @@ public:
   GLBuffer* GetBuffer(ID buffer) { return buffers.Get(buffer); }
   void DestroyBuffer(ID id) { buffers.Destroy(id); }
 
+  ID CreateTexture2D(const Texture2DDesc &desc);
+  void ResizeTexture2D(ID id, float width, float height) { textures.Get(id)->Resize(width, height); } 
+  void SetTexture2DData(ID id, uint8_t *data) { textures.Get(id)->SetData(data); }
+  void BindTexture2D(ID id, std::size_t binding = 0) { textures.Get(id)->Bind(binding); }
+  GLTexture2D* GetTexture2D(ID id) { return textures.Get(id); }
+  void DestroyTexture2D(ID id) { textures.Destroy(id); }
+
+  ID CreateCubemap(const CubemapDesc& desc);
+  void BindCubemap(ID id, std::size_t binding = 0) { cubemaps.Get(id)->Bind(binding); }
+  void DestroyCubemap(ID id) { cubemaps.Destroy(id); }
+
   virtual void Submit(const DrawCommand &command);
 
 private:
   ObjectCache<GLPipeline> pipelines;
   ObjectCache<GLProgram> shaders;
   ObjectCache<GLBuffer> buffers;
+  ObjectCache<GLTexture2D> textures;
+  ObjectCache<GLCubemap> cubemaps;
+
   GLVertexArrayCache vaoCache;
 
   std::size_t currentID = 1;

@@ -42,6 +42,16 @@ public:
   static void AttachUniformBuffer(ID buffer, std::size_t block = 0);
   static void DestroyBuffer(ID id);
 
+  static ID CreateTexture2D(const Texture2DDesc &desc);
+  static void ResizeTexture2D(ID id, float width, float height);
+  static void SetTexture2DData(ID id, uint8_t *data);
+  static void BindTexture2D(ID id, std::size_t binding = 0);
+  static void DestroyTexture2D(ID id);
+
+  static ID CreateCubemap(const CubemapDesc &desc);
+  static void BindCubemap(ID id, std::size_t binding = 0);
+  static void DestroyCubemap(ID id);
+
   // TODO: This should probably exist in some command encoder, but for now it's here.
   static void Submit(const DrawCommand& command);
 

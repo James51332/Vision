@@ -77,6 +77,46 @@ void RenderDevice::DestroyBuffer(ID id)
   device->DestroyBuffer(id);
 }
 
+ID RenderDevice::CreateTexture2D(const Texture2DDesc &desc)
+{
+  return device->CreateTexture2D(desc);
+}
+
+void RenderDevice::ResizeTexture2D(ID id, float width, float height)
+{
+  device->ResizeTexture2D(id, width, height);
+}
+
+void RenderDevice::SetTexture2DData(ID id, uint8_t *data)
+{
+  device->SetTexture2DData(id, data);
+}
+
+void RenderDevice::BindTexture2D(ID id, std::size_t binding)
+{
+  device->BindTexture2D(id, binding);
+}
+
+void RenderDevice::DestroyTexture2D(ID id)
+{
+  device->DestroyTexture2D(id);
+}
+
+ID RenderDevice::CreateCubemap(const CubemapDesc &desc)
+{
+  return device->CreateCubemap(desc);
+}
+
+void RenderDevice::BindCubemap(ID id, std::size_t binding)
+{
+  device->BindCubemap(id, binding);
+}
+
+void RenderDevice::DestroyCubemap(ID id)
+{
+  device->DestroyCubemap(id);
+}
+
 void RenderDevice::Submit(const DrawCommand& command)
 {
   device->Submit(command);

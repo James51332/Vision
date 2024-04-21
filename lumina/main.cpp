@@ -37,7 +37,10 @@ namespace Lumina
       // tesselationShader->Use();
       // tesselationShader->UploadUniformInt(0, "heightMap");
 
-      heightMap = new Vision::Texture2D("resources/iceland_heightmap.png");
+      Vision::Texture2DDesc td;
+      td.LoadFromFile = true;
+      td.FilePath = "resources/iceland_heightmap.png";
+      heightMap = Vision::RenderDevice::CreateTexture2D(td);
 
       Vision::CubemapDesc desc;
       desc.Textures = {
@@ -48,7 +51,7 @@ namespace Lumina
         "resources/skybox/front.jpg",
         "resources/skybox/back.jpg"
       };
-      skyboxTexture = new Vision::Cubemap(desc);
+      skyboxTexture = Vision::RenderDevice::CreateCubemap(desc);
 
       skyboxMesh = Vision::MeshGenerator::CreateCubeMesh(1.0f);
 
@@ -68,10 +71,10 @@ namespace Lumina
     {
       delete planeMesh;
       Vision::RenderDevice::DestroyShader(tesselationShader);
-      delete heightMap;
+      Vision::RenderDevice::DestroyTexture2D(heightMap);
 
+      Vision::RenderDevice::DestroyCubemap(skyboxTexture);
       delete skyboxMesh;
-      delete skyboxTexture;
       Vision::RenderDevice::DestroyShader(skyboxShader);
     }
 
@@ -92,12 +95,12 @@ namespace Lumina
 
       renderer->Begin(&perspectiveCamera);
 
-      heightMap->Bind();
+      Vision::RenderDevice::BindTexture2D(heightMap);
       renderer->DrawMesh(planeMesh, tesselationPS);
 
       // Skybox
       glDepthFunc(GL_LEQUAL);
-      skyboxTexture->Bind();
+      Vision::RenderDevice::BindCubemap(skyboxTexture);
       renderer->DrawMesh(skyboxMesh, skyboxPS);
 
       renderer->End();
@@ -114,9 +117,9 @@ namespace Lumina
     Vision::Mesh* planeMesh;
     Vision::ID tesselationShader;
     Vision::ID tesselationPS;
-    Vision::Texture2D* heightMap;
+    Vision::ID heightMap;
 
-    Vision::Cubemap* skyboxTexture;
+    Vision::ID skyboxTexture;
     Vision::Mesh* skyboxMesh;
     Vision::ID skyboxPS;
     Vision::ID skyboxShader;

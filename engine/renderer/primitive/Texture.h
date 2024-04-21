@@ -1,6 +1,5 @@
 #pragma once
 
-#include <glad/glad.h>
 #include <vector>
 #include <string>
 
@@ -17,32 +16,16 @@ enum class PixelType
   Depth24Stencil8,
 };
 
-// Write only textures are renderbuffers in OpenGL
-class Texture2D
+struct Texture2DDesc
 {
-  friend class Framebuffer;
-  friend class Renderer2D;
-public:
-  Texture2D(float width, float height, PixelType pixelType, bool renderbuffer = false);
-  Texture2D(const char* filePath);
-  ~Texture2D();
+  bool LoadFromFile = false;
+  std::string FilePath;
 
-  void Resize(float width, float height);
-  void SetData(uint8_t* data);
-
-  float GetWidth() const { return m_Width; }
-  float GetHeight() const { return m_Height; }
-  PixelType GetPixelType() const { return m_PixelType; }
-
-  void Bind(uint32_t index = 0);
-  void Unbind();
-
-private:
-  GLuint m_TextureID;
-
-  float m_Width, m_Height;
-  PixelType m_PixelType;
-  bool m_Renderbuffer;
+  float Width;
+  float Height;
+  PixelType PixelType;
+  bool WriteOnly = false;
+  uint8_t* Data = nullptr;
 };
 
 // ----- Cubemaps -----
@@ -51,19 +34,6 @@ private:
 struct CubemapDesc
 {
   std::vector<std::string> Textures;
-};
-
-class Cubemap
-{
-public:
-  Cubemap(const CubemapDesc& desc);
-  ~Cubemap();
-
-  void Bind(uint32_t index = 0);
-  void Unbind();
-
-private:
-  GLuint m_CubemapID;
 };
 
 }

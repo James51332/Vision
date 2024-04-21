@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 
-#include "Texture.h"
+#include "renderer/opengl/GLTexture.h"
 
 namespace Vision
 {
@@ -15,8 +15,8 @@ public:
 
   void Reset(float width, float height);
 
-  Texture2D* GetColorAttachment() { return m_ColorAttachment; }
-  Texture2D* GetDepthAttachment() { return m_DepthStencilAttachment; }
+  GLTexture2D* GetColorAttachment() { return m_ColorAttachment; }
+  GLTexture2D* GetDepthAttachment() { return m_DepthStencilAttachment; }
 
   // If a framebuffer is bound, all rendering will occur on that framebuffer
   void Bind();
@@ -26,8 +26,8 @@ private:
   GLuint m_FramebufferID;
   float m_Width, m_Height;
 
-  Texture2D* m_ColorAttachment;
-  Texture2D* m_DepthStencilAttachment;
+  GLTexture2D* m_ColorAttachment;
+  GLTexture2D* m_DepthStencilAttachment;
 };
 
 }

@@ -40,6 +40,31 @@ ID GLDevice::CreateBuffer(const BufferDesc &desc)
   return id;
 }
 
+ID GLDevice::CreateTexture2D(const Texture2DDesc &desc)
+{
+  ID id = currentID++;
+  GLTexture2D* texture;
+  if (desc.LoadFromFile)
+    texture = new GLTexture2D(desc.FilePath.c_str());
+  else
+  {
+    texture = new GLTexture2D(desc.Width, desc.Height, desc.PixelType, desc.WriteOnly);
+    if (desc.Data)
+      texture->SetData(desc.Data);
+  }
+  
+  textures.Add(id, texture);
+  return id;
+}
+
+ID GLDevice::CreateCubemap(const CubemapDesc &desc)
+{
+  ID id = currentID++;
+  GLCubemap* cubemap = new GLCubemap(desc);
+  cubemaps.Add(id, cubemap);
+  return id;
+}
+
 void GLDevice::Submit(const DrawCommand& command)
 {
   // bind the shader and upload uniforms
@@ -55,7 +80,7 @@ void GLDevice::Submit(const DrawCommand& command)
   int index = 0;
   for (auto texture : command.Textures)
   {
-    texture->Bind(index);
+    textures.Get(texture)->Bind(index);
     index++;
   }
 

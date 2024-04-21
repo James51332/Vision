@@ -34,8 +34,8 @@ void Framebuffer::Reset(float width, float height)
 
   glGenFramebuffers(1, &m_FramebufferID);
 
-  m_ColorAttachment = new Texture2D(m_Width, m_Height, PixelType::RGBA32, false);
-  m_DepthStencilAttachment = new Texture2D(m_Width, m_Height, PixelType::Depth32, false);
+  m_ColorAttachment = new GLTexture2D(m_Width, m_Height, PixelType::RGBA32, false);
+  m_DepthStencilAttachment = new GLTexture2D(m_Width, m_Height, PixelType::Depth32, false);
 
   glBindFramebuffer(GL_FRAMEBUFFER, m_FramebufferID);
   

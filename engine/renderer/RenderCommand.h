@@ -33,7 +33,7 @@ struct DrawCommand
   std::vector<ID> VertexBuffers;
   ID IndexBuffer = 0;
 
-  std::vector<Texture2D*> Textures;
+  std::vector<ID> Textures;
   glm::mat4 Transform;
 
   // Settings
