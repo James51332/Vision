@@ -155,31 +155,32 @@ void ImGuiRenderer::Resize(float width, float height)
 void ImGuiRenderer::GenerateBuffers()
 {
   BufferDesc vboDesc;
-  vboDesc.Type = GL_ARRAY_BUFFER;
-  vboDesc.Usage = GL_DYNAMIC_DRAW;
+  vboDesc.Type = BufferType::Vertex;
+  vboDesc.Usage = BufferUsage::Dynamic;
   vboDesc.Size = sizeof(ImDrawVert) * m_MaxVertices;
   vboDesc.Data = nullptr;
-  vboDesc.Layout = { // ImDrawVert layout
-    { ShaderDataType::Float2, "a_Position"},
-    { ShaderDataType::Float2, "a_UV"},
-    { ShaderDataType::UByte4, "a_Color", true }
-  };
+
   
-  m_VBO = new Buffer(vboDesc);
+  m_VBO = new GLBuffer(vboDesc);
 
   BufferDesc iboDesc;
-  iboDesc.Type = GL_ELEMENT_ARRAY_BUFFER;
-  iboDesc.Usage = GL_DYNAMIC_DRAW;
+  iboDesc.Type = BufferType::Index;
+  iboDesc.Usage = BufferUsage::Dynamic;
   iboDesc.Size = sizeof(ImDrawIdx) * m_MaxIndices;
   iboDesc.Data = nullptr;
 
-  m_IBO = new Buffer(iboDesc);
+  m_IBO = new GLBuffer(iboDesc);
 }
 
 void ImGuiRenderer::GenerateArrays()
 {
   m_VertexArray = new GLVertexArray();
-  m_VertexArray->AttachBuffer(m_VBO);
+  BufferLayout layout = { // ImDrawVert layout
+    { ShaderDataType::Float2, "a_Position"},
+    { ShaderDataType::Float2, "a_UV"},
+    { ShaderDataType::UByte4, "a_Color", true }
+  };
+  m_VertexArray->AttachBuffer(m_VBO, layout);
 }
 
 static const char* vertexShader = R"(

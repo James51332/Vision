@@ -6,7 +6,6 @@
 #include "Camera.h"
 #include "opengl/GLVertexArray.h"
 #include "primitive/Shader.h"
-#include "primitive/Buffer.h"
 #include "Mesh.h"
 #include "RenderCommand.h"
 #include "RenderDevice.h"
@@ -18,6 +17,7 @@ class Renderer
 {
 public:
   Renderer(float width, float height, float displayScale = 1.0f);
+  ~Renderer();
   
   void Resize(float width, float height);
 
@@ -35,7 +35,7 @@ private:
   float m_Width, m_Height;
 
   // Eventually, these will be baked into pipeline states, but for now we'll use a uniform buffer
-  Buffer* pushConstants;
+  ID pushConstants;
 };
 
 }

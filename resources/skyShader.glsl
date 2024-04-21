@@ -3,16 +3,23 @@
 
 layout (location = 0) in vec3 a_Pos;
 
-out vec3 texCoord;
 
-uniform mat4 u_Projection;
-uniform mat4 u_View;
+layout (std140) uniform pushConstants
+{
+  mat4 u_View;
+  mat4 u_Projection;
+  mat4 u_ViewProjection;
+  vec2 u_ViewportSize;
+  float u_Time;
+};
+
+out vec3 texCoord;
 
 void main()
 {
-  mat3 view = mat3(u_View);
+  mat4 noTranslateView = mat4(mat3(u_View));
   texCoord = a_Pos;
-  vec4 pos = u_Projection * mat4(view) * vec4(a_Pos, 1.0);
+  vec4 pos = u_Projection * noTranslateView * vec4(a_Pos, 1.0);
   gl_Position = pos.xyww;
 }
 

@@ -26,7 +26,10 @@ namespace Lumina
       tesselationShader = Vision::RenderDevice::CreateShader(sd1);
 
       Vision::PipelineDesc p1;
-      p1.Layouts = { planeMesh->m_VertexBuffer->GetLayout() };
+      p1.Layouts = { Vision::BufferLayout({{Vision::ShaderDataType::Float3, "Position"},
+                     {Vision::ShaderDataType::Float3, "Normal"},
+                     {Vision::ShaderDataType::Float4, "Color"},
+                     {Vision::ShaderDataType::Float2, "UV"}}) };
       p1.Shader = tesselationShader;
       tesselationPS = Vision::RenderDevice::CreatePipeline(p1);
 
@@ -56,7 +59,7 @@ namespace Lumina
       // skyboxShader->UploadUniformInt(0, "skybox");
 
       Vision::PipelineDesc p2;
-      p2.Layouts = { skyboxMesh->m_VertexBuffer->GetLayout() };
+      p2.Layouts = p1.Layouts;
       p2.Shader = skyboxShader;
       skyboxPS = Vision::RenderDevice::CreatePipeline(p2);
     }
@@ -86,16 +89,16 @@ namespace Lumina
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
       else
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-      
+
       renderer->Begin(&perspectiveCamera);
 
       heightMap->Bind();
       renderer->DrawMesh(planeMesh, tesselationPS);
 
       // Skybox
-      // glDepthFunc(GL_LEQUAL);
-      // skyboxTexture->Bind();      
-      // renderer->DrawMesh(skyboxMesh, skyboxPS);
+      glDepthFunc(GL_LEQUAL);
+      skyboxTexture->Bind();
+      renderer->DrawMesh(skyboxMesh, skyboxPS);
 
       renderer->End();
     }

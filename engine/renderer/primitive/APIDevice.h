@@ -23,6 +23,12 @@ public:
   virtual ID CreateShader(const ShaderDesc& desc) = 0;
   virtual void DestroyShader(ID id) = 0;
 
+  virtual ID CreateBuffer(const BufferDesc &desc) = 0;
+  virtual void SetBufferData(ID buffer, void *data, std::size_t size) = 0;
+  virtual void ResizeBuffer(ID buffer, std::size_t size) = 0;
+  virtual void AttachUniformBuffer(ID buffer, std::size_t block = 0) = 0; 
+  virtual void DestroyBuffer(ID id) = 0;
+
   virtual void Submit(const DrawCommand& command) = 0;
 };
 

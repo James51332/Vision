@@ -4,37 +4,10 @@
 #include <sstream>
 #include <SDL.h>
 
+#include "GLTypes.h"
+
 namespace Vision
 {
-
-static const char* StringFromShaderStage(ShaderStage type)
-{
-  switch (type)
-  {
-    case ShaderStage::Vertex: return "vertex";
-    case ShaderStage::Pixel: return "pixel";
-    case ShaderStage::Domain: return "domain";
-    case ShaderStage::Hull: return "hull";
-    case ShaderStage::Geometry: return "geometry";
-    default:
-      return "unknown";
-  }
-}
-
-static GLenum GLenumFromShaderStage(ShaderStage stage)
-{
-  switch (stage)
-  {
-    case ShaderStage::Vertex: return GL_VERTEX_SHADER;
-    case ShaderStage::Pixel: return GL_FRAGMENT_SHADER;
-    case ShaderStage::Hull: return GL_TESS_CONTROL_SHADER;
-    case ShaderStage::Domain: return GL_TESS_EVALUATION_SHADER;
-    case ShaderStage::Geometry: return GL_GEOMETRY_SHADER;
-  }
-
-  SDL_assert(false);
-  return 0;
-}
 
 GLProgram::GLProgram(const std::unordered_map<ShaderStage, std::string>& shaders)
 {
@@ -43,7 +16,7 @@ GLProgram::GLProgram(const std::unordered_map<ShaderStage, std::string>& shaders
   // Compile all shaders
   for (auto pair : shaders)
   {
-    GLenum type = GLenumFromShaderStage(pair.first);
+    GLenum type = ShaderStageToGLenum(pair.first);
     std::string text = pair.second;
     const char *c_str = text.c_str();
 
@@ -61,7 +34,7 @@ GLProgram::GLProgram(const std::unordered_map<ShaderStage, std::string>& shaders
       char infoLog[bufferSize];
 
       glGetShaderInfoLog(id, bufferSize, nullptr, infoLog);
-      std::cout << "Failed to compile shader: " << StringFromShaderStage(pair.first) << std::endl;
+      std::cout << "Failed to compile shader: " << ShaderStageToString(pair.first) << std::endl;
       std::cout << infoLog << std::endl;
     }
 
@@ -157,11 +130,10 @@ void GLProgram::UploadUniformMat4(const float* value, const char *name)
   glUniformMatrix4fv(location, 1, GL_FALSE, value);
 }
 
-void GLProgram::SetUniformBlock(Buffer* uniform, const char* name, std::size_t binding)
+void GLProgram::SetUniformBlock(const char* name, std::size_t binding)
 {
   unsigned int waves_index = glGetUniformBlockIndex(program, name);
   glUniformBlockBinding(program, waves_index, binding);
-  glBindBufferBase(GL_UNIFORM_BUFFER, binding, uniform->m_Object);
 }
 
 }

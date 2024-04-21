@@ -23,14 +23,21 @@ Renderer::Renderer(float width, float height, float displayScale)
   // Resize the viewport (no need to use Resize() because we've already done everything else it does)
   glViewport(0, 0, static_cast<GLsizei>(width * displayScale), static_cast<GLsizei>(height * displayScale));
 
-  BufferDesc desc;
-  desc.Type = GL_UNIFORM_BUFFER;
-  desc.Usage = GL_DYNAMIC_DRAW;
-  desc.Size = sizeof(PushConstant);
-  desc.Data = nullptr;
+  // TODO: Push constants will probably be parts of pipeline states.
+  {
+    BufferDesc desc;
+    desc.Type = BufferType::Uniform;
+    desc.Usage = BufferUsage::Dynamic;
+    desc.Size = sizeof(PushConstant);
+    desc.Data = nullptr;
 
-  // TODO: This is leaked (but it's fine for now)
-  pushConstants = new Buffer(desc);
+    pushConstants = RenderDevice::CreateBuffer(desc);
+  }
+}
+
+Renderer::~Renderer()
+{
+  RenderDevice::DestroyBuffer(pushConstants);
 }
 
 void Renderer::Resize(float width, float height)
@@ -72,6 +79,7 @@ void Renderer::DrawMesh(Mesh* mesh, ID pipeline, const glm::mat4& transform)
   command.IndexBuffer = mesh->m_IndexBuffer;
   command.NumVertices = mesh->GetNumIndices() == 0 ? mesh->GetNumVertices() : mesh->GetNumIndices();
   command.IndexType = IndexType::U32;
+  command.Type = PrimitiveType::Triangle;
   command.Transform = transform;
   command.PatchSize = 4; // TODO: Other patch sizes
 
@@ -93,12 +101,12 @@ void Renderer::Submit(const DrawCommand& command)
   // which we are gonna write as a uniform buffer for opengl.
   PushConstant data;
   data.view = m_Camera->GetViewMatrix();
-  data.viewProj = m_Camera->GetViewProjectionMatrix();
   data.proj = m_Camera->GetProjectionMatrix();
+  data.viewProj = m_Camera->GetViewProjectionMatrix();
   data.viewSize = { m_Width, m_Height};
   data.time = time;
-  pushConstants->SetData(&data, sizeof(PushConstant));
-  glBindBufferBase(GL_UNIFORM_BUFFER, 0, pushConstants->m_Object);
+  RenderDevice::SetBufferData(pushConstants, &data, sizeof(PushConstant));
+  RenderDevice::AttachUniformBuffer(pushConstants, 0);
 
   // device submit
   RenderDevice::Submit(command);

@@ -36,8 +36,13 @@ public:
   static ID CreateShader(const ShaderDesc& desc);
   static void DestroyShader(ID shader);
 
+  static ID CreateBuffer(const BufferDesc &desc);
+  static void SetBufferData(ID buffer, void *data, std::size_t size);
+  static void ResizeBuffer(ID buffer, std::size_t size);
+  static void AttachUniformBuffer(ID buffer, std::size_t block = 0);
+  static void DestroyBuffer(ID id);
+
   // TODO: This should probably exist in some command encoder, but for now it's here.
-  static void UploadUniformBuffer();
   static void Submit(const DrawCommand& command);
 
 private:

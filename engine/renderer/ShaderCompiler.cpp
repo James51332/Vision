@@ -7,7 +7,7 @@
 namespace Vision
 {
 
-static const char* StringFromShaderStage(ShaderStage type)
+static const char* ShaderStageToString(ShaderStage type)
 {
   switch (type)
   {

@@ -4,12 +4,14 @@
 #include <vector>
 #include <unordered_map>
 
-#include "renderer/primitive/Buffer.h"
-
 #include "GLPipeline.h"
+#include "GLBuffer.h"
 
 namespace Vision
 {
+
+// forward declare this.
+class GLDevice;
 
 class GLVertexArray
 {
@@ -20,7 +22,7 @@ public:
   void Bind();
 
   // Buffers are attached in the shader in order of this call 
-  void AttachBuffer(Buffer* buffer);
+  void AttachBuffer(GLBuffer* buffer, const BufferLayout& layout);
 
 private:
   GLuint m_Object;
@@ -35,7 +37,7 @@ private:
 struct GLVertexArrayCache
 {
 public:
-  GLVertexArray* Fetch(GLPipeline* pipeline, std::vector<Buffer*> vbos);
+  GLVertexArray* Fetch(GLDevice* device, ID pipeline, std::vector<ID> vbos);
 
   void Clear();
 

@@ -2,18 +2,10 @@
 
 #include <iostream>
 
+#include "GLTypes.h"
+
 namespace Vision
 {
-
-GLDevice::GLDevice()
-{
-
-}
-
-GLDevice::~GLDevice()
-{
-
-}
 
 ID GLDevice::CreatePipeline(const PipelineDesc &desc)
 {
@@ -32,11 +24,6 @@ ID GLDevice::CreatePipeline(const PipelineDesc &desc)
   return id;
 }
 
-void GLDevice::DestroyPipeline(ID pipeline)
-{
-  pipelines.Destroy(pipeline);
-}
-
 ID GLDevice::CreateShader(const ShaderDesc& desc)
 {
   ID id = currentID++;
@@ -45,35 +32,12 @@ ID GLDevice::CreateShader(const ShaderDesc& desc)
   return id;
 }
 
-void GLDevice::DestroyShader(ID shader)
+ID GLDevice::CreateBuffer(const BufferDesc &desc)
 {
-  shaders.Destroy(shader);
-}
-
-static GLenum IndexTypeToGLenum(IndexType type)
-{
-  switch (type)
-  {
-  case IndexType::U8:
-    return GL_UNSIGNED_BYTE;
-  case IndexType::U16:
-    return GL_UNSIGNED_SHORT;
-  case IndexType::U32:
-    return GL_UNSIGNED_INT;
-  }
-}
-
-static GLenum PrimitiveTypeToGLenum(PrimitiveType type)
-{
-  switch (type)
-  {
-  case PrimitiveType::Triangle:
-    return GL_TRIANGLES;
-  case PrimitiveType::TriangleStrip:
-    return GL_TRIANGLE_STRIP;
-  case PrimitiveType::Patch:
-    return GL_PATCHES;
-  }
+  ID id = currentID++;
+  GLBuffer* buffer = new GLBuffer(desc);
+  buffers.Add(id, buffer);
+  return id;
 }
 
 void GLDevice::Submit(const DrawCommand& command)
@@ -83,8 +47,9 @@ void GLDevice::Submit(const DrawCommand& command)
   GLProgram* shader = pipeline->Shader;
 
   shader->Use();
-  GLuint pushConstants = glGetUniformBlockIndex(shader->GetProgram(), "pushConstants");
-  glUniformBlockBinding(shader->GetProgram(), pushConstants, 0);
+
+  // HACK: we shouldn't do this forever, just getting it working
+  shader->SetUniformBlock("pushConstants", 0);
 
   // bind the textures
   int index = 0;
@@ -99,7 +64,7 @@ void GLDevice::Submit(const DrawCommand& command)
   if (shader->UsesTesselation()) primitive = GL_PATCHES;
 
   // generate the vertex array using the vertex array cache
-  GLVertexArray* vao = vaoCache.Fetch(pipeline, command.VertexBuffers);
+  GLVertexArray* vao = vaoCache.Fetch(this, command.Pipeline, command.VertexBuffers);
   vao->Bind();
 
   // set the patch size
@@ -109,7 +74,8 @@ void GLDevice::Submit(const DrawCommand& command)
   if (command.IndexBuffer)
   {
     GLenum indexType = IndexTypeToGLenum(command.IndexType);
-    command.IndexBuffer->Bind();
+    GLBuffer* indexBuffer = buffers.Get(command.IndexBuffer);
+    indexBuffer->Bind();
 
     // TODO: Vtx Offsets
     glDrawElements(primitive, command.NumVertices, indexType, nullptr);

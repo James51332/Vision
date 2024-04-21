@@ -1,5 +1,7 @@
 #include "GLVertexArray.h"
 
+#include "GLDevice.h"
+
 namespace Vision
 {
 
@@ -36,10 +38,8 @@ static GLenum GLenumFromShaderDataType(ShaderDataType type)
   }
 }
 
-void GLVertexArray::AttachBuffer(Buffer* buffer)
-{
-  const BufferLayout& layout = buffer->GetLayout();
-  
+void GLVertexArray::AttachBuffer(GLBuffer* buffer, const BufferLayout& layout)
+{  
   glBindVertexArray(m_Object);
   buffer->Bind();
 
@@ -85,27 +85,31 @@ void HashCombine(std::size_t &Seed, const T &Val) noexcept
 
 // we'll profile this later. just want to ensure we don't have 
 // collisions because we aren't hashing the right values.
-GLVertexArray* GLVertexArrayCache::Fetch(GLPipeline* pipeline, std::vector<Buffer*> vbos)
+GLVertexArray* GLVertexArrayCache::Fetch(GLDevice* device, ID pipeline, std::vector<ID> vbos)
 {
   // TODO: We really should be hashing the IDs of our pipelines.
   std::size_t hash = 0;
-  HashCombine(hash, (std::size_t)(intptr_t)pipeline);
+  HashCombine(hash, pipeline);
 
-  for (auto layout : pipeline->Layouts)
+  GLPipeline* pipeObj = device->GetPipeline(pipeline);
+
+  for (auto layout : pipeObj->Layouts)
   {
     HashCombine(hash, layout.Stride);
     for (auto element : layout.Elements)
     {
-      // HashCombine(hash, element.InstanceDivisor);
-      // HashCombine(hash, element.Normalized ? 100L : 50L);
-      // HashCombine(hash, element.Offset);
-      // HashCombine(hash, element.Size);
-      // HashCombine(hash, element.Type);
+      HashCombine(hash, element.InstanceDivisor);
+      HashCombine(hash, element.Normalized);
+      HashCombine(hash, element.Offset);
+      HashCombine(hash, element.Size);
+      HashCombine(hash, element.Type);
     }
   }
 
-  for (auto* buffer : vbos)
-    HashCombine(hash, (std::size_t)(intptr_t)buffer);
+  for (auto buffer : vbos)
+  {
+    HashCombine(hash, buffer);
+  }
 
   auto vao = vaos.find(hash);
   if (vao != vaos.end())
@@ -115,9 +119,11 @@ GLVertexArray* GLVertexArrayCache::Fetch(GLPipeline* pipeline, std::vector<Buffe
   else
   {
     GLVertexArray* vao = new GLVertexArray();
-    for (auto* buffer : vbos)
+    int layoutNum = 0;
+    for (auto buffer : vbos)
     {
-      vao->AttachBuffer(buffer);
+      vao->AttachBuffer(device->GetBuffer(buffer), pipeObj->Layouts[layoutNum]);
+      layoutNum++;
     }
 
     vaos.emplace(hash, vao);

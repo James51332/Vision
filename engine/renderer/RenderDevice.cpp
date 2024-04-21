@@ -52,6 +52,31 @@ void RenderDevice::DestroyShader(ID shader)
   device->DestroyShader(shader);
 }
 
+ID RenderDevice::CreateBuffer(const BufferDesc &desc)
+{
+  return device->CreateBuffer(desc);
+}
+
+void RenderDevice::SetBufferData(ID buffer, void *data, std::size_t size)
+{
+  device->SetBufferData(buffer, data, size);
+}
+
+void RenderDevice::ResizeBuffer(ID buffer, std::size_t size)
+{
+  device->ResizeBuffer(buffer, size);
+}
+
+void RenderDevice::AttachUniformBuffer(ID buffer, std::size_t block)
+{
+  device->AttachUniformBuffer(buffer, block);
+}
+
+void RenderDevice::DestroyBuffer(ID id)
+{
+  device->DestroyBuffer(id);
+}
+
 void RenderDevice::Submit(const DrawCommand& command)
 {
   device->Submit(command);

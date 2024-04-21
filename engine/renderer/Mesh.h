@@ -32,16 +32,14 @@ class Mesh
   friend class Renderer;
 public:
   Mesh(const MeshDesc& desc);
-
-  void Bind();
+  ~Mesh();
 
   std::size_t GetNumIndices() const { return m_NumIndices; }
   std::size_t GetNumVertices() const { return m_NumVertices; }
 
-  // TODO: Make this private in the GLDevice API
-  Buffer* m_VertexBuffer;
 private:
-  Buffer* m_IndexBuffer;
+  ID m_VertexBuffer;
+  ID m_IndexBuffer;
 
   std::size_t m_NumVertices;
   std::size_t m_NumIndices;

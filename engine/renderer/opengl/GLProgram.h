@@ -28,7 +28,7 @@ public:
   void UploadUniformFloat4(const float *, const char *name);
   void UploadUniformMat4(const float *, const char *name);
 
-  void SetUniformBlock(Buffer *buffer, const char *name, std::size_t binding);
+  void SetUniformBlock(const char *name, std::size_t binding);
 
 private:
   GLuint program;

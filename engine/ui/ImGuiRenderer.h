@@ -34,7 +34,7 @@ private:
   void DestroyTextures();
 
 private:
-  Buffer *m_VBO, *m_IBO;
+  GLBuffer *m_VBO, *m_IBO;
   GLVertexArray *m_VertexArray;
   GLProgram *m_Shader;
   GLuint m_FontTexture;

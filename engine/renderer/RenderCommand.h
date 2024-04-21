@@ -30,8 +30,8 @@ struct DrawCommand
 {
   // Data
   ID Pipeline;
-  std::vector<Buffer*> VertexBuffers;
-  Buffer* IndexBuffer = nullptr;
+  std::vector<ID> VertexBuffers;
+  ID IndexBuffer = 0;
 
   std::vector<Texture2D*> Textures;
   glm::mat4 Transform;
