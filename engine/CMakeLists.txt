@@ -6,6 +6,7 @@ add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/stb EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/SPIRV-Cross EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/imgui EXCLUDE_FROM_ALL)
+add_subdirectory(vendor/shaderc EXCLUDE_FROM_ALL)
 
 # Source Files
 file(GLOB_RECURSE SRC_FILES CMAKE_CONFIGURE_DEPENDS "engine/*.cpp" "engine/*.h")
@@ -14,7 +15,10 @@ file(GLOB_RECURSE SRC_FILES CMAKE_CONFIGURE_DEPENDS "engine/*.cpp" "engine/*.h")
 add_library(Vision ${SRC_FILES})
 
 # Define the include directory for the program
-target_include_directories(Vision PUBLIC "engine")
+target_include_directories(Vision 
+                            PUBLIC 
+                              "engine"
+                              "vendor/shaderc/libshaderc/include")
 
 # Link to the SDL library
 target_link_libraries(Vision
@@ -25,4 +29,5 @@ target_link_libraries(Vision
                           glm::glm
                           ImGui
                           spirv-cross-core
-                          spirv-cross-glsl)
+                          spirv-cross-glsl
+                          shaderc_combined)
