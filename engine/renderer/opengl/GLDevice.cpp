@@ -27,7 +27,7 @@ ID GLDevice::CreatePipeline(const PipelineDesc &desc)
 ID GLDevice::CreateShader(const ShaderDesc& desc)
 {
   ID id = currentID++;
-  GLProgram* shader = new GLProgram(desc.stageMap);
+  GLProgram* shader = new GLProgram(desc.StageMap);
   shaders.Add(id, shader);
   return id;
 }

@@ -22,7 +22,7 @@ namespace Lumina
 
       planeMesh = Vision::MeshGenerator::CreatePlaneMesh(50.0f, 50.0f, 128, 128, true, false);
       Vision::ShaderDesc sd1;
-      sd1.filePath = "resources/distShader.glsl";
+      sd1.FilePath = "resources/distShader.glsl";
       tesselationShader = Vision::RenderDevice::CreateShader(sd1);
 
       Vision::PipelineDesc p1;
@@ -56,7 +56,7 @@ namespace Lumina
       skyboxMesh = Vision::MeshGenerator::CreateCubeMesh(1.0f);
 
       Vision::ShaderDesc sd;
-      sd.filePath = "resources/skyShader.glsl";
+      sd.FilePath = "resources/skyShader.glsl";
       skyboxShader = Vision::RenderDevice::CreateShader(sd);
       // skyboxShader->Use();
       // skyboxShader->UploadUniformInt(0, "skybox");
