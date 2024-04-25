@@ -88,76 +88,76 @@ void ShaderCompiler::GenerateStageMap(ShaderDesc& desc)
   desc.Source = ShaderSource::StageMap;
 }
 
+static EShLanguage ShaderStageToEShLanguage(ShaderStage stage)
+{
+  switch (stage)
+  {
+    case ShaderStage::Vertex: return EShLangVertex;
+    case ShaderStage::Pixel: return EShLangFragment;
+    case ShaderStage::Hull: return EShLangTessControl;
+    case ShaderStage::Domain: return EShLangTessEvaluation;
+    case ShaderStage::Geometry: return EShLangGeometry;
+  }
+}
+
 void ShaderCompiler::GenerateSPIRVMap(ShaderDesc& desc)
 {
-  // TODO: I'm going to write this in the next commit.
+  SDL_assert(desc.Source == ShaderSource::StageMap);
 
-  // SDL_assert(desc.Source == ShaderSource::StageMap);
-  // if (desc.FilePath != "resources/skyShader.glsl") return;
+  for (auto pair : desc.StageMap)
+  {
+    auto stage = pair.first;
+    std::string text = pair.second;
+    const char* textPtr = text.c_str();
 
-  // for (auto pair : desc.StageMap)
-  // {
-  //   ShaderStage stage = pair.first;
-  //   std::string& text = pair.second;
+    glslang::InitializeProcess();
 
-  //   if (stage != ShaderStage::Vertex) continue;
-  //   std::cout << "Running Test on Vertex Shader!" << std::endl;
+    EShLanguage language = ShaderStageToEShLanguage(stage);
+    glslang::TShader shader(language);
 
-  //   glslang::InitializeProcess();
+    shader.setStrings(&textPtr, 1);
+    shader.setEnvInput(glslang::EShSourceGlsl, language, glslang::EShClientOpenGL, 410);
+    shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_1);
+    shader.setEnvTarget(glslang::EshTargetSpv, glslang::EShTargetSpv_1_1);
 
-  //   // First compile the shader
-  //   glslang::TShader shader(EShLangVertex);
-  //   const char* str = text.c_str();
-  //   shader.setStrings(&str, 1);
-  //   shader.setEnvInput(glslang::EShSourceGlsl, EShLangVertex, glslang::EShClientOpenGL, 410);
-  //   shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_1);
-  //   shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_1);
+    shader.setAutoMapBindings(true);
+    shader.setAutoMapLocations(true);
 
-  //   // Old GLSL compiler expects us to have locations for uniforms
-  //   shader.setAutoMapBindings(true);
-  //   shader.setAutoMapLocations(true);
+    if (!shader.parse(GetDefaultResources(), 100, false, static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgSpvRules)))
+    {
+      std::cout << "Failed to compile shader" << std::endl;
+      std::cout << shader.getInfoLog() << std::endl;
+    }
 
-  //   if (!shader.parse(GetDefaultResources(), 100, false, static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgSpvRules)))
-  //   {
-  //     std::cout << "failed to compile shader" << std::endl;
-  //     std::cout << shader.getInfoLog() << std::endl;
-  //   }
+    std::vector<uint32_t> data;
+    spv::SpvBuildLogger logger;
+    glslang::SpvOptions options;
 
-  //   std::vector<uint32_t> data;
-  //   spv::SpvBuildLogger logger;
-  //   glslang::SpvOptions options;
-  //   options.disableOptimizer = true;
-  //   options.generateDebugInfo = true;
-  //   options.optimizeSize = false;
+    // TODO: configure this based on build mode
+    options.disableOptimizer = true;
+    options.generateDebugInfo = true;
+    options.optimizeSize = false;
 
-  //   // each program only has one shader
-  //   glslang::TProgram program;
-  //   program.addShader(&shader);
+    // each program only has one shader
+    glslang::TProgram program;
+    program.addShader(&shader);
 
-  //   if (!program.link(static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgSpvRules)) || !program.mapIO())
-  //   {
-  //     std::cout << "failed to link program" << std::endl;
-  //     std::cout << program.getInfoLog() << std::endl;
-  //   }
+    if (!program.link(static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgSpvRules)) || !program.mapIO())
+    {
+      std::cout << "Failed to link program" << std::endl;
+      std::cout << program.getInfoLog() << std::endl;
+    }
 
-  //   program.buildReflection();
+    program.buildReflection();
 
-  //   glslang::GlslangToSpv(*program.getIntermediate(EShLangVertex), data, &logger, &options);
-  //   std::cout << logger.getAllMessages() << std::endl;
-  //   glslang::FinalizeProcess();
+    glslang::GlslangToSpv(*program.getIntermediate(language), data, &logger, &options);
+    desc.SPIRVMap[stage] = std::move(data);
 
-  //   // Then decompile
-  //   spirv_cross::CompilerGLSL comp(data);
-  //   spirv_cross::CompilerGLSL::Options opt;
-  //   opt.version = 410;
-  //   opt.es = false;
-  //   opt.enable_420pack_extension = false;
-  //   opt.emit_push_constant_as_uniform_buffer = true;
-  //   comp.set_common_options(opt);
-  //   std::string output = comp.compile();
+    glslang::FinalizeProcess();
+  }
 
-  //   std::cout << output << std::endl;
-  // }
+  // set the new source mode to SPIRV map
+  desc.Source = ShaderSource::SPIRV;
 }
 
 }

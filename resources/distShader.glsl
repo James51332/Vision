@@ -25,7 +25,7 @@ out vec2 UV[];
 
 uniform sampler2D heightMap;
 
-layout (std140) uniform pushConstants
+layout (push_constant) uniform pushConstants
 {
   mat4 u_View;
   mat4 u_Projection;

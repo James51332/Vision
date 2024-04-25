@@ -1,6 +1,7 @@
 #include "GLDevice.h"
 
 #include <iostream>
+#include <spirv_glsl.hpp>
 
 #include "GLTypes.h"
 
@@ -27,7 +28,39 @@ ID GLDevice::CreatePipeline(const PipelineDesc &desc)
 ID GLDevice::CreateShader(const ShaderDesc& desc)
 {
   ID id = currentID++;
-  GLProgram* shader = new GLProgram(desc.StageMap);
+  GLProgram* shader;
+
+  if (desc.Source == ShaderSource::StageMap)
+  {
+    shader = new GLProgram(desc.StageMap);
+  } 
+  else if (desc.Source == ShaderSource::SPIRV)
+  {
+    // first we need to decompile
+    std::unordered_map<ShaderStage, std::string> stages;
+    for (auto pair : desc.SPIRVMap)
+    {
+      auto stage = pair.first;
+      auto& data = pair.second;
+      spirv_cross::CompilerGLSL decompiler(data);
+
+      // TODO: We'll consider options which are more suited for modern OpenGL
+      // once metal is implemented, and we want computer shaders on other platforms.
+      spirv_cross::CompilerGLSL::Options options;
+      options.emit_push_constant_as_uniform_buffer = true;
+      options.enable_420pack_extension = false;
+      options.version = 410;
+      decompiler.set_common_options(options);
+
+      std::string glsl = decompiler.compile();
+      stages[stage] = glsl;
+    }
+
+    // then we need to build
+    shader = new GLProgram(stages);
+  }
+
+
   shaders.Add(id, shader);
   return id;
 }

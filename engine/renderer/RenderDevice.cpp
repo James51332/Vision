@@ -43,6 +43,7 @@ ID RenderDevice::CreateShader(const ShaderDesc& desc)
 
   ShaderCompiler compiler;
   compiler.GenerateStageMap(tmp);
+  compiler.GenerateSPIRVMap(tmp);
 
   return device->CreateShader(tmp);
 }

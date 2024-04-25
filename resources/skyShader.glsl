@@ -3,7 +3,7 @@
 
 layout (location = 0) in vec3 a_Pos;
 
-layout (std140) uniform pushConstants
+layout (push_constant) uniform pushConstants
 {
   mat4 u_View;
   mat4 u_Projection;

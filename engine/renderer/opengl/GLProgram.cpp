@@ -20,6 +20,11 @@ GLProgram::GLProgram(const std::unordered_map<ShaderStage, std::string>& shaders
     std::string text = pair.second;
     const char *c_str = text.c_str();
 
+    if (pair.first == ShaderStage::Vertex)
+    {
+      std::cout << text << std::endl;
+    }
+
     // give the source code to gl compiler
     GLuint id = glCreateShader(type);
     glShaderSource(id, 1, &c_str, nullptr);
