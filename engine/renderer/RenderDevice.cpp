@@ -118,6 +118,41 @@ void RenderDevice::DestroyCubemap(ID id)
   device->DestroyCubemap(id);
 }
 
+ID RenderDevice::CreateFramebuffer(const FramebufferDesc &desc)
+{
+  return device->CreateFramebuffer(desc);
+}
+
+void RenderDevice::ResizeFramebuffer(ID id, float width, float height)
+{
+  device->ResizeFramebuffer(id, width, height);
+}
+
+void RenderDevice::DestroyFramebuffer(ID id)
+{
+  device->DestroyFramebuffer(id);
+}
+
+ID RenderDevice::CreateRenderPass(const RenderPassDesc &desc)
+{
+  return device->CreateRenderPass(desc);
+}
+
+void RenderDevice::BeginRenderPass(ID pass)
+{
+  device->BeginRenderPass(pass);
+}
+
+void RenderDevice::EndRenderPass()
+{
+  device->EndRenderPass();
+}
+
+void RenderDevice::DestroyRenderPass(ID pass)
+{
+  device->DestroyRenderPass(pass);
+}
+
 void RenderDevice::Submit(const DrawCommand& command)
 {
   device->Submit(command);

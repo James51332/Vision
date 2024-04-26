@@ -34,6 +34,8 @@ namespace Lumina
       tesselationPS = Vision::RenderDevice::CreatePipeline(p1);
 
       // We're cooked until we figure out how to do this without breaking everything.
+      // I think the move is to use shader reflection to automatically set it for
+      // old GLSL compilers, so there really isn't an API for this.
       // tesselationShader->Use();
       // tesselationShader->UploadUniformInt(0, "heightMap");
 
@@ -58,13 +60,15 @@ namespace Lumina
       Vision::ShaderDesc sd;
       sd.FilePath = "resources/skyShader.glsl";
       skyboxShader = Vision::RenderDevice::CreateShader(sd);
-      // skyboxShader->Use();
-      // skyboxShader->UploadUniformInt(0, "skybox");
 
       Vision::PipelineDesc p2;
       p2.Layouts = p1.Layouts;
       p2.Shader = skyboxShader;
       skyboxPS = Vision::RenderDevice::CreatePipeline(p2);
+
+      Vision::RenderPassDesc rpDesc;
+      rpDesc.Framebuffer = 0;
+      renderPass = Vision::RenderDevice::CreateRenderPass(rpDesc);
     }
 
     ~Lumina()
@@ -76,6 +80,8 @@ namespace Lumina
       Vision::RenderDevice::DestroyCubemap(skyboxTexture);
       delete skyboxMesh;
       Vision::RenderDevice::DestroyShader(skyboxShader);
+
+      Vision::RenderDevice::DestroyRenderPass(renderPass);
     }
 
     void OnUpdate(float timestep)
@@ -93,6 +99,7 @@ namespace Lumina
       else
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+      Vision::RenderDevice::BeginRenderPass(renderPass);
       renderer->Begin(&perspectiveCamera);
 
       Vision::RenderDevice::BindTexture2D(heightMap);
@@ -104,6 +111,7 @@ namespace Lumina
       renderer->DrawMesh(skyboxMesh, skyboxPS);
 
       renderer->End();
+      Vision::RenderDevice::EndRenderPass();
     }
 
     void OnResize(float width, float height)
@@ -123,6 +131,8 @@ namespace Lumina
     Vision::Mesh* skyboxMesh;
     Vision::ID skyboxPS;
     Vision::ID skyboxShader;
+
+    Vision::ID renderPass;
 };
 
 }

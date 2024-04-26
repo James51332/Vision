@@ -52,6 +52,15 @@ public:
   static void BindCubemap(ID id, std::size_t binding = 0);
   static void DestroyCubemap(ID id);
 
+  static ID CreateFramebuffer(const FramebufferDesc &desc);
+  static void ResizeFramebuffer(ID id, float width, float height);
+  static void DestroyFramebuffer(ID id);
+
+  static ID CreateRenderPass(const RenderPassDesc &desc);
+  static void BeginRenderPass(ID pass);
+  static void EndRenderPass();
+  static void DestroyRenderPass(ID pass);
+
   // TODO: This should probably exist in some command encoder, but for now it's here.
   static void Submit(const DrawCommand& command);
 

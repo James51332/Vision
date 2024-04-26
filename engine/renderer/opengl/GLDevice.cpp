@@ -98,8 +98,45 @@ ID GLDevice::CreateCubemap(const CubemapDesc &desc)
   return id;
 }
 
+ID GLDevice::CreateFramebuffer(const FramebufferDesc &desc)
+{
+  ID id = currentID++;
+  GLFramebuffer* fb = new GLFramebuffer(desc);
+  framebuffers.Add(id, fb);
+  return id;
+}
+
+ID GLDevice::CreateRenderPass(const RenderPassDesc &desc)
+{
+  ID id = currentID++;
+  RenderPassDesc* obj = new RenderPassDesc(desc);
+  renderpasses.Add(id, obj);
+  return id;
+}
+
+void GLDevice::BeginRenderPass(ID pass)
+{
+  SDL_assert(activePass == 0);
+
+  activePass = pass;
+  ID fbID = renderpasses.Get(activePass)->Framebuffer;
+
+  if (fbID != 0) // don't bind a the default framebuffer.
+    framebuffers.Get(fbID)->Unbind();
+}
+
+void GLDevice::EndRenderPass()
+{
+  ID fbID = renderpasses.Get(activePass)->Framebuffer;
+  if (fbID != 0)
+    framebuffers.Get(fbID)->Unbind();
+  activePass = 0;
+}
+
 void GLDevice::Submit(const DrawCommand& command)
 {
+  SDL_assert(activePass != 0);
+
   // bind the shader and upload uniforms
   GLPipeline* pipeline = pipelines.Get(command.Pipeline);
   GLProgram* shader = pipeline->Shader;

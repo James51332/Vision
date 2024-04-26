@@ -4,6 +4,7 @@
 #include "renderer/primitive/Buffer.h"
 #include "renderer/primitive/Texture.h"
 #include "renderer/primitive/Shader.h"
+#include "renderer/primitive/RenderPass.h"
 
 #include "renderer/RenderCommand.h"
 
@@ -39,6 +40,15 @@ public:
   virtual void BindCubemap(ID id, std::size_t binding = 0) = 0;
   virtual void DestroyCubemap(ID id) = 0;
 
+  virtual ID CreateFramebuffer(const FramebufferDesc& desc) = 0;
+  virtual void ResizeFramebuffer(ID id, float width, float height) = 0;
+  virtual void DestroyFramebuffer(ID id) = 0;
+  
+  virtual ID CreateRenderPass(const RenderPassDesc& desc) = 0;
+  virtual void BeginRenderPass(ID pass) = 0;
+  virtual void EndRenderPass() = 0;
+  virtual void DestroyRenderPass(ID pass) = 0; 
+ 
   virtual void Submit(const DrawCommand& command) = 0;
 };
 

@@ -8,6 +8,7 @@
 #include "GLVertexArray.h"
 #include "GLBuffer.h"
 #include "GLTexture.h"
+#include "GLFramebuffer.h"
 
 namespace Vision
 {
@@ -41,7 +42,18 @@ public:
   void BindCubemap(ID id, std::size_t binding = 0) { cubemaps.Get(id)->Bind(binding); }
   void DestroyCubemap(ID id) { cubemaps.Destroy(id); }
 
-  virtual void Submit(const DrawCommand &command);
+  ID CreateFramebuffer(const FramebufferDesc &desc);
+  void ResizeFramebuffer(ID id, float width, float height) { framebuffers.Get(id)->Resize(width, height); }
+  GLFramebuffer* GetFramebuffer(ID id) { return framebuffers.Get(id); }
+  void DestroyFramebuffer(ID id) { framebuffers.Destroy(id); }
+
+  ID CreateRenderPass(const RenderPassDesc &desc);
+  void BeginRenderPass(ID pass);
+  void EndRenderPass();
+  RenderPassDesc* GetRenderPass(ID id) { return renderpasses.Get(id); }
+  void DestroyRenderPass(ID id) { renderpasses.Destroy(id); }
+
+  void Submit(const DrawCommand &command);
 
 private:
   ObjectCache<GLPipeline> pipelines;
@@ -49,6 +61,11 @@ private:
   ObjectCache<GLBuffer> buffers;
   ObjectCache<GLTexture2D> textures;
   ObjectCache<GLCubemap> cubemaps;
+  ObjectCache<GLFramebuffer> framebuffers;
+
+  // renderpasses are just equivalent to their descriptors in OpenGL
+  ObjectCache<RenderPassDesc> renderpasses;
+  ID activePass = 0;
 
   GLVertexArrayCache vaoCache;
 

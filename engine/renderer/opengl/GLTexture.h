@@ -26,6 +26,7 @@ public:
   float GetWidth() const { return m_Width; }
   float GetHeight() const { return m_Height; }
   PixelType GetPixelType() const { return m_PixelType; }
+  GLuint GetGLID() const { return m_TextureID; } 
 
   void Bind(uint32_t index = 0);
   void Unbind();
