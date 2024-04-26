@@ -125,8 +125,9 @@ void ShaderCompiler::GenerateSPIRVMap(ShaderDesc& desc)
 
     if (!shader.parse(GetDefaultResources(), 100, false, static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgSpvRules)))
     {
-      std::cout << "Failed to compile shader" << std::endl;
+      std::cout << "Failed to compile shader:" << std::endl;
       std::cout << shader.getInfoLog() << std::endl;
+      return; // attempting to convert to spirv will crash
     }
 
     std::vector<uint32_t> data;
@@ -144,11 +145,9 @@ void ShaderCompiler::GenerateSPIRVMap(ShaderDesc& desc)
 
     if (!program.link(static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgSpvRules)) || !program.mapIO())
     {
-      std::cout << "Failed to link program" << std::endl;
+      std::cout << "Failed to link program:" << std::endl;
       std::cout << program.getInfoLog() << std::endl;
     }
-
-    program.buildReflection();
 
     glslang::GlslangToSpv(*program.getIntermediate(language), data, &logger, &options);
     desc.SPIRVMap[stage] = std::move(data);

@@ -1,5 +1,5 @@
 #type vertex
-#version 410 core
+#version 450 core
 
 layout (location = 0) in vec3 a_Position;
 layout (location = 1) in vec3 a_Normal;
@@ -15,7 +15,7 @@ void main()
 }
 
 #type hull
-#version 410 core
+#version 450 core
 
 in vec2 v_UV[];
 
@@ -23,7 +23,7 @@ layout(vertices = 4) out;
 
 out vec2 UV[];
 
-uniform sampler2D heightMap;
+layout (binding = 0) uniform sampler2D heightMap;
 
 layout (push_constant) uniform pushConstants
 {
@@ -78,7 +78,7 @@ void main()
   UV[gl_InvocationID] = v_UV[gl_InvocationID];
 
   // only run the tesselation computation for one vertex in the patch
-  //if (gl_InvocationID == 0)
+  if (gl_InvocationID == 0)
   {
     gl_TessLevelOuter[1] = distanceTess(gl_in[0].gl_Position, gl_in[1].gl_Position, v_UV[0], v_UV[1]);
     gl_TessLevelOuter[2] = distanceTess(gl_in[1].gl_Position, gl_in[2].gl_Position, v_UV[1], v_UV[2]);
@@ -92,13 +92,13 @@ void main()
 }
 
 #type domain
-#version 410 core
+#version 450 core
 
 layout(quads, fractional_odd_spacing, ccw) in;
 
 in vec2 UV[];
 
-layout (std140) uniform pushConstants
+layout (push_constant) uniform pushConstants
 {
   mat4 u_View;
   mat4 u_Projection;
@@ -107,7 +107,7 @@ layout (std140) uniform pushConstants
   float u_Time;
 };
 
-uniform sampler2D heightMap;
+layout (binding = 0) uniform sampler2D heightMap;
 
 out float height;
 
@@ -150,7 +150,7 @@ void main()
 }
 
 #type fragment
-#version 410 core
+#version 450 core
 
 in float height;
 

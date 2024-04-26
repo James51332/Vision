@@ -29,6 +29,10 @@ ID GLDevice::CreateShader(const ShaderDesc& desc)
 {
   ID id = currentID++;
   GLProgram* shader;
+  
+  // our naive approach to shader reflection.
+  std::unordered_map<GLuint, std::string> samplerBindings; 
+  std::unordered_map<GLuint, std::string> uniformBindings;
 
   if (desc.Source == ShaderSource::StageMap)
   {
@@ -45,7 +49,7 @@ ID GLDevice::CreateShader(const ShaderDesc& desc)
       spirv_cross::CompilerGLSL decompiler(data);
 
       // TODO: We'll consider options which are more suited for modern OpenGL
-      // once metal is implemented, and we want computer shaders on other platforms.
+      // once metal is implemented, and we want compute shaders on other platforms.
       spirv_cross::CompilerGLSL::Options options;
       options.emit_push_constant_as_uniform_buffer = true;
       options.enable_420pack_extension = false;
@@ -54,10 +58,37 @@ ID GLDevice::CreateShader(const ShaderDesc& desc)
 
       std::string glsl = decompiler.compile();
       stages[stage] = glsl;
+
+      // we're also going to handle automatically binding shader resources for now.
+      // in the future, we may want a more robust system, but this should get us going.
+      spirv_cross::ShaderResources res = decompiler.get_shader_resources();
+      
+      for (auto sampler : res.separate_samplers)
+      {
+        auto binding = decompiler.get_decoration(sampler.id, spv::DecorationBinding);
+        std::string name = sampler.name;
+        samplerBindings.emplace(binding, name);
+      }
+
+      for (auto uniform : res.uniform_buffers)
+      {
+        auto block = decompiler.get_decoration(uniform.id, spv::DecorationBinding);
+      }
     }
 
     // then we need to build
     shader = new GLProgram(stages);
+
+    // finally we can do the reflection stuff
+    for (auto pair : samplerBindings)
+    {
+      shader->UploadUniformInt(pair.first, pair.second.c_str());
+    }
+
+    for (auto pair : uniformBindings)
+    {
+      shader->SetUniformBlock(pair.second.c_str(), pair.first);
+    }
   }
 
 

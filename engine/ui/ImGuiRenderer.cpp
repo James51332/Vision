@@ -183,7 +183,7 @@ void ImGuiRenderer::GenerateArrays()
   m_VertexArray->AttachBuffer(m_VBO, layout);
 }
 
-static const char* vertexShader = R"(
+static const char *vertexShader = R"(
 #version 410 core
 
 layout (location = 0) in vec2 a_Position;
@@ -219,10 +219,10 @@ void main()
 
 void ImGuiRenderer::GenerateShaders()
 {
-  std::unordered_map<ShaderStage, std::string> stages;
-  stages.emplace(ShaderStage::Vertex, vertexShader);
-  stages.emplace(ShaderStage::Pixel, fragmentShader);
-  m_Shader = new GLProgram(stages);
+  ShaderDesc desc;
+  desc.StageMap[ShaderStage::Vertex] = vertexShader;
+  desc.StageMap[ShaderStage::Pixel] = fragmentShader;
+  m_Shader = new GLProgram(desc.StageMap);
 }
 
 void ImGuiRenderer::GenerateTextures()

@@ -1,5 +1,5 @@
 #type vertex
-#version 410 core
+#version 450 core
 
 layout (location = 0) in vec3 a_Pos;
 
@@ -23,13 +23,13 @@ void main()
 }
 
 #type fragment
-#version 410 core
+#version 450 core
 
 in vec3 texCoord;
 
 out vec4 FragColor;
 
-uniform samplerCube skybox;
+layout (binding = 0) uniform samplerCube skybox;
 
 void main()
 {
