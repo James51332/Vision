@@ -26,9 +26,10 @@ just want to learn.
 
 ### What's Broken?
 
-This is my development branch, where I'm working on rewriting the renderer. There are a few things broken, and the API is undergoing changes right now. Here are the things that are broken:
+This is my development branch, where I'm working on rewriting the renderer. There are a few things broken, and the API is undergoing changes right now. Here are the things that are broken in this branch, but are working in [master](https://github.com/james51332/vision):
 
 * Renderer2D
+* ImGuiRenderer
 
 # Screenshots
 

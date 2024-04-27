@@ -19,6 +19,14 @@ ID GLDevice::CreatePipeline(const PipelineDesc &desc)
   GLPipeline* pipeline = new GLPipeline();
   pipeline->Layouts = desc.Layouts;
   pipeline->Shader = shaders.Get(desc.Shader);
+
+  pipeline->DepthTest = desc.DepthTest;
+  pipeline->DepthWrite = desc.DepthWrite;
+  pipeline->DepthFunc = DepthFuncToGLenum(desc.DepthFunc);
+
+  pipeline->EnableBlend = desc.Blending;
+  pipeline->BlendSource = GL_SRC_ALPHA;
+  pipeline->BlendDst = GL_ONE_MINUS_SRC_ALPHA;
   
   ID id = currentID++;
   pipelines.Add(id, pipeline);
@@ -150,10 +158,19 @@ void GLDevice::BeginRenderPass(ID pass)
   SDL_assert(activePass == 0);
 
   activePass = pass;
-  ID fbID = renderpasses.Get(activePass)->Framebuffer;
+  RenderPassDesc* rp = renderpasses.Get(activePass);
+  ID fbID = rp->Framebuffer;
 
   if (fbID != 0) // don't bind a the default framebuffer.
-    framebuffers.Get(fbID)->Unbind();
+    framebuffers.Get(fbID)->Bind();
+
+  if (rp->LoadOp == LoadOp::DontCare) return;
+  if (rp->LoadOp == LoadOp::Clear)
+  {
+    glm::vec4& col = rp->ClearColor;
+    glClearColor(col.r, col.g, col.b, col.a);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // TODO: These may want to be controlled separately
+  }
 }
 
 void GLDevice::EndRenderPass()
@@ -162,6 +179,20 @@ void GLDevice::EndRenderPass()
   if (fbID != 0)
     framebuffers.Get(fbID)->Unbind();
   activePass = 0;
+
+  // render pass StoreOps are pointless in GL.
+}
+
+void GLDevice::SetScissorRect(float x, float y, float width, float height)
+{
+  if (width <= 0 || height <= 0)
+  {
+    glDisable(GL_SCISSOR_TEST);
+    return;
+  }
+
+  glEnable(GL_SCISSOR_TEST);
+  glScissor(x, y, width, height);
 }
 
 void GLDevice::Submit(const DrawCommand& command)
@@ -176,6 +207,20 @@ void GLDevice::Submit(const DrawCommand& command)
 
   // HACK: we shouldn't do this forever, just getting it working
   shader->SetUniformBlock("pushConstants", 0);
+
+  // setup our GL state
+  glDepthMask(pipeline->DepthWrite ? GL_TRUE : GL_FALSE);
+  glDepthFunc(pipeline->DepthFunc);
+  if (pipeline->DepthTest)
+    glEnable(GL_DEPTH_TEST);
+  else
+    glDisable(GL_DEPTH_TEST);
+  
+  if (pipeline->EnableBlend)
+    glEnable(GL_BLEND);
+  else
+    glDisable(GL_BLEND);
+  glBlendFunc(pipeline->BlendSource, pipeline->BlendDst);
 
   // bind the textures
   int index = 0;

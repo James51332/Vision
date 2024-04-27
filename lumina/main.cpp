@@ -33,12 +33,6 @@ namespace Lumina
       p1.Shader = tesselationShader;
       tesselationPS = Vision::RenderDevice::CreatePipeline(p1);
 
-      // We're cooked until we figure out how to do this without breaking everything.
-      // I think the move is to use shader reflection to automatically set it for
-      // old GLSL compilers, so there really isn't an API for this.
-      // tesselationShader->Use();
-      // tesselationShader->UploadUniformInt(0, "heightMap");
-
       Vision::Texture2DDesc td;
       td.LoadFromFile = true;
       td.FilePath = "resources/iceland_heightmap.png";
@@ -64,10 +58,13 @@ namespace Lumina
       Vision::PipelineDesc p2;
       p2.Layouts = p1.Layouts;
       p2.Shader = skyboxShader;
+      p2.DepthFunc = Vision::DepthFunc::LessEqual;
       skyboxPS = Vision::RenderDevice::CreatePipeline(p2);
 
       Vision::RenderPassDesc rpDesc;
       rpDesc.Framebuffer = 0;
+      rpDesc.ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
+      rpDesc.LoadOp = Vision::LoadOp::Clear;
       renderPass = Vision::RenderDevice::CreateRenderPass(rpDesc);
     }
 
@@ -90,23 +87,11 @@ namespace Lumina
       perspectiveCamera.Update(timestep);
 
       // Render
-      glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-      // for debugging
-      if (Vision::Input::KeyDown(SDL_SCANCODE_TAB))
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      else
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
       Vision::RenderDevice::BeginRenderPass(renderPass);
       renderer->Begin(&perspectiveCamera);
 
       Vision::RenderDevice::BindTexture2D(heightMap);
       renderer->DrawMesh(planeMesh, tesselationPS);
-
-      // Skybox
-      glDepthFunc(GL_LEQUAL);
       Vision::RenderDevice::BindCubemap(skyboxTexture);
       renderer->DrawMesh(skyboxMesh, skyboxPS);
 

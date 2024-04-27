@@ -62,6 +62,8 @@ public:
   static void DestroyRenderPass(ID pass);
 
   // TODO: This should probably exist in some command encoder, but for now it's here.
+  static void SetViewport(float x, float y, float width, float height);
+  static void SetScissorRect(float x, float y, float width, float height);
   static void Submit(const DrawCommand& command);
 
 private:

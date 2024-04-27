@@ -20,8 +20,8 @@ struct PushConstant
 Renderer::Renderer(float width, float height, float displayScale)
   : m_Width(width), m_Height(height), m_PixelDensity(displayScale)
 {
-  // Resize the viewport (no need to use Resize() because we've already done everything else it does)
-  glViewport(0, 0, static_cast<GLsizei>(width * displayScale), static_cast<GLsizei>(height * displayScale));
+  // Resize the viewport
+  Resize(width, height);
 
   // TODO: Push constants will probably be parts of pipeline states.
   {
@@ -45,7 +45,7 @@ void Renderer::Resize(float width, float height)
   m_Width = width;
   m_Height = height;
 
-  glViewport(0, 0, static_cast<GLsizei>(width * m_PixelDensity), static_cast<GLsizei>(height * m_PixelDensity));
+  RenderDevice::SetViewport(0, 0, width * m_PixelDensity, height * m_PixelDensity);
 }
 
 void Renderer::Begin(Camera* camera)
@@ -54,11 +54,6 @@ void Renderer::Begin(Camera* camera)
 
   m_InFrame = true;
   m_Camera = camera;
-
-  // Enable Blending and Depth Testing
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glEnable(GL_DEPTH_TEST);
 }
 
 void Renderer::End()

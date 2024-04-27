@@ -127,4 +127,16 @@ static GLenum PixelTypeTOGLFormat(PixelType type)
   return 0;
 }
 
+static GLenum DepthFuncToGLenum(DepthFunc func)
+{
+  switch (func)
+  {
+    case DepthFunc::Less: return GL_LESS;
+    case DepthFunc::LessEqual: return GL_LEQUAL;
+    case DepthFunc::Greater: return GL_GREATER;
+    case DepthFunc::GreaterEqual: return GL_GEQUAL;
+    case DepthFunc::Equal: return GL_EQUAL;
+  }
+}
+
 }

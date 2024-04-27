@@ -53,6 +53,8 @@ public:
   RenderPassDesc* GetRenderPass(ID id) { return renderpasses.Get(id); }
   void DestroyRenderPass(ID id) { renderpasses.Destroy(id); }
 
+  virtual void SetViewport(float x, float y, float width, float height) { glViewport(x, y, width, height); }
+  virtual void SetScissorRect(float x, float y, float width, float height);
   void Submit(const DrawCommand &command);
 
 private:

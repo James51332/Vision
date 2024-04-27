@@ -153,6 +153,16 @@ void RenderDevice::DestroyRenderPass(ID pass)
   device->DestroyRenderPass(pass);
 }
 
+void RenderDevice::SetViewport(float x, float y, float width, float height) 
+{
+  device->SetViewport(x, y, width, height);
+}
+
+void RenderDevice::SetScissorRect(float x, float y, float width, float height) 
+{
+  device->SetScissorRect(x, y, width, height);
+}
+
 void RenderDevice::Submit(const DrawCommand& command)
 {
   device->Submit(command);

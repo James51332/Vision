@@ -49,6 +49,8 @@ public:
   virtual void EndRenderPass() = 0;
   virtual void DestroyRenderPass(ID pass) = 0; 
  
+  virtual void SetViewport(float x, float y, float width, float height) = 0;
+  virtual void SetScissorRect(float x, float y, float width, float height) = 0;
   virtual void Submit(const DrawCommand& command) = 0;
 };
 
