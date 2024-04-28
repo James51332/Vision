@@ -6,6 +6,7 @@
 #include "renderer/primitive/Shader.h"
 #include "renderer/primitive/RenderPass.h"
 
+#include "renderer/RenderAPI.h"
 #include "renderer/RenderCommand.h"
 
 namespace Vision
@@ -16,6 +17,7 @@ using ID = std::size_t;
 class RenderDevice
 {
 public:
+  static RenderDevice* Create(RenderAPI API);
   virtual ~RenderDevice() {}
 
   virtual ID CreatePipeline(const PipelineDesc& desc) = 0;

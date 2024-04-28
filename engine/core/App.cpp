@@ -74,7 +74,7 @@ void App::Init()
   Input::Init();
 
   // Initialize
-  renderDevice = new GLDevice();
+  renderDevice = RenderDevice::Create(RenderAPI::OpenGL);
   renderer = new Renderer(displayWidth, displayHeight, m_DisplayScale);
   //renderer2D = new Renderer2D(displayWidth, displayHeight, m_DisplayScale);
   uiRenderer = new ImGuiRenderer(displayWidth, displayHeight, m_DisplayScale);
