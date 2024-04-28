@@ -53,6 +53,7 @@ void App::Init()
 {
   WindowDesc desc;
   desc.Title = title;
+  desc.API = RenderAPI::Metal;
   window = new Window(desc);
   renderContext = window->GetRenderContext();
 
@@ -62,15 +63,15 @@ void App::Init()
   // Initialize
   renderDevice = renderContext->GetRenderDevice();
   renderer = new Renderer(displayWidth, displayHeight, displayScale);
-  //renderer2D = new Renderer2D(displayWidth, displayHeight, m_DisplayScale);
-  uiRenderer = new ImGuiRenderer(displayWidth, displayHeight, displayScale);
+  // renderer2D = new Renderer2D(displayWidth, displayHeight, m_DisplayScale);
+  // uiRenderer = new ImGuiRenderer(displayWidth, displayHeight, displayScale);
 }
 
 void App::Shutdown()
 {
+  // delete renderer2D;
+  // delete uiRenderer;
   delete renderer;
- // delete renderer2D;
-  delete uiRenderer;
   delete window;
 }
 
@@ -91,7 +92,7 @@ void App::ProcessEvents()
 
         renderer->Resize(displayWidth, displayHeight);
         //renderer2D->Resize(displayWidth, displayHeight);
-        uiRenderer->Resize(displayWidth, displayHeight);
+        //uiRenderer->Resize(displayWidth, displayHeight);
 
         OnResize(displayWidth, displayHeight);
         break;

@@ -21,10 +21,6 @@ add_subdirectory(vendor/glslang)
 # Source Files
 file(GLOB_RECURSE SRC_FILES CMAKE_CONFIGURE_DEPENDS "engine/*.cpp" "engine/*.h")
 
-if (APPLE)
-  file(GLOB_RECURSE APPLE_FILES CMAKE_CONFIGURE_DEPENDS "engine/*.mm")
-endif()
-
 # Define the executable for the program
 add_library(Vision ${SRC_FILES} ${APPLE_FILES})
 
