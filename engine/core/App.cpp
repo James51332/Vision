@@ -7,8 +7,8 @@ namespace Vision
 
 App* App::appInstance = nullptr;
 
-App::App(const std::string& title)
-  : m_Title(title)
+App::App(const std::string& name)
+  : title(name)
 {
   SDL_assert(!appInstance);
   appInstance = this;
@@ -23,12 +23,11 @@ App::~App()
 
 void App::Run()
 {
-  // Show Window
-  SDL_ShowWindow(m_Window);
+  window->Show();
 
   float lastTime = 0;
-  m_Running = true;
-  while (m_Running)
+  running = true;
+  while (running)
   {
     // Calculate Timestep
     float timestep;
@@ -52,18 +51,19 @@ void App::Run()
 
 void App::Init()
 {
-  m_Window = SDL_CreateWindow(m_Title.c_str(), displayWidth, displayHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN);
-  m_DisplayScale = SDL_GetWindowDisplayScale(m_Window);
-  renderContext = RenderContext::Create(RenderAPI::OpenGL, m_Window);
+  WindowDesc desc;
+  desc.Title = title;
+  window = new Window(desc);
+  renderContext = window->GetRenderContext();
 
   // Initialize Input System
   Input::Init();
 
   // Initialize
   renderDevice = renderContext->GetRenderDevice();
-  renderer = new Renderer(displayWidth, displayHeight, m_DisplayScale);
+  renderer = new Renderer(displayWidth, displayHeight, displayScale);
   //renderer2D = new Renderer2D(displayWidth, displayHeight, m_DisplayScale);
-  uiRenderer = new ImGuiRenderer(displayWidth, displayHeight, m_DisplayScale);
+  uiRenderer = new ImGuiRenderer(displayWidth, displayHeight, displayScale);
 }
 
 void App::Shutdown()
@@ -71,11 +71,7 @@ void App::Shutdown()
   delete renderer;
  // delete renderer2D;
   delete uiRenderer;
-  delete renderContext;
-
-  SDL_DestroyWindow(m_Window);
-
-  m_Window = nullptr;
+  delete window;
 }
 
 void App::ProcessEvents()

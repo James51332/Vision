@@ -2,6 +2,8 @@
 
 #include <SDL3/SDL.h>
 
+#include "core/Window.h"
+
 #include "ui/UIInput.h"
 #include "ui/ImGuiRenderer.h"
 
@@ -19,7 +21,7 @@ public:
   ~App();
 
   void Run();
-  void Stop() { m_Running = false; }
+  void Stop() { running = false; }
 
   static App* GetApp() { return appInstance; }
   static RenderDevice* GetDevice() { return appInstance->renderDevice; }
@@ -38,12 +40,12 @@ private:
   static App* appInstance;
 
   // Run Loop
-  bool m_Running = false;
+  bool running = false;
 
   // Platform Data
-  SDL_Window* m_Window;
-  float m_DisplayScale = 1.0f; // Used for retina rendering
-  std::string m_Title;
+  Window* window;
+  float displayScale; // Used for retina rendering
+  std::string title;
   RenderContext* renderContext;
 
 protected:
