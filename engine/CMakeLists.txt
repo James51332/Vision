@@ -21,11 +21,22 @@ add_subdirectory(vendor/glslang)
 # Source Files
 file(GLOB_RECURSE SRC_FILES CMAKE_CONFIGURE_DEPENDS "engine/*.cpp" "engine/*.h")
 
+if (APPLE)
+  file(GLOB_RECURSE APPLE_FILES CMAKE_CONFIGURE_DEPENDS "engine/*.mm")
+endif()
+
 # Define the executable for the program
-add_library(Vision ${SRC_FILES})
+add_library(Vision ${SRC_FILES} ${APPLE_FILES})
 
 # Define the include directory for the program
 target_include_directories(Vision PUBLIC "engine")
+
+if (APPLE)
+  target_link_libraries(Vision PUBLIC
+                          "-framework Foundation"
+                          "-framework QuartzCore"
+                          "-framework Metal")
+endif()
 
 # Link to the SDL library
 target_link_libraries(Vision
