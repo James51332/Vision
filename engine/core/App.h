@@ -21,6 +21,9 @@ public:
   void Run();
   void Stop() { m_Running = false; }
 
+  static App* GetApp() { return appInstance; }
+  static RenderDevice* GetDevice() { return appInstance->renderDevice; }
+
 protected:
   virtual void OnUpdate(float timestep) = 0;
   virtual void OnResize(float width, float height) {} // Not mandatory to implement
@@ -31,6 +34,9 @@ private:
   void ProcessEvents();
 
 private:
+  // A vision app is a singleton. One per process.
+  static App* appInstance;
+
   // Run Loop
   bool m_Running = false;
 
@@ -45,6 +51,7 @@ private:
 protected:
   float displayWidth = 1280.0f, displayHeight = 720.0f;
 
+  RenderDevice* renderDevice;
   Renderer* renderer;
  // Renderer2D* renderer2D;
   ImGuiRenderer* uiRenderer;

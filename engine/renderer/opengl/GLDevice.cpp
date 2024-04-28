@@ -1,12 +1,20 @@
 #include "GLDevice.h"
 
 #include <iostream>
+#include <SDL.h>
 #include <spirv_glsl.hpp>
 
 #include "GLTypes.h"
 
+#include "renderer/ShaderCompiler.h"
+
 namespace Vision
 {
+
+GLDevice::GLDevice()
+{
+  gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
+}
 
 ID GLDevice::CreatePipeline(const PipelineDesc &desc)
 {
@@ -33,15 +41,27 @@ ID GLDevice::CreatePipeline(const PipelineDesc &desc)
   return id;
 }
 
-ID GLDevice::CreateShader(const ShaderDesc& desc)
+ID GLDevice::CreateShader(const ShaderDesc& tmp)
 {
   ID id = currentID++;
   GLProgram* shader;
+  
+  ShaderDesc desc = tmp; // we need to modify, but we'll just copy (don't mess w/ user stuff—offline anyways)
   
   // our naive approach to shader reflection.
   std::unordered_map<GLuint, std::string> samplerBindings; 
   std::unordered_map<GLuint, std::string> uniformBindings;
 
+  // compiler our shader
+  if (desc.Source == ShaderSource::File)
+  {
+    ShaderCompiler compiler;
+    compiler.GenerateStageMap(desc);
+    compiler.GenerateSPIRVMap(desc);
+    desc.Source = ShaderSource::SPIRV;
+  }
+
+  // if we manully give the shader code, we won't run the compiler (hack for renderers)
   if (desc.Source == ShaderSource::StageMap)
   {
     shader = new GLProgram(desc.StageMap);

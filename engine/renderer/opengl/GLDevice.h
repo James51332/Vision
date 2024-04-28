@@ -1,6 +1,6 @@
 #pragma once
 
-#include "renderer/primitive/APIDevice.h"
+#include "renderer/RenderDevice.h"
 #include "renderer/primitive/ObjectCache.h"
 
 #include "GLPipeline.h"
@@ -13,9 +13,11 @@
 namespace Vision
 {
 
-class GLDevice : public APIDevice
+class GLDevice : public RenderDevice
 {
 public:
+  GLDevice();
+
   ID CreatePipeline(const PipelineDesc& desc);
   GLPipeline* GetPipeline(ID pipeline) { return pipelines.Get(pipeline); }
   void DestroyPipeline(ID pipeline) { pipelines.Destroy(pipeline); }

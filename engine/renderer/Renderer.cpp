@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "core/App.h"
 #include "core/Input.h"
 
 namespace Vision
@@ -31,13 +32,13 @@ Renderer::Renderer(float width, float height, float displayScale)
     desc.Size = sizeof(PushConstant);
     desc.Data = nullptr;
 
-    pushConstants = RenderDevice::CreateBuffer(desc);
+    pushConstants = App::GetDevice()->CreateBuffer(desc);
   }
 }
 
 Renderer::~Renderer()
 {
-  RenderDevice::DestroyBuffer(pushConstants);
+  App::GetDevice()->DestroyBuffer(pushConstants);
 }
 
 void Renderer::Resize(float width, float height)
@@ -45,7 +46,7 @@ void Renderer::Resize(float width, float height)
   m_Width = width;
   m_Height = height;
 
-  RenderDevice::SetViewport(0, 0, width * m_PixelDensity, height * m_PixelDensity);
+  App::GetDevice()->SetViewport(0, 0, width * m_PixelDensity, height * m_PixelDensity);
 }
 
 void Renderer::Begin(Camera* camera)
@@ -100,11 +101,11 @@ void Renderer::Submit(const DrawCommand& command)
   data.viewProj = m_Camera->GetViewProjectionMatrix();
   data.viewSize = { m_Width, m_Height};
   data.time = time;
-  RenderDevice::SetBufferData(pushConstants, &data, sizeof(PushConstant));
-  RenderDevice::AttachUniformBuffer(pushConstants, 0);
+  App::GetDevice()->SetBufferData(pushConstants, &data, sizeof(PushConstant));
+  App::GetDevice()->AttachUniformBuffer(pushConstants, 0);
 
   // device submit
-  RenderDevice::Submit(command);
+  App::GetDevice()->Submit(command);
 }
 
 }

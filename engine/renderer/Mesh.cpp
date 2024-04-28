@@ -1,5 +1,7 @@
 #include "Mesh.h"
 
+#include "core/App.h"
+
 #include "RenderDevice.h"
 
 namespace Vision
@@ -16,7 +18,7 @@ Mesh::Mesh(const MeshDesc& desc)
     bufferDesc.Size = desc.NumVertices * sizeof(MeshVertex);
     bufferDesc.Usage = BufferUsage::Dynamic;
 
-    m_VertexBuffer = RenderDevice::CreateBuffer(bufferDesc);
+    m_VertexBuffer = App::GetDevice()->CreateBuffer(bufferDesc);
   }
 
   // Create index buffer
@@ -27,14 +29,14 @@ Mesh::Mesh(const MeshDesc& desc)
     bufferDesc.Size = desc.NumIndices * sizeof(MeshIndex);
     bufferDesc.Usage = BufferUsage::Dynamic;
 
-    m_IndexBuffer = RenderDevice::CreateBuffer(bufferDesc);
+    m_IndexBuffer = App::GetDevice()->CreateBuffer(bufferDesc);
   }
 }
 
 Mesh::~Mesh()
 {
-  RenderDevice::DestroyBuffer(m_VertexBuffer);
-  RenderDevice::DestroyBuffer(m_IndexBuffer);
+  App::GetDevice()->DestroyBuffer(m_VertexBuffer);
+  App::GetDevice()->DestroyBuffer(m_IndexBuffer);
 }
 
 }

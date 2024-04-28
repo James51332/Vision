@@ -2,12 +2,19 @@
 
 #include "Input.h"
 
+#include "renderer/opengl/GLDevice.h"
+
 namespace Vision
 {
+
+App* App::appInstance = nullptr;
 
 App::App(const std::string& title)
   : m_Title(title)
 {
+  SDL_assert(!appInstance);
+  appInstance = this;
+
   Init();
 }
 
@@ -50,7 +57,7 @@ void App::Init()
   m_Window = SDL_CreateWindow(m_Title.c_str(), displayWidth, displayHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN);
   m_DisplayScale = SDL_GetWindowDisplayScale(m_Window);
 
-  // Get our OpenGL surface to draw on
+  // Get our OpenGL surface to draw on (we're gonna move this a to context to remove tie to OpenGL)
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
@@ -66,11 +73,8 @@ void App::Init()
   // Initialize Input System
   Input::Init();
 
-  // Load OpenGL function pointers
-  gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
-
   // Initialize
-  RenderDevice::Init(RenderAPI::OpenGL);
+  renderDevice = new GLDevice();
   renderer = new Renderer(displayWidth, displayHeight, m_DisplayScale);
   //renderer2D = new Renderer2D(displayWidth, displayHeight, m_DisplayScale);
   uiRenderer = new ImGuiRenderer(displayWidth, displayHeight, m_DisplayScale);
@@ -81,7 +85,7 @@ void App::Shutdown()
   delete renderer;
  // delete renderer2D;
   delete uiRenderer;
-  RenderDevice::Shutdown();
+  delete renderDevice;
 
   SDL_DestroyWindow(m_Window);
 
