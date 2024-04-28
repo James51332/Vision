@@ -7,6 +7,7 @@ add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/stb EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/SPIRV-Cross EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/imgui EXCLUDE_FROM_ALL)
+add_subdirectory(vendor/metal-cpp EXCLUDE_FROM_ALL)
 
 # set the options we want for glslang
 foreach(_glslang_option "BUILD_TESTING" "ENABLE_GLSLANG_BINARIES" "ENABLE_SPVREMAPPER" "ENABLE_HLSL" "ENABLE_OPT")
@@ -37,4 +38,5 @@ target_link_libraries(Vision
                           spirv-cross-core
                           spirv-cross-glsl
                           SPIRV
-                          glslang-default-resource-limits)
+                          glslang-default-resource-limits
+                          metal-cpp)
