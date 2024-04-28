@@ -2,8 +2,6 @@
 
 #include "Input.h"
 
-#include "renderer/opengl/GLDevice.h"
-
 namespace Vision
 {
 
@@ -48,7 +46,7 @@ void App::Run()
     // Update App
     OnUpdate(timestep);
 
-    SDL_GL_SwapWindow(m_Window);
+    renderContext->Present();
   }
 }
 
@@ -56,25 +54,13 @@ void App::Init()
 {
   m_Window = SDL_CreateWindow(m_Title.c_str(), displayWidth, displayHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN);
   m_DisplayScale = SDL_GetWindowDisplayScale(m_Window);
-
-  // Get our OpenGL surface to draw on (we're gonna move this a to context to remove tie to OpenGL)
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-  SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
-  m_Context = SDL_GL_CreateContext(m_Window);
-  SDL_GL_MakeCurrent(m_Window, m_Context);
-
-  // VSync
-  SDL_GL_SetSwapInterval(1);
+  renderContext = RenderContext::Create(RenderAPI::OpenGL, m_Window);
 
   // Initialize Input System
   Input::Init();
 
   // Initialize
-  renderDevice = RenderDevice::Create(RenderAPI::OpenGL);
+  renderDevice = renderContext->GetRenderDevice();
   renderer = new Renderer(displayWidth, displayHeight, m_DisplayScale);
   //renderer2D = new Renderer2D(displayWidth, displayHeight, m_DisplayScale);
   uiRenderer = new ImGuiRenderer(displayWidth, displayHeight, m_DisplayScale);
@@ -85,7 +71,7 @@ void App::Shutdown()
   delete renderer;
  // delete renderer2D;
   delete uiRenderer;
-  delete renderDevice;
+  delete renderContext;
 
   SDL_DestroyWindow(m_Window);
 

@@ -5,7 +5,7 @@
 #include "ui/UIInput.h"
 #include "ui/ImGuiRenderer.h"
 
-#include "renderer/RenderDevice.h"
+#include "renderer/RenderContext.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
 
@@ -44,9 +44,7 @@ private:
   SDL_Window* m_Window;
   float m_DisplayScale = 1.0f; // Used for retina rendering
   std::string m_Title;
-  
-  // TODO: Other contexts.
-  SDL_GLContext m_Context;
+  RenderContext* renderContext;
 
 protected:
   float displayWidth = 1280.0f, displayHeight = 720.0f;
