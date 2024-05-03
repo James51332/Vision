@@ -35,17 +35,20 @@ void MetalDevice::DestroyShader(ID id)
 
 ID MetalDevice::CreateBuffer(const BufferDesc &desc)
 {
-  return 0;
+  ID id = currentID++;
+  MetalBuffer* buffer = new MetalBuffer(gpuDevice, desc);
+  buffers.Add(id, buffer);
+  return id;
 }
 
 void MetalDevice::SetBufferData(ID buffer, void *data, std::size_t size)
 {
-
+  buffers.Get(buffer)->SetData(size, data);
 }
 
 void MetalDevice::ResizeBuffer(ID buffer, std::size_t size)
 {
-
+  buffers.Get(buffer)->Reset(gpuDevice, size);
 }
 
 void MetalDevice::AttachUniformBuffer(ID buffer, std::size_t block) 
@@ -55,7 +58,7 @@ void MetalDevice::AttachUniformBuffer(ID buffer, std::size_t block)
 
 void MetalDevice::DestroyBuffer(ID id)
 {
-
+  buffers.Destroy(buffer);
 }
 
 ID MetalDevice::CreateTexture2D(const Texture2DDesc &desc)

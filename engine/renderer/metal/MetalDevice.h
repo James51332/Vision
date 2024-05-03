@@ -3,6 +3,9 @@
 #include <Metal/Metal.hpp>
 
 #include "renderer/RenderDevice.h"
+#include "renderer/primitive/ObjectCache.h"
+
+#include "MetalBuffer.h"
 
 namespace Vision
 {
@@ -47,6 +50,13 @@ public:
   void SetViewport(float x, float y, float width, float height);
   void SetScissorRect(float x, float y, float width, float height);
   void Submit(const DrawCommand& command);
+
+private:
+  MTL::Device* gpuDevice;
+
+  ObjectCache<MetalBuffer> buffers;
+
+  ID currentID = 1;
 };
 
 }
