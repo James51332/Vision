@@ -58,7 +58,7 @@ void MetalDevice::AttachUniformBuffer(ID buffer, std::size_t block)
 
 void MetalDevice::DestroyBuffer(ID id)
 {
-  buffers.Destroy(buffer);
+  buffers.Destroy(id);
 }
 
 ID MetalDevice::CreateTexture2D(const Texture2DDesc &desc)
