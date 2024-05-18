@@ -1,9 +1,15 @@
 #include "MetalDevice.h"
 
+#include <spirv_msl.hpp>
+#include <iostream>
+
+#include "renderer/ShaderCompiler.h"
+
 namespace Vision
 {
 
 MetalDevice::MetalDevice(MTL::Device *device)
+  : gpuDevice(device)
 {
 
 }
@@ -23,14 +29,66 @@ void MetalDevice::DestroyPipeline(ID id)
 
 }
 
-ID MetalDevice::CreateShader(const ShaderDesc &desc)
+ID MetalDevice::CreateShader(const ShaderDesc &tmp)
 {
-  return 0;
+  ID id = currentID++;
+  MetalShader* shader;
+
+  // we'll have all steps to build a shader in order and only enter the pipeline where
+  // the user sets. the first stage is just to load the text and parse is into each
+  // individual shader program.
+  ShaderDesc desc = tmp;
+  if (desc.Source == ShaderSource::File)
+  {
+    ShaderCompiler compiler;
+    compiler.GenerateStageMap(desc);
+    compiler.GenerateSPIRVMap(desc);
+    desc.Source = ShaderSource::SPIRV;
+  }
+
+  // the second stage is to convert the raw shader source code into spirv, so we can perform
+  // reflection and convert it to msl via spirv cross.
+  if (desc.Source == ShaderSource::SPIRV)
+  {
+    // clear the stage map as we build the sources.
+    desc.StageMap.clear();
+
+    // iterate over each stage.
+    for (auto pair : desc.SPIRVMap)
+    {
+      ShaderStage stage = pair.first;
+      std::vector<uint32_t>& spirv = pair.second;
+
+      // TODO: add options to this.
+      spirv_cross::CompilerMSL compiler(spirv);
+      std::string source = compiler.compile();
+      
+      desc.StageMap[stage] = source;
+
+      // std::cout << ShaderStageToString(stage) << std::endl;
+      // std::cout << source << std::endl << std::endl;
+    }
+
+    desc.Source = ShaderSource::StageMap;
+  }
+
+  // final stage is to to prepare the msl. note that this pipeline may potentially
+  // want to incorporate the metal intermediate format for faster shader loading.
+  // we could manufacture some sort of shader cache that is automatically built by
+  // the engine. we'll need to make change for the shader descriptor to include the
+  // stage map language since internal renderers provide shader source in GLSL.
+  if (desc.Source == ShaderSource::StageMap)
+  {
+    shader = new MetalShader(gpuDevice, desc.StageMap); 
+  }
+
+  shaders.Add(id, shader);
+  return id;
 }
 
 void MetalDevice::DestroyShader(ID id)
 {
-
+  shaders.Destroy(id);
 }
 
 ID MetalDevice::CreateBuffer(const BufferDesc &desc)
@@ -53,7 +111,9 @@ void MetalDevice::ResizeBuffer(ID buffer, std::size_t size)
 
 void MetalDevice::AttachUniformBuffer(ID buffer, std::size_t block) 
 {
-
+  // TODO: The way we should implement this depends on how we transpile our shader
+  // code. Thankfully, the user will never have to think about this, which is honestly
+  // dope.
 }
 
 void MetalDevice::DestroyBuffer(ID id)

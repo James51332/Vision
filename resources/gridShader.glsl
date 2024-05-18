@@ -6,10 +6,14 @@ layout (location = 1) in vec3 a_Normal;
 layout (location = 2) in vec4 a_Color;
 layout (location = 3) in vec2 a_UV;
 
-uniform mat4 u_ViewProjection;
-uniform mat4 u_Transform;
-uniform vec3 u_CameraPos;
-uniform float u_Time;
+layout (push_constant) uniform pushConstants
+{
+  mat4 u_View;
+  mat4 u_Projection;
+  mat4 u_ViewProjection;
+  vec2 u_ViewportSize;
+  float u_Time;
+};
 
 out vec3 v_NearPos;
 out vec3 v_FarPos;

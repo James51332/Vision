@@ -6,6 +6,7 @@
 #include "renderer/primitive/ObjectCache.h"
 
 #include "MetalBuffer.h"
+#include "MetalShader.h"
 
 namespace Vision
 {
@@ -55,6 +56,7 @@ private:
   MTL::Device* gpuDevice;
 
   ObjectCache<MetalBuffer> buffers;
+  ObjectCache<MetalShader> shaders;
 
   ID currentID = 1;
 };

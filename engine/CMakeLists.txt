@@ -43,6 +43,7 @@ target_link_libraries(Vision
                           glm::glm
                           ImGui
                           spirv-cross-core
+                          spirv-cross-msl
                           spirv-cross-glsl
                           SPIRV
                           glslang-default-resource-limits

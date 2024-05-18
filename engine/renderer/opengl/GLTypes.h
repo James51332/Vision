@@ -28,20 +28,6 @@ static GLenum PrimitiveTypeToGLenum(PrimitiveType type)
   }
 }
 
-static const char* ShaderStageToString(ShaderStage type)
-{
-  switch (type)
-  {
-    case ShaderStage::Vertex: return "vertex";
-    case ShaderStage::Pixel: return "pixel";
-    case ShaderStage::Domain: return "domain";
-    case ShaderStage::Hull: return "hull";
-    case ShaderStage::Geometry: return "geometry";
-    default:
-      return "unknown";
-  }
-}
-
 static GLenum ShaderStageToGLenum(ShaderStage stage)
 {
   switch (stage)

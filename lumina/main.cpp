@@ -20,24 +20,6 @@ namespace Lumina
       // Initialize the scene
       perspectiveCamera = Vision::PerspectiveCamera(displayWidth, displayHeight, 0.1f, 1000.0f);
 
-      planeMesh = Vision::MeshGenerator::CreatePlaneMesh(50.0f, 50.0f, 128, 128, true, false);
-      Vision::ShaderDesc sd1;
-      sd1.FilePath = "resources/distShader.glsl";
-      tesselationShader = renderDevice->CreateShader(sd1);
-
-      Vision::PipelineDesc p1;
-      p1.Layouts = { Vision::BufferLayout({{Vision::ShaderDataType::Float3, "Position"},
-                     {Vision::ShaderDataType::Float3, "Normal"},
-                     {Vision::ShaderDataType::Float4, "Color"},
-                     {Vision::ShaderDataType::Float2, "UV"}}) };
-      p1.Shader = tesselationShader;
-      tesselationPS = renderDevice->CreatePipeline(p1);
-
-      Vision::Texture2DDesc td;
-      td.LoadFromFile = true;
-      td.FilePath = "resources/iceland_heightmap.png";
-      heightMap = renderDevice->CreateTexture2D(td);
-
       Vision::CubemapDesc desc;
       desc.Textures = {
         "resources/skybox/right.jpg",
@@ -51,32 +33,34 @@ namespace Lumina
 
       skyboxMesh = Vision::MeshGenerator::CreateCubeMesh(1.0f);
 
-      Vision::ShaderDesc sd;
-      sd.FilePath = "resources/skyShader.glsl";
-      skyboxShader = renderDevice->CreateShader(sd);
+      Vision::ShaderDesc shaderDesc;
+      shaderDesc.FilePath = "resources/skyShader.glsl";
+      skyboxShader = renderDevice->CreateShader(shaderDesc);
 
-      Vision::PipelineDesc p2;
-      p2.Layouts = p1.Layouts;
-      p2.Shader = skyboxShader;
-      p2.DepthFunc = Vision::DepthFunc::LessEqual;
-      skyboxPS = renderDevice->CreatePipeline(p2);
+      Vision::PipelineDesc pipelineDesc;
+      pipelineDesc.Layouts = 
+      { Vision::BufferLayout({
+        { Vision::ShaderDataType::Float3, "Normal" },
+        { Vision::ShaderDataType::Float4, "Color" },
+        { Vision::ShaderDataType::Float2, "UV" }}) 
+      };
+      pipelineDesc.Shader = skyboxShader;
+      pipelineDesc.DepthFunc = Vision::DepthFunc::LessEqual;
+      skyboxPS = renderDevice->CreatePipeline(pipelineDesc);
 
       Vision::RenderPassDesc rpDesc;
       rpDesc.Framebuffer = 0;
-      rpDesc.ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
+      rpDesc.ClearColor = {0.1f, 0.1f, 0.1f, 1.0f};
       rpDesc.LoadOp = Vision::LoadOp::Clear;
       renderPass = renderDevice->CreateRenderPass(rpDesc);
     }
 
     ~Lumina()
     {
-      delete planeMesh;
-      renderDevice->DestroyShader(tesselationShader);
-      renderDevice->DestroyTexture2D(heightMap);
-
-      renderDevice->DestroyCubemap(skyboxTexture);
       delete skyboxMesh;
+      renderDevice->DestroyCubemap(skyboxTexture);
       renderDevice->DestroyShader(skyboxShader);
+      renderDevice->DestroyPipeline(skyboxPS);
 
       renderDevice->DestroyRenderPass(renderPass);
     }
@@ -87,11 +71,10 @@ namespace Lumina
       perspectiveCamera.Update(timestep);
 
       // Render
+      // TODO: The renderer probably should own the render pass obj.
       renderDevice->BeginRenderPass(renderPass);
       renderer->Begin(&perspectiveCamera);
 
-      renderDevice->BindTexture2D(heightMap);
-      renderer->DrawMesh(planeMesh, tesselationPS);
       renderDevice->BindCubemap(skyboxTexture);
       renderer->DrawMesh(skyboxMesh, skyboxPS);
 
@@ -107,19 +90,12 @@ namespace Lumina
   private:
     Vision::PerspectiveCamera perspectiveCamera;
 
-    Vision::Mesh* planeMesh;
-    Vision::ID tesselationShader;
-    Vision::ID tesselationPS;
-    Vision::ID heightMap;
-
-    Vision::ID skyboxTexture;
     Vision::Mesh* skyboxMesh;
+    Vision::ID skyboxTexture;
     Vision::ID skyboxPS;
     Vision::ID skyboxShader;
-
     Vision::ID renderPass;
 };
-
 }
 
 int main()

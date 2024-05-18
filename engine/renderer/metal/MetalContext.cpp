@@ -18,9 +18,10 @@ MetalContext::MetalContext(SDL_Window* wind)
 
 MetalContext::~MetalContext()
 {
-  SDL_Metal_DestroyView(view);
-
+  delete device;
   metalLayer->device()->release();
+
+  SDL_Metal_DestroyView(view);
 }
 
 RenderDevice* MetalContext::GetRenderDevice()

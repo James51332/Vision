@@ -15,10 +15,24 @@ enum class ShaderStage
   Pixel
 };
 
+static const char* ShaderStageToString(ShaderStage type)
+{
+  switch (type)
+  {
+    case ShaderStage::Vertex: return "vertex";
+    case ShaderStage::Pixel: return "pixel";
+    case ShaderStage::Domain: return "domain";
+    case ShaderStage::Hull: return "hull";
+    case ShaderStage::Geometry: return "geometry";
+    default:
+      return "unknown";
+  }
+}
+
 /*
 This is the shader compilation pipeline. 
 
-file -> stage map -> spirv -> (GLSL ->) compiler
+file -> stage map -> spirv -> (GLSL/MSL ->) compiler
 
 I'm debating whether or not to include glslang with the vision library.
 This really is a key distinction between rendering library and game engine.
