@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "renderer/primitive/BufferLayout.h"
+#include "renderer/primitive/Texture.h"
 
 namespace Vision
 {
@@ -36,6 +37,7 @@ struct PipelineDesc
   bool Blending = true;
   // TODO: Blend Modes
 
+  PixelType PixelFormat;
   // TODO: Other pipeline features, and dynamic states?
 };
 

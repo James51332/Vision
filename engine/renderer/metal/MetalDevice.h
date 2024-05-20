@@ -7,6 +7,7 @@
 
 #include "MetalBuffer.h"
 #include "MetalShader.h"
+#include "MetalPipeline.h"
 
 namespace Vision
 {
@@ -18,16 +19,16 @@ public:
   ~MetalDevice();
 
   ID CreatePipeline(const PipelineDesc& desc);
-  void DestroyPipeline(ID id);
+  void DestroyPipeline(ID id) { pipelines.Destroy(id); }
 
   ID CreateShader(const ShaderDesc& desc);
-  void DestroyShader(ID id);
+  void DestroyShader(ID id) { shaders.Destroy(id); }
 
   ID CreateBuffer(const BufferDesc &desc);
-  void SetBufferData(ID buffer, void *data, std::size_t size);
-  void ResizeBuffer(ID buffer, std::size_t size);
+  void SetBufferData(ID buffer, void *data, std::size_t size) { buffers.Get(buffer)->SetData(size, data); }
+  void ResizeBuffer(ID buffer, std::size_t size) { buffers.Get(buffer)->Reset(gpuDevice, size); }
   void AttachUniformBuffer(ID buffer, std::size_t block = 0);  
-  void DestroyBuffer(ID id);
+  void DestroyBuffer(ID id) { buffers.Destroy(id); }
 
   ID CreateTexture2D(const Texture2DDesc& desc);
   void ResizeTexture2D(ID id, float width, float height);
@@ -57,6 +58,7 @@ private:
 
   ObjectCache<MetalBuffer> buffers;
   ObjectCache<MetalShader> shaders;
+  ObjectCache<MetalPipeline> pipelines;
 
   ID currentID = 1;
 };

@@ -2,8 +2,11 @@
 
 #include <spirv_msl.hpp>
 #include <iostream>
+#include <SDL.h>
 
 #include "renderer/ShaderCompiler.h"
+
+#include "MetalType.h"
 
 namespace Vision
 {
@@ -21,12 +24,10 @@ MetalDevice::~MetalDevice()
 
 ID MetalDevice::CreatePipeline(const PipelineDesc &desc)
 {
-  return 0;
-}
-
-void MetalDevice::DestroyPipeline(ID id)
-{
-
+  ID id = currentID++;
+  MetalPipeline* ps = new MetalPipeline(gpuDevice, shaders, desc);
+  pipelines.Add(id, ps);
+  return id;
 }
 
 ID MetalDevice::CreateShader(const ShaderDesc &tmp)
@@ -86,11 +87,6 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
   return id;
 }
 
-void MetalDevice::DestroyShader(ID id)
-{
-  shaders.Destroy(id);
-}
-
 ID MetalDevice::CreateBuffer(const BufferDesc &desc)
 {
   ID id = currentID++;
@@ -99,26 +95,11 @@ ID MetalDevice::CreateBuffer(const BufferDesc &desc)
   return id;
 }
 
-void MetalDevice::SetBufferData(ID buffer, void *data, std::size_t size)
-{
-  buffers.Get(buffer)->SetData(size, data);
-}
-
-void MetalDevice::ResizeBuffer(ID buffer, std::size_t size)
-{
-  buffers.Get(buffer)->Reset(gpuDevice, size);
-}
-
 void MetalDevice::AttachUniformBuffer(ID buffer, std::size_t block) 
 {
   // TODO: The way we should implement this depends on how we transpile our shader
   // code. Thankfully, the user will never have to think about this, which is honestly
   // dope.
-}
-
-void MetalDevice::DestroyBuffer(ID id)
-{
-  buffers.Destroy(id);
 }
 
 ID MetalDevice::CreateTexture2D(const Texture2DDesc &desc)

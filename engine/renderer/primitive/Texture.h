@@ -12,8 +12,9 @@ enum class PixelType
   RG16,
   RGB24,
   RGBA32,
+  BGRA32,
   Depth32,
-  Depth24Stencil8,
+  Depth24Stencil8
 };
 
 struct Texture2DDesc

@@ -7,6 +7,8 @@
 #include "renderer/RenderContext.h"
 #include "renderer/metal/MetalDevice.h"
 
+#include "MetalType.h"
+
 namespace Vision
 {
 
@@ -17,6 +19,7 @@ public:
   ~MetalContext();
 
   RenderDevice* GetRenderDevice();
+  PixelType GetPixelType() const { return MTLPixelFormatToPixelType(metalLayer->pixelFormat()); }
   void Present();
 
 private:
