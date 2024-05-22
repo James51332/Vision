@@ -8,6 +8,7 @@
 #include "MetalBuffer.h"
 #include "MetalShader.h"
 #include "MetalPipeline.h"
+#include "MetalTexture.h"
 
 namespace Vision
 {
@@ -31,10 +32,10 @@ public:
   void DestroyBuffer(ID id) { buffers.Destroy(id); }
 
   ID CreateTexture2D(const Texture2DDesc& desc);
-  void ResizeTexture2D(ID id, float width, float height);
-  void SetTexture2DData(ID id, uint8_t* data);
+  void ResizeTexture2D(ID id, float width, float height) { textures.Get(id)->Resize(gpuDevice, width, height); }
+  void SetTexture2DData(ID id, uint8_t* data) { textures.Get(id)->SetData(data); }
   void BindTexture2D(ID id, std::size_t binding = 0);
-  void DestroyTexture2D(ID id);
+  void DestroyTexture2D(ID id) { textures.Destroy(id); }
 
   ID CreateCubemap(const CubemapDesc& desc);
   void BindCubemap(ID id, std::size_t binding = 0);
@@ -59,6 +60,7 @@ private:
   ObjectCache<MetalBuffer> buffers;
   ObjectCache<MetalShader> shaders;
   ObjectCache<MetalPipeline> pipelines;
+  ObjectCache<MetalTexture> textures;
 
   ID currentID = 1;
 };

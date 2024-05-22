@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "renderer/primitive/Texture.h"
+#include "renderer/primitive/Buffer.h"
 
 namespace Vision
 {
@@ -63,6 +64,19 @@ static MTL::VertexFormat ShaderDataTypeToMTLVertexFormat(ShaderDataType type)
 
   std::cout << "Unknown Shader Data Type!" << std::endl;
   return MTL::VertexFormatInvalid;
+}
+
+static PixelType ChannelsToPixelType(int channels)
+{
+  switch (channels)
+  {
+    case 1: return PixelType::R8;
+    case 2: return PixelType::RG16;
+    case 3: return PixelType::RGB24;
+    case 4:
+    default:
+      return PixelType::RGBA32;
+  }
 }
 
 }

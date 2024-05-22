@@ -104,25 +104,19 @@ void MetalDevice::AttachUniformBuffer(ID buffer, std::size_t block)
 
 ID MetalDevice::CreateTexture2D(const Texture2DDesc &desc)
 {
-  return 0;
-}
+  ID id = currentID++;
+  MetalTexture* texture;
 
-void MetalDevice::ResizeTexture2D(ID id, float width, float height)
-{
+  if (desc.LoadFromFile)
+    texture = new MetalTexture(gpuDevice, desc.FilePath.c_str());
+  else
+    texture = new MetalTexture(gpuDevice, desc.Width, desc.Height, desc.PixelType);
 
-}
-
-void MetalDevice::SetTexture2DData(ID id, uint8_t *data)
-{
-
+  textures.Add(id, texture);
+  return id;
 }
 
 void MetalDevice::BindTexture2D(ID id, std::size_t binding)
-{
-
-}
-
-void MetalDevice::DestroyTexture2D(ID id)
 {
 
 }
