@@ -13,7 +13,7 @@ MetalContext::MetalContext(SDL_Window* wind)
 
   MTL::Device* dev = MTL::CreateSystemDefaultDevice();
   metalLayer->setDevice(dev);
-  device = new MetalDevice(dev);
+  device = new MetalDevice(dev, metalLayer);
 }
 
 MetalContext::~MetalContext()

@@ -10,7 +10,6 @@ namespace Vision
 
 MetalPipeline::MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shaders, const PipelineDesc& desc)
 {
-
   MTL::RenderPipelineDescriptor *attribs = MTL::RenderPipelineDescriptor::alloc()->init();
 
   // set the pixel format
@@ -52,7 +51,7 @@ MetalPipeline::MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shad
 
   // build the pipeline
   NS::Error *error = nullptr;
-  MTL::RenderPipelineState *ps = device->newRenderPipelineState(attribs, &error);
+  pipeline = device->newRenderPipelineState(attribs, &error);
 
   if (error)
   {

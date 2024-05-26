@@ -11,15 +11,20 @@
 namespace Vision
 {
 
-MetalDevice::MetalDevice(MTL::Device *device)
-  : gpuDevice(device)
+MetalDevice::MetalDevice(MTL::Device *device, CA::MetalLayer* l)
+  : gpuDevice(device->retain()), layer(l->retain())
 {
-
+  queue = gpuDevice->newCommandQueue();
+  cmdBuffer = nullptr;
+  encoder = nullptr; 
 }
 
 MetalDevice::~MetalDevice()
 {
-
+  // These are all retain so they don't get delete before this class.
+  layer->release();
+  gpuDevice->release();
+  queue->release();
 }
 
 ID MetalDevice::CreatePipeline(const PipelineDesc &desc)
@@ -62,12 +67,15 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
 
       // TODO: add options to this.
       spirv_cross::CompilerMSL compiler(spirv);
+      auto opts = compiler.get_msl_options();
+      opts.enable_frag_depth_builtin = true;
+      compiler.set_msl_options(opts);
       std::string source = compiler.compile();
       
       desc.StageMap[stage] = source;
 
-      // std::cout << ShaderStageToString(stage) << std::endl;
-      // std::cout << source << std::endl << std::endl;
+      std::cout << ShaderStageToString(stage) << std::endl;
+      std::cout << source << std::endl << std::endl;
     }
 
     desc.Source = ShaderSource::StageMap;
@@ -100,6 +108,8 @@ void MetalDevice::AttachUniformBuffer(ID buffer, std::size_t block)
   // TODO: The way we should implement this depends on how we transpile our shader
   // code. Thankfully, the user will never have to think about this, which is honestly
   // dope.
+  encoder->setVertexBuffer(buffers.Get(buffer)->buffer, 0, block);
+  encoder->setFragmentBuffer(buffers.Get(buffer)->buffer, 0, block);
 }
 
 ID MetalDevice::CreateTexture2D(const Texture2DDesc &desc)
@@ -127,11 +137,17 @@ ID MetalDevice::CreateCubemap(const CubemapDesc &desc)
   MetalCubemap* cubemap = new MetalCubemap(gpuDevice, desc);
   cubemaps.Add(id, cubemap);
   return id;
+
+  MTL::SamplerDescriptor* descr = MTL::SamplerDescriptor::alloc()->init();
+  descr->setMinFilter(MTL::SamplerMinMagFilterLinear);
+  descr->setMagFilter(MTL::SamplerMinMagFilterLinear);
+  temp = gpuDevice->newSamplerState(descr);
 }
 
 void MetalDevice::BindCubemap(ID id, std::size_t binding)
 {
-
+  encoder->setFragmentTexture(cubemaps.Get(id)->GetTexture(), binding);
+  encoder->setFragmentSamplerState(temp, 0);
 }
 
 ID MetalDevice::CreateFramebuffer(const FramebufferDesc &desc)
@@ -154,14 +170,33 @@ ID MetalDevice::CreateRenderPass(const RenderPassDesc &desc)
   return 0;
 }
 
+// For now the method is to just use a command encoder per renderpass.
 void MetalDevice::BeginRenderPass(ID pass)
 {
+  cmdBuffer = queue->commandBuffer()->retain();
 
+  MTL::RenderPassDescriptor* descriptor = MTL::RenderPassDescriptor::alloc()->init();
+  descriptor->colorAttachments()->object(0)->setClearColor({0.0f, 0.0f, 0.0f, 1.0f});
+  descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionClear);
+  descriptor->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
+
+  drawable = layer->nextDrawable();
+  descriptor->colorAttachments()->object(0)->setTexture(drawable->texture());
+
+  encoder = cmdBuffer->renderCommandEncoder(descriptor)->retain();
 }
 
 void MetalDevice::EndRenderPass()
 {
+  assert(cmdBuffer);
 
+  encoder->endEncoding();
+  encoder->release();
+  encoder = nullptr;
+
+  cmdBuffer->presentDrawable(drawable);
+  cmdBuffer->commit();
+  cmdBuffer->release();
 }
 
 void MetalDevice::DestroyRenderPass(ID pass)
@@ -181,7 +216,16 @@ void MetalDevice::SetScissorRect(float x, float y, float width, float height)
 
 void MetalDevice::Submit(const DrawCommand &command)
 {
+  assert(encoder != nullptr);
 
+  MetalPipeline* ps = pipelines.Get(command.Pipeline);
+
+  encoder->setRenderPipelineState(ps->GetPipeline());
+  //encoder->setViewport({0.0f, 0.0f, 200.0f, 200.0f, 0.0f, 1.0f});
+
+  MetalBuffer* indexBuffer = buffers.Get(command.IndexBuffer);
+
+  encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, indexBuffer->size * sizeof(uint32_t), MTL::IndexTypeUInt32, indexBuffer->buffer, 0);
 }
 
 }

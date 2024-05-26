@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Metal/Metal.hpp>
+#include <QuartzCore/CAMetalLayer.hpp>
 
 #include "renderer/RenderDevice.h"
 #include "renderer/primitive/ObjectCache.h"
@@ -16,7 +17,7 @@ namespace Vision
 class MetalDevice : public RenderDevice
 {
 public:
-  MetalDevice(MTL::Device* device);
+  MetalDevice(MTL::Device* device, CA::MetalLayer* layer);
   ~MetalDevice();
 
   ID CreatePipeline(const PipelineDesc& desc);
@@ -56,14 +57,22 @@ public:
 
 private:
   MTL::Device* gpuDevice;
+  CA::MetalLayer* layer;
+  CA::MetalDrawable* drawable;
 
   ObjectCache<MetalBuffer> buffers;
   ObjectCache<MetalShader> shaders;
   ObjectCache<MetalPipeline> pipelines;
   ObjectCache<MetalTexture> textures;
   ObjectCache<MetalCubemap> cubemaps;
-
   ID currentID = 1;
+
+  // command stuff
+  MTL::CommandQueue* queue;
+  MTL::CommandBuffer* cmdBuffer;
+  MTL::RenderCommandEncoder* encoder;
+
+  MTL::SamplerState* temp;
 };
 
 }

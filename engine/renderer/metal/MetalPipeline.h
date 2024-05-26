@@ -16,6 +16,8 @@ public:
   MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shaders, const PipelineDesc& desc);
   ~MetalPipeline();
 
+  MTL::RenderPipelineState* GetPipeline() const { return pipeline; }
+
 private:
   MTL::RenderPipelineState* pipeline; 
 };

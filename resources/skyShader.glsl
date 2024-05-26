@@ -19,7 +19,7 @@ void main()
   mat4 noTranslateView = mat4(mat3(u_View));
   texCoord = a_Pos;
   vec4 pos = u_Projection * noTranslateView * vec4(a_Pos, 1.0);
-  gl_Position = pos.xyww;
+  gl_Position = pos.xyzz;
 }
 
 #type fragment
