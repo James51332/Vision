@@ -39,7 +39,7 @@ public:
 
   ID CreateCubemap(const CubemapDesc& desc);
   void BindCubemap(ID id, std::size_t binding = 0);
-  void DestroyCubemap(ID id);
+  void DestroyCubemap(ID id) { cubemaps.Destroy(id); }
 
   ID CreateFramebuffer(const FramebufferDesc& desc);
   void ResizeFramebuffer(ID id, float width, float height);
@@ -61,6 +61,7 @@ private:
   ObjectCache<MetalShader> shaders;
   ObjectCache<MetalPipeline> pipelines;
   ObjectCache<MetalTexture> textures;
+  ObjectCache<MetalCubemap> cubemaps;
 
   ID currentID = 1;
 };

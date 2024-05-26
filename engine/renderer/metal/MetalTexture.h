@@ -30,4 +30,16 @@ private:
   int channels;
 };
 
+class MetalCubemap
+{
+public:
+  MetalCubemap(MTL::Device* device, const CubemapDesc &desc);
+  ~MetalCubemap();
+
+  MTL::Texture* GetTexture() const { return cubemap; }
+
+private:
+  MTL::Texture* cubemap;
+  PixelType pixelType;
+};
 }

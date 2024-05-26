@@ -1,6 +1,7 @@
 #include "MetalTexture.h"
 
 #include <stb_image.h>
+#include <SDL.h>
 #include <Metal/MTLTexture.hpp>
 
 #include "MetalType.h"
@@ -21,7 +22,7 @@ MetalTexture::MetalTexture(MTL::Device *device, const char *filePath)
   // desire four channels bc metal has no 24-bit type
   desired = (comp != 3) ? desired : 4;
   channels = desired;
-  pixelType = ChannelsToPixelType(comp);
+  pixelType = ChannelsToPixelType(channels);
 
   // allocate our image
   Resize(device, static_cast<float>(w), static_cast<float>(h));
@@ -68,6 +69,49 @@ void MetalTexture::SetData(uint8_t *data)
 {
   MTL::Region region(0, 0, width, height);
   texture->replaceRegion(region, 0, data, width * channels);
+}
+
+MetalCubemap::MetalCubemap(MTL::Device* device, const CubemapDesc& desc)
+{
+  SDL_assert(desc.Textures.size() == 6);
+
+  // desire four channels bc metal has no 24-bit type
+  int w, h, comp, desired;
+  stbi_info(desc.Textures[0].c_str(), &w, &h, &comp);
+
+  desired = (comp != 3) ? desired : 4;
+  int channels = desired;
+  pixelType = ChannelsToPixelType(channels);
+
+  MTL::TextureDescriptor* descriptor;
+  descriptor = MTL::TextureDescriptor::alloc()->textureCubeDescriptor(PixelTypeToMTLPixelFormat(pixelType),
+                                                                      w,
+                                                                      false);
+  
+  cubemap = device->newTexture(descriptor);
+
+  // attach the sides to each
+  int side = 0;
+  for (auto file : desc.Textures)
+  {
+    unsigned char *data = stbi_load(file.c_str(), &w, &h, nullptr, channels);
+    if (!data)
+    {
+      std::cout << "Failed to load image:" << file << std::endl;
+      std::cout << stbi_failure_reason() << std::endl;
+    }
+
+    MTL::Region region(0, 0, w, h);
+    cubemap->replaceRegion(region, 0, side, data, w * channels, w * h * channels);
+
+    side++;
+    stbi_image_free(data);
+  }
+}
+
+MetalCubemap::~MetalCubemap()
+{
+  cubemap->release();
 }
 
 }

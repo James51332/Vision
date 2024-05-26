@@ -123,15 +123,13 @@ void MetalDevice::BindTexture2D(ID id, std::size_t binding)
 
 ID MetalDevice::CreateCubemap(const CubemapDesc &desc)
 {
-  return 0;
+  ID id = currentID++;
+  MetalCubemap* cubemap = new MetalCubemap(gpuDevice, desc);
+  cubemaps.Add(id, cubemap);
+  return id;
 }
 
 void MetalDevice::BindCubemap(ID id, std::size_t binding)
-{
-
-}
-
-void MetalDevice::DestroyCubemap(ID id)
 {
 
 }
