@@ -46,12 +46,12 @@ private:
   Window* window;
   float displayScale; // Used for retina rendering
   std::string title;
-  RenderContext* renderContext;
 
 protected:
   float displayWidth = 1280.0f, displayHeight = 720.0f;
 
   RenderDevice* renderDevice;
+  RenderContext* renderContext;
   Renderer* renderer;
  // Renderer2D* renderer2D;
   ImGuiRenderer* uiRenderer;

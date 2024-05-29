@@ -14,6 +14,7 @@ public:
   ~GLContext();
 
   RenderDevice* GetRenderDevice();
+  PixelType GetPixelType() const { return PixelType::RGBA32; }
   void Present();
 
 private:

@@ -10,6 +10,7 @@ layout (push_constant) uniform pushConstants
   mat4 u_ViewProjection;
   vec2 u_ViewportSize;
   float u_Time;
+  float dummy;
 };
 
 out vec3 texCoord;
@@ -19,7 +20,7 @@ void main()
   mat4 noTranslateView = mat4(mat3(u_View));
   texCoord = a_Pos;
   vec4 pos = u_Projection * noTranslateView * vec4(a_Pos, 1.0);
-  gl_Position = pos.xyzz;
+  gl_Position = pos.xyww;
 }
 
 #type fragment

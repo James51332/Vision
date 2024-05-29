@@ -136,18 +136,20 @@ ID MetalDevice::CreateCubemap(const CubemapDesc &desc)
   ID id = currentID++;
   MetalCubemap* cubemap = new MetalCubemap(gpuDevice, desc);
   cubemaps.Add(id, cubemap);
-  return id;
-
+  // Hack: sampler states should be part of textures
   MTL::SamplerDescriptor* descr = MTL::SamplerDescriptor::alloc()->init();
   descr->setMinFilter(MTL::SamplerMinMagFilterLinear);
   descr->setMagFilter(MTL::SamplerMinMagFilterLinear);
   temp = gpuDevice->newSamplerState(descr);
+  descr->release();
+  
+  return id;
 }
 
 void MetalDevice::BindCubemap(ID id, std::size_t binding)
 {
+  encoder->setFragmentSamplerState(temp, binding);
   encoder->setFragmentTexture(cubemaps.Get(id)->GetTexture(), binding);
-  encoder->setFragmentSamplerState(temp, 0);
 }
 
 ID MetalDevice::CreateFramebuffer(const FramebufferDesc &desc)
@@ -173,22 +175,37 @@ ID MetalDevice::CreateRenderPass(const RenderPassDesc &desc)
 // For now the method is to just use a command encoder per renderpass.
 void MetalDevice::BeginRenderPass(ID pass)
 {
+  NS::AutoreleasePool* pool = NS::AutoreleasePool::alloc()->init();
+  
   cmdBuffer = queue->commandBuffer()->retain();
 
   MTL::RenderPassDescriptor* descriptor = MTL::RenderPassDescriptor::alloc()->init();
   descriptor->colorAttachments()->object(0)->setClearColor({0.0f, 0.0f, 0.0f, 1.0f});
   descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionClear);
   descriptor->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
+  
+  MTL::RenderPassDepthAttachmentDescriptor* da = MTL::RenderPassDepthAttachmentDescriptor::alloc()->init();
+  da->setClearDepth(1.0f);
+  descriptor->setDepthAttachment(da);
+  da->release();
 
-  drawable = layer->nextDrawable();
+  drawable = layer->nextDrawable()->retain();
   descriptor->colorAttachments()->object(0)->setTexture(drawable->texture());
 
   encoder = cmdBuffer->renderCommandEncoder(descriptor)->retain();
+  
+  descriptor->release();
+  
+  pool->release();
 }
 
 void MetalDevice::EndRenderPass()
 {
+  NS::AutoreleasePool* pool = NS::AutoreleasePool::alloc()->init();
+  
   assert(cmdBuffer);
+  
+  encoder->setDepthClipMode(MTL::DepthClipModeClamp);
 
   encoder->endEncoding();
   encoder->release();
@@ -197,11 +214,15 @@ void MetalDevice::EndRenderPass()
   cmdBuffer->presentDrawable(drawable);
   cmdBuffer->commit();
   cmdBuffer->release();
+  cmdBuffer = nullptr;
+  
+  drawable->release();
+  
+  pool->release();
 }
 
 void MetalDevice::DestroyRenderPass(ID pass)
 {
-
 }
 
 void MetalDevice::SetViewport(float x, float y, float width, float height)
@@ -221,11 +242,10 @@ void MetalDevice::Submit(const DrawCommand &command)
   MetalPipeline* ps = pipelines.Get(command.Pipeline);
 
   encoder->setRenderPipelineState(ps->GetPipeline());
-  //encoder->setViewport({0.0f, 0.0f, 200.0f, 200.0f, 0.0f, 1.0f});
 
   MetalBuffer* indexBuffer = buffers.Get(command.IndexBuffer);
 
-  encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, indexBuffer->size * sizeof(uint32_t), MTL::IndexTypeUInt32, indexBuffer->buffer, 0);
+  encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, indexBuffer->size / sizeof(uint32_t), MTL::IndexTypeUInt32, indexBuffer->buffer, 0);
 }
 
 }

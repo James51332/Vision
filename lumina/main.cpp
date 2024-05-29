@@ -40,12 +40,14 @@ namespace Lumina
       Vision::PipelineDesc pipelineDesc;
       pipelineDesc.Layouts = 
       { Vision::BufferLayout({
+        { Vision::ShaderDataType::Float3, "Position"},
         { Vision::ShaderDataType::Float3, "Normal" },
         { Vision::ShaderDataType::Float4, "Color" },
         { Vision::ShaderDataType::Float2, "UV" }}) 
       };
       pipelineDesc.Shader = skyboxShader;
       pipelineDesc.DepthFunc = Vision::DepthFunc::LessEqual;
+      pipelineDesc.PixelFormat = renderContext->GetPixelType();
       skyboxPS = renderDevice->CreatePipeline(pipelineDesc);
 
       Vision::RenderPassDesc rpDesc;

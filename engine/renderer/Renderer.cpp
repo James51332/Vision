@@ -16,6 +16,7 @@ struct PushConstant
   glm::mat4 viewProj;
   glm::vec2 viewSize;
   float time;
+  float dummy = 0.0f; // metal requires 16 byte alignment
 };
 
 Renderer::Renderer(float width, float height, float displayScale)
