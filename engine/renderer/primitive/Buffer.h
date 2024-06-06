@@ -24,6 +24,8 @@ struct BufferDesc
   BufferUsage Usage;
   std::size_t Size;
   void* Data;
+
+  std::string DebugName = "Unnamed";
 };
 
 using ID = std::size_t;

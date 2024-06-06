@@ -8,7 +8,7 @@ namespace Vision
 {
 
 GLBuffer::GLBuffer(const BufferDesc& desc)
-  : m_Type(BufferTypeToGLenum(desc.Type)), m_Usage(BufferUsageToGLenum(desc.Usage)), m_Size(desc.Size)
+  : m_Type(BufferTypeToGLenum(desc.Type)), m_Usage(BufferUsageToGLenum(desc.Usage)), m_Size(desc.Size), debugName(desc.DebugName)
 {
   glGenBuffers(1, &m_Object);
   glBindBuffer(m_Type, m_Object);

@@ -8,12 +8,14 @@ namespace Vision
 {
 
 MetalBuffer::MetalBuffer(MTL::Device* device, const BufferDesc& desc)
-  : type(desc.Type), size(desc.Size)
+  : type(desc.Type), size(desc.Size), name(desc.DebugName)
 {
   if (desc.Data)
     buffer = device->newBuffer(desc.Data, desc.Size, MTL::ResourceStorageModeShared);
   else
     buffer = device->newBuffer(size, MTL::ResourceStorageModeShared);
+  
+  buffer->setLabel(NS::String::alloc()->init(desc.DebugName.c_str(), NS::UTF8StringEncoding));
 }
 
 MetalBuffer::~MetalBuffer()
@@ -34,6 +36,7 @@ void MetalBuffer::Reset(MTL::Device* device, std::size_t s)
   size = s;
   buffer->release();
   buffer = device->newBuffer(size, MTL::ResourceStorageModeShared);
+  buffer->setLabel(NS::String::alloc()->init(name.c_str(), NS::UTF8StringEncoding));
 }
 
 }

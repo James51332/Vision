@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Metal/Metal.hpp>
+#include <string>
 
 #include "renderer/primitive/Buffer.h"
 
@@ -21,6 +22,7 @@ public:
 
   BufferType type;
   std::size_t size;
+  std::string name;
 };
 
 }

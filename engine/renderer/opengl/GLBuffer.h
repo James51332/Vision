@@ -28,6 +28,8 @@ private:
   GLenum m_Type;
   GLenum m_Usage;
   std::size_t m_Size;
+
+  std::string debugName;
 };
 
 }
