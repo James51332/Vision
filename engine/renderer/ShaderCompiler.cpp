@@ -102,8 +102,8 @@ void ShaderCompiler::GenerateSPIRVMap(ShaderDesc& desc)
     glslang::TShader shader(language);
 
     shader.setStrings(&textPtr, 1);
-    shader.setEnvInput(glslang::EShSourceGlsl, language, glslang::EShClientOpenGL, 410);
-    shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_1);
+    shader.setEnvInput(glslang::EShSourceGlsl, language, glslang::EShClientOpenGL, 450);
+    shader.setEnvClient(glslang::EShClientOpenGL, glslang::EShTargetOpenGL_450);
     shader.setEnvTarget(glslang::EshTargetSpv, glslang::EShTargetSpv_1_1);
 
     shader.setAutoMapBindings(true);

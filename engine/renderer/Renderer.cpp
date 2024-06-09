@@ -32,7 +32,8 @@ Renderer::Renderer(float width, float height, float displayScale)
     desc.Usage = BufferUsage::Dynamic;
     desc.Size = sizeof(PushConstant);
     desc.Data = nullptr;
-
+    desc.DebugName = "Renderer Data";
+    
     pushConstants = App::GetDevice()->CreateBuffer(desc);
   }
 }
@@ -104,7 +105,7 @@ void Renderer::Submit(const DrawCommand& command)
   data.time = time;
   App::GetDevice()->SetBufferData(pushConstants, &data, sizeof(PushConstant));
   App::GetDevice()->AttachUniformBuffer(pushConstants, 0);
-
+  
   // device submit
   App::GetDevice()->Submit(command);
 }

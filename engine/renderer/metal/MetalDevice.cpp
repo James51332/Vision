@@ -39,6 +39,7 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
 {
   ID id = currentID++;
   MetalShader* shader;
+  std::size_t buffersInUse = 0;
 
   // we'll have all steps to build a shader in order and only enter the pipeline where
   // the user sets. the first stage is just to load the text and parse is into each
@@ -65,17 +66,24 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
       ShaderStage stage = pair.first;
       std::vector<uint32_t>& spirv = pair.second;
 
-      // TODO: add options to this.
-      spirv_cross::CompilerMSL compiler(spirv);
-      auto opts = compiler.get_msl_options();
-      opts.enable_frag_depth_builtin = true;
-      compiler.set_msl_options(opts);
+      // create and configure the compiler
+      spirv_cross::CompilerMSL compiler(std::move(spirv));
+
+      // uniform buffers take up the same space as stage buffers,
+      // so we'll use the last buffer slots for our stage input.
+      if (stage == ShaderStage::Vertex)
+      {
+        auto res = compiler.get_shader_resources();
+        buffersInUse = res.uniform_buffers.size();
+      }
+
+      // generate the source code.
       std::string source = compiler.compile();
-      
       desc.StageMap[stage] = source;
 
-      std::cout << ShaderStageToString(stage) << std::endl;
-      std::cout << source << std::endl << std::endl;
+      // Log the generated shader code.
+      // std::cout << ShaderStageToString(stage) << std::endl;
+      // std::cout << source << std::endl << std::endl;
     }
 
     desc.Source = ShaderSource::StageMap;
@@ -88,7 +96,7 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
   // stage map language since internal renderers provide shader source in GLSL.
   if (desc.Source == ShaderSource::StageMap)
   {
-    shader = new MetalShader(gpuDevice, desc.StageMap); 
+    shader = new MetalShader(gpuDevice, desc.StageMap, buffersInUse); 
   }
 
   shaders.Add(id, shader);
@@ -204,8 +212,6 @@ void MetalDevice::EndRenderPass()
   NS::AutoreleasePool* pool = NS::AutoreleasePool::alloc()->init();
   
   assert(cmdBuffer);
-  
-  encoder->setDepthClipMode(MTL::DepthClipModeClamp);
 
   encoder->endEncoding();
   encoder->release();
@@ -244,8 +250,16 @@ void MetalDevice::Submit(const DrawCommand &command)
   encoder->setRenderPipelineState(ps->GetPipeline());
 
   MetalBuffer* indexBuffer = buffers.Get(command.IndexBuffer);
+  
+  std::size_t currentBuffer = ps->GetFirstFreeBuffer();
+  for (auto vb : command.VertexBuffers)
+  {
+    MetalBuffer* buffer = buffers.Get(vb);
+    encoder->setVertexBuffer(buffer->buffer, 0, currentBuffer);
+    currentBuffer++;
+  }
 
-  encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, indexBuffer->size / sizeof(uint32_t), MTL::IndexTypeUInt32, indexBuffer->buffer, 0);
+  encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, command.NumVertices, MTL::IndexTypeUInt32, indexBuffer->buffer, 0);
 }
 
 }

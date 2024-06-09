@@ -24,7 +24,8 @@ MetalPipeline::MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shad
   // set the pipeline layout
   MTL::VertexDescriptor* vtxDesc = MTL::VertexDescriptor::alloc()->init();
   
-  int layoutIndex = 0;
+  firstFreeBuffer = shader->GetNumUsedBuffers(); // first free (e.g. used are 0 to 4 => 5 = free = numUsed)
+  int layoutIndex = firstFreeBuffer;
   int attrib = 0;
   for (auto layout : desc.Layouts)
   {
@@ -43,7 +44,7 @@ MetalPipeline::MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shad
       attrib++;
     }
 
-    vtxDesc->layouts()->object(0)->setStride(layout.Stride);
+    vtxDesc->layouts()->object(layoutIndex)->setStride(layout.Stride);
     layoutIndex++;
   }
 

@@ -5,7 +5,8 @@
 namespace Vision
 {
 
-MetalShader::MetalShader(MTL::Device *device, const std::unordered_map<ShaderStage, std::string> &shaders)
+MetalShader::MetalShader(MTL::Device *device, const std::unordered_map<ShaderStage, std::string> &shaders, std::size_t buffers)
+  : usedBuffers(buffers)
 {
   // allocate a compiler options object that we'll use for all of the shaders
   MTL::CompileOptions* options = MTL::CompileOptions::alloc()->init();
@@ -16,7 +17,7 @@ MetalShader::MetalShader(MTL::Device *device, const std::unordered_map<ShaderSta
     std::string source = pair.second;
 
     // TODO: We may need other forms of encoding later (e.g. wide-chars)
-    NS::String* string = NS::String::alloc()->init(source.c_str(), NS::UTF8StringEncoding); 
+    NS::String* string = NS::String::alloc()->init(source.c_str(), NS::UTF8StringEncoding);
 
     // construct a library for each shader stage
     NS::Error* error = nullptr;
