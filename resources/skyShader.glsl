@@ -18,8 +18,8 @@ out vec3 texCoord;
 
 void main()
 {
-  mat4 noTranslateView = other * mat4(mat3(u_View));
   texCoord = a_Pos;
+  mat4 noTranslateView = mat4(mat3(u_View));
   vec4 pos = u_Projection * u_View * vec4(a_Pos, 1.0);
   gl_Position = pos.xyzw;
 }
