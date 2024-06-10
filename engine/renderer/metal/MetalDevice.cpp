@@ -39,7 +39,7 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
 {
   ID id = currentID++;
   MetalShader* shader;
-  std::size_t buffersInUse = 0;
+  std::unordered_map<std::string, std::size_t> ubos;
 
   // we'll have all steps to build a shader in order and only enter the pipeline where
   // the user sets. the first stage is just to load the text and parse is into each
@@ -74,7 +74,14 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
       if (stage == ShaderStage::Vertex)
       {
         auto res = compiler.get_shader_resources();
-        buffersInUse = res.uniform_buffers.size();
+        
+        for (auto buffer : res.uniform_buffers)
+        {
+          auto slots = compiler.get_active_buffer_ranges(buffer.id);
+          std::size_t slot = slots[0].index; // hopefully this works
+          std::string name = compiler.get_name(buffer.id);
+          ubos[name] = slot;
+        }
       }
 
       // generate the source code.
@@ -96,7 +103,7 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
   // stage map language since internal renderers provide shader source in GLSL.
   if (desc.Source == ShaderSource::StageMap)
   {
-    shader = new MetalShader(gpuDevice, desc.StageMap, buffersInUse); 
+    shader = new MetalShader(gpuDevice, desc.StageMap, ubos); 
   }
 
   shaders.Add(id, shader);
@@ -245,20 +252,24 @@ void MetalDevice::Submit(const DrawCommand &command)
 {
   assert(encoder != nullptr);
 
+  // fetch the pipeline state
   MetalPipeline* ps = pipelines.Get(command.Pipeline);
-
   encoder->setRenderPipelineState(ps->GetPipeline());
 
-  MetalBuffer* indexBuffer = buffers.Get(command.IndexBuffer);
-  
-  std::size_t currentBuffer = ps->GetFirstFreeBuffer();
-  for (auto vb : command.VertexBuffers)
+  // bind our vertex buffers
+  std::size_t numBuffers = command.VertexBuffers.size();
+  auto& shaderStageBindings = ps->GetStageBufferBindings();
+
+  SDL_assert(numBuffers <= shaderStageBindings.size());
+  for (std::size_t i = 0; i < numBuffers; i++)
   {
-    MetalBuffer* buffer = buffers.Get(vb);
-    encoder->setVertexBuffer(buffer->buffer, 0, currentBuffer);
-    currentBuffer++;
+    MetalBuffer* buffer = buffers.Get(command.VertexBuffers.at(i));
+    std::size_t slot = shaderStageBindings.at(i);
+    encoder->setVertexBuffer(buffer->buffer, 0, slot);
   }
 
+  // submit the draw call.
+  MetalBuffer* indexBuffer = buffers.Get(command.IndexBuffer);
   encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, command.NumVertices, MTL::IndexTypeUInt32, indexBuffer->buffer, 0);
 }
 

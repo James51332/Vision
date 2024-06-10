@@ -24,14 +24,35 @@ MetalPipeline::MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shad
   // set the pipeline layout
   MTL::VertexDescriptor* vtxDesc = MTL::VertexDescriptor::alloc()->init();
   
-  firstFreeBuffer = shader->GetNumUsedBuffers(); // first free (e.g. used are 0 to 4 => 5 = free = numUsed)
-  int layoutIndex = firstFreeBuffer;
+  // build the free buffer bindings
+  auto& usedSlots = shader->GetUniformBufferSlots();
+  constexpr std::size_t maxSlot = 30; // this is the last slot in the table
+  stageBufferBindings.clear();
+  
+  for (std::size_t i = 0; i <= maxSlot; i++)
+  {
+    std::size_t count = std::count(usedSlots.begin(), usedSlots.end(), i);
+    if (count == 1) 
+      continue;
+    else if (count == 0) 
+      stageBufferBindings.push_back(i);
+    else
+      SDL_assert(false);
+
+    if (stageBufferBindings.size() == desc.Layouts.size()) // we have enough slots.
+      break;
+  }
+
+  int stageBuffer = 0;
   int attrib = 0;
   for (auto layout : desc.Layouts)
   {
+    SDL_assert(stageBuffer < stageBufferBindings.size()); // We can't have more stage slots than free slots
+    std::size_t layoutIndex = stageBufferBindings[stageBuffer];
+
     if (layout.Stride == 0)
     {
-      layoutIndex++;
+      stageBuffer++;
       continue;
     }
     
@@ -45,7 +66,7 @@ MetalPipeline::MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shad
     }
 
     vtxDesc->layouts()->object(layoutIndex)->setStride(layout.Stride);
-    layoutIndex++;
+    stageBuffer++;
   }
 
   attribs->setVertexDescriptor(vtxDesc);

@@ -17,11 +17,11 @@ public:
   ~MetalPipeline();
 
   MTL::RenderPipelineState* GetPipeline() const { return pipeline; }
-  std::size_t GetFirstFreeBuffer() const { return firstFreeBuffer; }
+  std::vector<std::size_t>& GetStageBufferBindings() { return stageBufferBindings; }
 
 private:
   MTL::RenderPipelineState* pipeline;
-  std::size_t firstFreeBuffer = 0;
+  std::vector<std::size_t> stageBufferBindings;
 };
 
 }

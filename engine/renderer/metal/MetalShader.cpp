@@ -5,23 +5,23 @@
 namespace Vision
 {
 
-MetalShader::MetalShader(MTL::Device *device, const std::unordered_map<ShaderStage, std::string> &shaders, std::size_t buffers)
-  : usedBuffers(buffers)
+MetalShader::MetalShader(MTL::Device *device, const std::unordered_map<ShaderStage, std::string> &shaders, const std::unordered_map<std::string, std::size_t> &slotsMap)
+    : uniformSlotsMap(slotsMap)
 {
   // allocate a compiler options object that we'll use for all of the shaders
-  MTL::CompileOptions* options = MTL::CompileOptions::alloc()->init();
-
+  MTL::CompileOptions *options = MTL::CompileOptions::alloc()->init();
+  
   for (auto pair : shaders)
   {
     ShaderStage stage = pair.first;
     std::string source = pair.second;
 
     // TODO: We may need other forms of encoding later (e.g. wide-chars)
-    NS::String* string = NS::String::alloc()->init(source.c_str(), NS::UTF8StringEncoding);
+    NS::String *string = NS::String::alloc()->init(source.c_str(), NS::UTF8StringEncoding);
 
     // construct a library for each shader stage
-    NS::Error* error = nullptr;
-    MTL::Library* library = device->newLibrary(string, options, &error);
+    NS::Error *error = nullptr;
+    MTL::Library *library = device->newLibrary(string, options, &error);
 
     if (error)
     {
@@ -30,8 +30,8 @@ MetalShader::MetalShader(MTL::Device *device, const std::unordered_map<ShaderSta
     }
 
     // extract the main function from the library
-    NS::String* funcName = NS::String::alloc()->init("main0", NS::UTF8StringEncoding);
-    MTL::Function* func = library->newFunction(funcName);
+    NS::String *funcName = NS::String::alloc()->init("main0", NS::UTF8StringEncoding);
+    MTL::Function *func = library->newFunction(funcName);
 
     shaderFunctions[stage] = func;
 
@@ -39,6 +39,13 @@ MetalShader::MetalShader(MTL::Device *device, const std::unordered_map<ShaderSta
   }
 
   options->release();
+  
+  // build our slots map as well.
+  uniformSlots.clear();
+  for (auto pair : uniformSlotsMap)
+  {
+    uniformSlots.push_back(pair.second);
+  }
 }
 
 MetalShader::~MetalShader()
