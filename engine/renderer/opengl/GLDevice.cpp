@@ -101,6 +101,8 @@ ID GLDevice::CreateShader(const ShaderDesc& tmp)
       for (auto uniform : res.uniform_buffers)
       {
         auto block = decompiler.get_decoration(uniform.id, spv::DecorationBinding);
+        std::string name = uniform.name;
+        uniformBindings.emplace(block, name);
       }
     }
 

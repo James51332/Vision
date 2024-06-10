@@ -69,6 +69,10 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
       // create and configure the compiler
       spirv_cross::CompilerMSL compiler(std::move(spirv));
 
+      auto mslOpts = compiler.get_msl_options();
+      mslOpts.enable_decoration_binding = true; // set the compiler to use glsl bindings for buffer indices.
+      compiler.set_msl_options(mslOpts);
+
       // uniform buffers take up the same space as stage buffers,
       // so we'll use the last buffer slots for our stage input.
       if (stage == ShaderStage::Vertex)
@@ -77,8 +81,7 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
         
         for (auto buffer : res.uniform_buffers)
         {
-          auto slots = compiler.get_active_buffer_ranges(buffer.id);
-          std::size_t slot = slots[0].index; // hopefully this works
+          auto slot = compiler.get_decoration(buffer.id, spv::DecorationBinding);
           std::string name = compiler.get_name(buffer.id);
           ubos[name] = slot;
         }
@@ -89,8 +92,8 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
       desc.StageMap[stage] = source;
 
       // Log the generated shader code.
-      // std::cout << ShaderStageToString(stage) << std::endl;
-      // std::cout << source << std::endl << std::endl;
+      std::cout << ShaderStageToString(stage) << std::endl;
+      std::cout << source << std::endl << std::endl;
     }
 
     desc.Source = ShaderSource::StageMap;
