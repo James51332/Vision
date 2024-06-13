@@ -83,11 +83,20 @@ MetalPipeline::MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shad
 
   vtxDesc->release();
   attribs->release();
+
+  // create the depth state
+  MTL::DepthStencilDescriptor* depthDesc = MTL::DepthStencilDescriptor::alloc()->init();  
+  depthDesc->setDepthCompareFunction(desc.DepthTest ? DepthFunctionToMTLCompareFunction(desc.DepthFunc) : MTL::CompareFunctionAlways);
+  depthDesc->setDepthWriteEnabled(desc.DepthWrite);
+
+  depthState = device->newDepthStencilState(depthDesc);
+  depthDesc->release();
 }
 
 MetalPipeline::~MetalPipeline()
 {
   pipeline->release();
+  depthState->release();
 }
 
 }

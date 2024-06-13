@@ -146,7 +146,8 @@ ID MetalDevice::CreateTexture2D(const Texture2DDesc &desc)
 
 void MetalDevice::BindTexture2D(ID id, std::size_t binding)
 {
-
+  encoder->setFragmentSamplerState(temp, binding);
+  encoder->setFragmentTexture(textures.Get(id)->GetTexture(), binding);
 }
 
 ID MetalDevice::CreateCubemap(const CubemapDesc &desc)
@@ -258,6 +259,9 @@ void MetalDevice::Submit(const DrawCommand &command)
   // fetch the pipeline state
   MetalPipeline* ps = pipelines.Get(command.Pipeline);
   encoder->setRenderPipelineState(ps->GetPipeline());
+  
+  // setup our depth information
+  encoder->setDepthStencilState(ps->GetDepthStencil());
 
   // bind our vertex buffers
   std::size_t numBuffers = command.VertexBuffers.size();

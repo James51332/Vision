@@ -20,6 +20,7 @@ namespace Lumina
       // Initialize the scene
       perspectiveCamera = Vision::PerspectiveCamera(displayWidth, displayHeight, 0.1f, 1000.0f);
 
+      // create the skybox
       Vision::CubemapDesc desc;
       desc.Textures = {
         "resources/skybox/right.jpg",
@@ -50,6 +51,25 @@ namespace Lumina
       pipelineDesc.PixelFormat = renderContext->GetPixelType();
       skyboxPS = renderDevice->CreatePipeline(pipelineDesc);
 
+      // create the plane
+      Vision::Texture2DDesc td;
+      td.FilePath = "resources/iceland_heightmap.png";
+      td.LoadFromFile = true;
+      icelandTexture = renderDevice->CreateTexture2D(td);
+
+      planeMesh = Vision::MeshGenerator::CreatePlaneMesh(5.0f, 5.0f, 50.0f, 50.0f, true);
+
+      Vision::ShaderDesc sd;
+      sd.FilePath = "resources/planeShader.glsl";
+      planeShader = renderDevice->CreateShader(sd);
+
+      Vision::PipelineDesc pd;
+      pd.Layouts = pipelineDesc.Layouts;
+      pd.PixelFormat = renderContext->GetPixelType();
+      pd.Shader = planeShader;
+      planePS = renderDevice->CreatePipeline(pd);
+
+      // create the render pass
       Vision::RenderPassDesc rpDesc;
       rpDesc.Framebuffer = 0;
       rpDesc.ClearColor = {0.1f, 0.1f, 0.1f, 1.0f};
@@ -77,6 +97,9 @@ namespace Lumina
       renderDevice->BeginRenderPass(renderPass);
       renderer->Begin(&perspectiveCamera);
 
+      renderDevice->BindTexture2D(icelandTexture);
+      renderer->DrawMesh(planeMesh, planePS);
+
       renderDevice->BindCubemap(skyboxTexture);
       renderer->DrawMesh(skyboxMesh, skyboxPS);
 
@@ -96,6 +119,12 @@ namespace Lumina
     Vision::ID skyboxTexture;
     Vision::ID skyboxPS;
     Vision::ID skyboxShader;
+
+    Vision::Mesh* planeMesh;
+    Vision::ID icelandTexture;
+    Vision::ID planePS;
+    Vision::ID planeShader;
+
     Vision::ID renderPass;
 };
 }

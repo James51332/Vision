@@ -18,10 +18,12 @@ public:
 
   MTL::RenderPipelineState* GetPipeline() const { return pipeline; }
   std::vector<std::size_t>& GetStageBufferBindings() { return stageBufferBindings; }
+  MTL::DepthStencilState* GetDepthStencil() const { return depthState; }
 
 private:
   MTL::RenderPipelineState* pipeline;
   std::vector<std::size_t> stageBufferBindings;
+  MTL::DepthStencilState* depthState;
 };
 
 }

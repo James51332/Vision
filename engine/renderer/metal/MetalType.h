@@ -7,6 +7,7 @@
 
 #include "renderer/primitive/Texture.h"
 #include "renderer/primitive/Buffer.h"
+#include "renderer/primitive/Pipeline.h"
 
 namespace Vision
 {
@@ -76,6 +77,20 @@ static PixelType ChannelsToPixelType(int channels)
     case 4:
     default:
       return PixelType::RGBA32;
+  }
+}
+
+static MTL::CompareFunction DepthFunctionToMTLCompareFunction(DepthFunc func)
+{
+  switch (func)
+  {
+    case DepthFunc::Less: return MTL::CompareFunctionLess;
+    case DepthFunc::LessEqual: return MTL::CompareFunctionLessEqual;
+    case DepthFunc::Greater: return MTL::CompareFunctionGreater;
+    case DepthFunc::GreaterEqual: return MTL::CompareFunctionGreaterEqual;
+    case DepthFunc::Equal: return MTL::CompareFunctionEqual;
+    default:
+      return MTL::CompareFunctionAlways;
   }
 }
 
