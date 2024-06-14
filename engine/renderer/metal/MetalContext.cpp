@@ -29,9 +29,4 @@ RenderDevice* MetalContext::GetRenderDevice()
   return device;
 }
 
-void MetalContext::Present()
-{
-//  metalLayer->nextDrawable()->present();
-}
-
 }

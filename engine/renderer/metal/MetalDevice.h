@@ -10,6 +10,7 @@
 #include "MetalShader.h"
 #include "MetalPipeline.h"
 #include "MetalTexture.h"
+#include "MetalRenderPass.h"
 
 namespace Vision
 {
@@ -49,30 +50,38 @@ public:
   ID CreateRenderPass(const RenderPassDesc& desc);
   void BeginRenderPass(ID pass);
   void EndRenderPass();
-  void DestroyRenderPass(ID pass);
+  void DestroyRenderPass(ID pass) { renderPasses.Destroy(pass); }
+
+  void BeginCommandBuffer();
+  void SubmitCommandBuffer();
+  void SchedulePresentation();
 
   void SetViewport(float x, float y, float width, float height);
   void SetScissorRect(float x, float y, float width, float height);
   void Submit(const DrawCommand& command);
 
-private:
-  MTL::Device* gpuDevice;
-  CA::MetalLayer* layer;
-  CA::MetalDrawable* drawable;
 
+private:
+  // gpu device
+  MTL::Device* gpuDevice;
+
+  // render target
+  CA::MetalLayer* layer;
+  CA::MetalDrawable* drawable = nullptr;
+
+  // gpu data
+  ID currentID = 1;
   ObjectCache<MetalBuffer> buffers;
   ObjectCache<MetalShader> shaders;
   ObjectCache<MetalPipeline> pipelines;
   ObjectCache<MetalTexture> textures;
   ObjectCache<MetalCubemap> cubemaps;
-  ID currentID = 1;
+  ObjectCache<MetalRenderPass> renderPasses;
 
   // command stuff
   MTL::CommandQueue* queue;
   MTL::CommandBuffer* cmdBuffer;
   MTL::RenderCommandEncoder* encoder;
-
-  MTL::SamplerState* temp;
 };
 
 }

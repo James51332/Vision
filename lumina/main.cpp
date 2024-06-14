@@ -94,6 +94,7 @@ namespace Lumina
 
       // Render
       // TODO: The renderer probably should own the render pass obj.
+      renderDevice->BeginCommandBuffer();
       renderDevice->BeginRenderPass(renderPass);
       renderer->Begin(&perspectiveCamera);
 
@@ -105,6 +106,8 @@ namespace Lumina
 
       renderer->End();
       renderDevice->EndRenderPass();
+      renderDevice->SchedulePresentation();
+      renderDevice->SubmitCommandBuffer();
     }
 
     void OnResize(float width, float height)

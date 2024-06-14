@@ -15,7 +15,6 @@ public:
 
   RenderDevice* GetRenderDevice();
   PixelType GetPixelType() const { return PixelType::RGBA32; }
-  void Present();
 
 private:
   SDL_Window* window;

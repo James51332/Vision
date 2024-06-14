@@ -8,6 +8,7 @@
 #include "renderer/primitive/Texture.h"
 #include "renderer/primitive/Buffer.h"
 #include "renderer/primitive/Pipeline.h"
+#include "renderer/primitive/RenderPass.h"
 
 namespace Vision
 {
@@ -91,6 +92,29 @@ static MTL::CompareFunction DepthFunctionToMTLCompareFunction(DepthFunc func)
     case DepthFunc::Equal: return MTL::CompareFunctionEqual;
     default:
       return MTL::CompareFunctionAlways;
+  }
+}
+
+static MTL::LoadAction LoadOpToMTLLoadAction(LoadOp op)
+{
+  switch (op)
+  {
+    case LoadOp::Load: return MTL::LoadActionLoad;
+    case LoadOp::Clear: return MTL::LoadActionClear;
+    case LoadOp::DontCare: return MTL::LoadActionDontCare;
+    default:
+      return MTL::LoadActionDontCare;
+  }
+}
+
+static MTL::StoreAction StoreOpToMTLStoreAction(StoreOp op)
+{
+  switch (op)
+  {
+    case StoreOp::DontCare: return MTL::StoreActionDontCare;
+    case StoreOp::Store: return MTL::StoreActionStore;
+    default:
+      return MTL::StoreActionDontCare;
   }
 }
 

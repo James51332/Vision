@@ -20,7 +20,6 @@ public:
 
   RenderDevice* GetRenderDevice();
   PixelType GetPixelType() const { return MTLPixelFormatToPixelType(metalLayer->pixelFormat()); }
-  void Present();
 
 private:
   SDL_Window* window = nullptr;

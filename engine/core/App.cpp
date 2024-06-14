@@ -44,8 +44,6 @@ void App::Run()
 
     // Update App
     OnUpdate(timestep);
-
-    renderContext->Present();
   }
 }
 

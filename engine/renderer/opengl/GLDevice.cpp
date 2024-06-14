@@ -11,7 +11,8 @@
 namespace Vision
 {
 
-GLDevice::GLDevice()
+GLDevice::GLDevice(SDL_Window* wind)
+  : window(wind)
 {
   gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
 }
@@ -177,7 +178,7 @@ ID GLDevice::CreateRenderPass(const RenderPassDesc &desc)
 
 void GLDevice::BeginRenderPass(ID pass)
 {
-  SDL_assert(activePass == 0);
+  SDL_assert(!activePass);
 
   activePass = pass;
   RenderPassDesc* rp = renderpasses.Get(activePass);
@@ -197,6 +198,8 @@ void GLDevice::BeginRenderPass(ID pass)
 
 void GLDevice::EndRenderPass()
 {
+  SDL_assert(activePass);
+
   ID fbID = renderpasses.Get(activePass)->Framebuffer;
   if (fbID != 0)
     framebuffers.Get(fbID)->Unbind();
@@ -207,6 +210,8 @@ void GLDevice::EndRenderPass()
 
 void GLDevice::SetScissorRect(float x, float y, float width, float height)
 {
+  SDL_assert(commandBufferActive);
+
   if (width <= 0 || height <= 0)
   {
     glDisable(GL_SCISSOR_TEST);
@@ -219,7 +224,7 @@ void GLDevice::SetScissorRect(float x, float y, float width, float height)
 
 void GLDevice::Submit(const DrawCommand& command)
 {
-  SDL_assert(activePass != 0);
+  SDL_assert(activePass);
 
   // bind the shader and upload uniforms
   GLPipeline* pipeline = pipelines.Get(command.Pipeline);
@@ -277,6 +282,32 @@ void GLDevice::Submit(const DrawCommand& command)
   {
     glDrawArrays(primitive, 0, command.NumVertices);
   }
+}
+
+void GLDevice::BeginCommandBuffer()
+{
+  SDL_assert(!commandBufferActive);
+  commandBufferActive = true;
+}
+
+void GLDevice::SubmitCommandBuffer()
+{
+  SDL_assert(commandBufferActive);
+  commandBufferActive = false;
+
+  if (schedulePresent)
+  {
+    SDL_GL_SwapWindow(window);
+    schedulePresent = false;
+  }
+}
+
+void GLDevice::SchedulePresentation()
+{
+  SDL_assert(commandBufferActive);
+  SDL_assert(activePass == 0);
+  
+  schedulePresent = true;
 }
 
 }

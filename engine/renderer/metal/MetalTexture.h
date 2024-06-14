@@ -21,9 +21,11 @@ public:
   float GetHeight() const { return height; }
   PixelType GetPixelType() const { return pixelType; }
   MTL::Texture* GetTexture() { return texture; }
+  MTL::SamplerState* GetSampler() const { return samplerState; }
 
 private:
   MTL::Texture* texture = nullptr;
+  MTL::SamplerState* samplerState = nullptr;
 
   float width, height;
   PixelType pixelType;
@@ -37,9 +39,12 @@ public:
   ~MetalCubemap();
 
   MTL::Texture* GetTexture() const { return cubemap; }
+  MTL::SamplerState* GetSampler() const { return samplerState; }
 
 private:
   MTL::Texture* cubemap;
+  MTL::SamplerState *samplerState = nullptr;
+
   PixelType pixelType;
 };
 }

@@ -15,7 +15,7 @@ GLContext::GLContext(SDL_Window* wind)
   context = SDL_GL_CreateContext(window);
   SDL_GL_MakeCurrent(window, context);
 
-  device = new GLDevice();
+  device = new GLDevice(wind);
 }
 
 GLContext::~GLContext()
@@ -26,11 +26,6 @@ GLContext::~GLContext()
 RenderDevice* GLContext::GetRenderDevice()
 {
   return device;
-}
-
-void GLContext::Present()
-{
-  SDL_GL_SwapWindow(window);
 }
 
 }

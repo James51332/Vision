@@ -123,9 +123,7 @@ ID MetalDevice::CreateBuffer(const BufferDesc &desc)
 
 void MetalDevice::AttachUniformBuffer(ID buffer, std::size_t block) 
 {
-  // TODO: The way we should implement this depends on how we transpile our shader
-  // code. Thankfully, the user will never have to think about this, which is honestly
-  // dope.
+  // We don't know which we're setting so we have to set both.
   encoder->setVertexBuffer(buffers.Get(buffer)->buffer, 0, block);
   encoder->setFragmentBuffer(buffers.Get(buffer)->buffer, 0, block);
 }
@@ -146,8 +144,14 @@ ID MetalDevice::CreateTexture2D(const Texture2DDesc &desc)
 
 void MetalDevice::BindTexture2D(ID id, std::size_t binding)
 {
-  encoder->setFragmentSamplerState(temp, binding);
-  encoder->setFragmentTexture(textures.Get(id)->GetTexture(), binding);
+  // TODO: For now, we have no way to know which state, so we must do both.
+  MetalTexture* texture = textures.Get(id);
+
+  encoder->setVertexTexture(texture->GetTexture(), binding);
+  encoder->setFragmentTexture(texture->GetTexture(), binding);
+
+  encoder->setVertexSamplerState(texture->GetSampler(), binding);
+  encoder->setFragmentSamplerState(texture->GetSampler(), binding);
 }
 
 ID MetalDevice::CreateCubemap(const CubemapDesc &desc)
@@ -155,20 +159,20 @@ ID MetalDevice::CreateCubemap(const CubemapDesc &desc)
   ID id = currentID++;
   MetalCubemap* cubemap = new MetalCubemap(gpuDevice, desc);
   cubemaps.Add(id, cubemap);
-  // Hack: sampler states should be part of textures
-  MTL::SamplerDescriptor* descr = MTL::SamplerDescriptor::alloc()->init();
-  descr->setMinFilter(MTL::SamplerMinMagFilterLinear);
-  descr->setMagFilter(MTL::SamplerMinMagFilterLinear);
-  temp = gpuDevice->newSamplerState(descr);
-  descr->release();
   
   return id;
 }
 
 void MetalDevice::BindCubemap(ID id, std::size_t binding)
 {
-  encoder->setFragmentSamplerState(temp, binding);
-  encoder->setFragmentTexture(cubemaps.Get(id)->GetTexture(), binding);
+  // TODO: For now, we have no way to know which state, so we must do both.
+  MetalCubemap *texture = cubemaps.Get(id);
+
+  encoder->setVertexTexture(texture->GetTexture(), binding);
+  encoder->setFragmentTexture(texture->GetTexture(), binding);
+
+  encoder->setVertexSamplerState(texture->GetSampler(), binding);
+  encoder->setFragmentSamplerState(texture->GetSampler(), binding);
 }
 
 ID MetalDevice::CreateFramebuffer(const FramebufferDesc &desc)
@@ -188,58 +192,83 @@ void MetalDevice::DestroyFramebuffer(ID id)
 
 ID MetalDevice::CreateRenderPass(const RenderPassDesc &desc)
 {
-  return 0;
+  ID id = currentID++;
+  MetalRenderPass* rp = new MetalRenderPass(desc);
+  renderPasses.Add(id, rp);
+  return id;
 }
 
-// For now the method is to just use a command encoder per renderpass.
 void MetalDevice::BeginRenderPass(ID pass)
 {
+  SDL_assert(cmdBuffer);
+  SDL_assert(!encoder);
+
+  // Autoreleasepool ensures our command buffers don't hog memory when we're done with them.
   NS::AutoreleasePool* pool = NS::AutoreleasePool::alloc()->init();
-  
-  cmdBuffer = queue->commandBuffer()->retain();
+  {
+    // assign the proper texture to the descriptor.
+    MetalRenderPass* renderpass = renderPasses.Get(pass);
+    MTL::RenderPassDescriptor* rpDesc = renderpass->GetDescriptor();
 
-  MTL::RenderPassDescriptor* descriptor = MTL::RenderPassDescriptor::alloc()->init();
-  descriptor->colorAttachments()->object(0)->setClearColor({0.0f, 0.0f, 0.0f, 1.0f});
-  descriptor->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionClear);
-  descriptor->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
-  
-  MTL::RenderPassDepthAttachmentDescriptor* da = MTL::RenderPassDepthAttachmentDescriptor::alloc()->init();
-  da->setClearDepth(1.0f);
-  descriptor->setDepthAttachment(da);
-  da->release();
+    // if our target is the framebuffer, we need to fetch the drawable.
+    if (renderpass->GetTarget() == 0)
+    {
+      if (!drawable) // only fetch if hasn't fetched since last presented.
+        drawable = layer->nextDrawable()->retain();
 
-  drawable = layer->nextDrawable()->retain();
-  descriptor->colorAttachments()->object(0)->setTexture(drawable->texture());
+      rpDesc->colorAttachments()->object(0)->setTexture(drawable->texture());
+    }
+    else
+    {
+      // TODO: Metal framebuffers.
+    }
 
-  encoder = cmdBuffer->renderCommandEncoder(descriptor)->retain();
-  
-  descriptor->release();
-  
+    encoder = cmdBuffer->renderCommandEncoder(rpDesc)->retain();
+  }
   pool->release();
 }
 
 void MetalDevice::EndRenderPass()
 {
+  SDL_assert(cmdBuffer);
+  SDL_assert(encoder);
+  
   NS::AutoreleasePool* pool = NS::AutoreleasePool::alloc()->init();
-  
-  assert(cmdBuffer);
-
-  encoder->endEncoding();
-  encoder->release();
-  encoder = nullptr;
-
-  cmdBuffer->presentDrawable(drawable);
-  cmdBuffer->commit();
-  cmdBuffer->release();
-  cmdBuffer = nullptr;
-  
-  drawable->release();
-  
+  {
+    encoder->endEncoding();
+    encoder->release();
+    encoder = nullptr;
+  }
   pool->release();
 }
 
-void MetalDevice::DestroyRenderPass(ID pass)
+void MetalDevice::BeginCommandBuffer()
 {
+  SDL_assert(!cmdBuffer);
+
+  cmdBuffer = queue->commandBuffer();
+}
+
+void MetalDevice::SubmitCommandBuffer()
+{
+  SDL_assert(cmdBuffer);
+  NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
+  {
+    cmdBuffer->commit();
+    cmdBuffer = nullptr;
+
+    drawable->release();
+    drawable = nullptr; // free the drawable only if presented.
+  }
+  pool->release();
+}
+
+void MetalDevice::SchedulePresentation()
+{
+  SDL_assert(cmdBuffer);
+  SDL_assert(drawable);
+
+  cmdBuffer->presentDrawable(drawable);
 }
 
 void MetalDevice::SetViewport(float x, float y, float width, float height)

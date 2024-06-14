@@ -1,5 +1,7 @@
 #pragma once
 
+#include <SDL.h>
+
 #include "renderer/RenderDevice.h"
 #include "renderer/primitive/ObjectCache.h"
 
@@ -16,7 +18,7 @@ namespace Vision
 class GLDevice : public RenderDevice
 {
 public:
-  GLDevice();
+  GLDevice(SDL_Window* wind);
 
   ID CreatePipeline(const PipelineDesc& desc);
   GLPipeline* GetPipeline(ID pipeline) { return pipelines.Get(pipeline); }
@@ -59,21 +61,32 @@ public:
   virtual void SetScissorRect(float x, float y, float width, float height);
   void Submit(const DrawCommand &command);
 
+  void BeginCommandBuffer();
+  void SubmitCommandBuffer();
+  void SchedulePresentation();
+
 private:
+  // swapchain image
+  SDL_Window* window;
+
+  // GPU data
+  std::size_t currentID = 1;
   ObjectCache<GLPipeline> pipelines;
   ObjectCache<GLProgram> shaders;
   ObjectCache<GLBuffer> buffers;
   ObjectCache<GLTexture2D> textures;
   ObjectCache<GLCubemap> cubemaps;
   ObjectCache<GLFramebuffer> framebuffers;
-
-  // renderpasses are just equivalent to their descriptors in OpenGL
   ObjectCache<RenderPassDesc> renderpasses;
-  ID activePass = 0;
 
+  // vertex arrays aren't really real outside of opengl, so the engine caches them.
+  // we hash to select one without having to rebuild each render.
   GLVertexArrayCache vaoCache;
 
-  std::size_t currentID = 1;
+  // renderer data
+  ID activePass = 0;
+  bool commandBufferActive = false;
+  bool schedulePresent = false;
 };
 
 }

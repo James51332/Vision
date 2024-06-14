@@ -16,7 +16,6 @@ public:
 
   virtual RenderDevice* GetRenderDevice() = 0;
   virtual PixelType GetPixelType() const = 0;
-  virtual void Present() = 0;
 };
 
 }

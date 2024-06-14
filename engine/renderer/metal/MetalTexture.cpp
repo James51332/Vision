@@ -38,11 +38,19 @@ MetalTexture::MetalTexture(MTL::Device *device, const char *filePath)
   // set the data
   SetData(data);
   stbi_image_free(data);
+
+  // create a hard-coded sampler state (we need to add options for GL too!)
+  MTL::SamplerDescriptor* samplerDesc = MTL::SamplerDescriptor::alloc()->init();
+  samplerDesc->setMinFilter(MTL::SamplerMinMagFilterLinear);
+  samplerDesc->setMagFilter(MTL::SamplerMinMagFilterLinear);
+  samplerState = device->newSamplerState(samplerDesc);
+  samplerDesc->release();
 }
 
 MetalTexture::~MetalTexture()
 {
   texture->release();
+  samplerState->release();
 }
 
 void MetalTexture::Resize(MTL::Device* device, float w, float h)
@@ -107,11 +115,18 @@ MetalCubemap::MetalCubemap(MTL::Device* device, const CubemapDesc& desc)
     side++;
     stbi_image_free(data);
   }
+
+  MTL::SamplerDescriptor *samplerDesc = MTL::SamplerDescriptor::alloc()->init();
+  samplerDesc->setMinFilter(MTL::SamplerMinMagFilterLinear);
+  samplerDesc->setMagFilter(MTL::SamplerMinMagFilterLinear);
+  samplerState = device->newSamplerState(samplerDesc);
+  samplerDesc->release();
 }
 
 MetalCubemap::~MetalCubemap()
 {
   cubemap->release();
+  samplerState->release();
 }
 
 }
