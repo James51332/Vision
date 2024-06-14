@@ -11,6 +11,7 @@
 #include "MetalPipeline.h"
 #include "MetalTexture.h"
 #include "MetalRenderPass.h"
+#include "MetalFramebuffer.h"
 
 namespace Vision
 {
@@ -45,7 +46,7 @@ public:
 
   ID CreateFramebuffer(const FramebufferDesc& desc);
   void ResizeFramebuffer(ID id, float width, float height);
-  void DestroyFramebuffer(ID id);
+  void DestroyFramebuffer(ID id) { framebuffers.Destroy(id); }
 
   ID CreateRenderPass(const RenderPassDesc& desc);
   void BeginRenderPass(ID pass);
@@ -77,6 +78,7 @@ private:
   ObjectCache<MetalTexture> textures;
   ObjectCache<MetalCubemap> cubemaps;
   ObjectCache<MetalRenderPass> renderPasses;
+  ObjectCache<MetalFramebuffer> framebuffers;
 
   // command stuff
   MTL::CommandQueue* queue;

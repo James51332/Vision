@@ -177,17 +177,15 @@ void MetalDevice::BindCubemap(ID id, std::size_t binding)
 
 ID MetalDevice::CreateFramebuffer(const FramebufferDesc &desc)
 {
-  return 0;
+  ID id = currentID++;
+  MetalFramebuffer* fb = new MetalFramebuffer(gpuDevice, desc);
+  framebuffers.Add(id, fb);
+  return id;
 }
 
 void MetalDevice::ResizeFramebuffer(ID id, float width, float height)
 {
-
-}
-
-void MetalDevice::DestroyFramebuffer(ID id)
-{
-
+  framebuffers.Get(id)->Resize(gpuDevice, width, height);
 }
 
 ID MetalDevice::CreateRenderPass(const RenderPassDesc &desc)
@@ -220,7 +218,8 @@ void MetalDevice::BeginRenderPass(ID pass)
     }
     else
     {
-      // TODO: Metal framebuffers.
+      MetalFramebuffer* fb = framebuffers.Get(renderpass->GetTarget());
+      rpDesc->colorAttachments()->object(0)->setTexture(fb->GetTexture());
     }
 
     encoder = cmdBuffer->renderCommandEncoder(rpDesc)->retain();
