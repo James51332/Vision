@@ -22,9 +22,6 @@ struct PushConstant
 Renderer::Renderer(float width, float height, float displayScale)
   : m_Width(width), m_Height(height), m_PixelDensity(displayScale)
 {
-  // Resize the viewport
-  Resize(width, height);
-
   // TODO: Push constants will probably be parts of pipeline states.
   {
     BufferDesc desc;
@@ -47,8 +44,6 @@ void Renderer::Resize(float width, float height)
 {
   m_Width = width;
   m_Height = height;
-
-  App::GetDevice()->SetViewport(0, 0, width * m_PixelDensity, height * m_PixelDensity);
 }
 
 void Renderer::Begin(Camera* camera)

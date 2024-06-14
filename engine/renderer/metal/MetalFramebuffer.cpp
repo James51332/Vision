@@ -1,5 +1,7 @@
 #include "MetalFramebuffer.h"
 
+#include "MetalType.h"
+
 namespace Vision
 {
 
@@ -20,9 +22,9 @@ void MetalFramebuffer::Resize(MTL::Device* device, float width, float height)
     texture->release();
 
   MTL::TextureDescriptor *descriptor;
-  MTL::PixelFormat format = PixelTypeToMTLPixelFormat(desc.ColorFormat);
+  MTL::PixelFormat format = PixelTypeToMTLPixelFormat(pixelType);
 
-  descriptor = MTL::TextureDescriptor::alloc()->texture2DDescriptor(format, desc.Width, desc.Height, false);
+  descriptor = MTL::TextureDescriptor::alloc()->texture2DDescriptor(format, width, height, false);
   descriptor->setUsage(MTL::TextureUsageRenderTarget);
 
   texture = device->newTexture(descriptor);

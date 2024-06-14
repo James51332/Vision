@@ -272,12 +272,16 @@ void MetalDevice::SchedulePresentation()
 
 void MetalDevice::SetViewport(float x, float y, float width, float height)
 {
-
+  SDL_assert(encoder);
+  MTL::Viewport viewport{ x, y, width, height, 0.0f, 0.0f };
+  encoder->setViewport(viewport);
 }
 
 void MetalDevice::SetScissorRect(float x, float y, float width, float height)
 {
-
+  SDL_assert(encoder);
+  MTL::ScissorRect rect{static_cast<uint32_t>(x), static_cast<uint32_t>(y), static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+  encoder->setScissorRect(rect);
 }
 
 void MetalDevice::Submit(const DrawCommand &command)
