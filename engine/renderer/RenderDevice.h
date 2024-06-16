@@ -20,6 +20,7 @@ public:
   static RenderDevice* Create(RenderAPI API);
   virtual ~RenderDevice() {}
 
+  // render pipeline
   virtual ID CreatePipeline(const PipelineDesc& desc) = 0;
   virtual void DestroyPipeline(ID id) = 0;
 
@@ -28,6 +29,8 @@ public:
 
   virtual ID CreateBuffer(const BufferDesc &desc) = 0;
   virtual void SetBufferData(ID buffer, void *data, std::size_t size) = 0;
+  virtual void MapBufferData(ID buffer, void **data, std::size_t size) = 0;
+  virtual void FreeBufferData(ID id, void **data) = 0;
   virtual void ResizeBuffer(ID buffer, std::size_t size) = 0;
   virtual void AttachUniformBuffer(ID buffer, std::size_t block = 0) = 0; 
   virtual void DestroyBuffer(ID id) = 0;
@@ -52,7 +55,9 @@ public:
   virtual void DestroyRenderPass(ID pass) = 0; 
 
   virtual void BeginCommandBuffer() = 0;
-  virtual void SubmitCommandBuffer() = 0;
+  virtual void SubmitCommandBuffer(bool await = false) = 0;
+
+  // TODO: GPU memory synchronization
 
   // used to present the next swapchain image to the screen.
   virtual void SchedulePresentation() = 0;
@@ -60,6 +65,18 @@ public:
   virtual void SetViewport(float x, float y, float width, float height) = 0;
   virtual void SetScissorRect(float x, float y, float width, float height) = 0;
   virtual void Submit(const DrawCommand& command) = 0;
+
+  // compute pipeline
+  virtual ID CreateComputePipeline(const ComputePipelineDesc &desc) = 0;
+  virtual void DestroyComputePipeline(ID id) = 0;
+
+  virtual void BeginComputePass() = 0;
+  virtual void EndComputePass() = 0;
+
+  virtual void SetComputeBuffer(ID buffer, std::size_t binding = 0) = 0;
+  virtual void SetComputeTexture(ID texture, std::size_t binding = 0) = 0;
+
+  virtual void DispatchCompute(ID pipeline, const glm::vec3 &threads) = 0;
 };
 
 }

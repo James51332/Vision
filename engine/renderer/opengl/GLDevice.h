@@ -30,6 +30,8 @@ public:
 
   ID CreateBuffer(const BufferDesc& desc);
   void SetBufferData(ID buffer, void* data, std::size_t size) { buffers.Get(buffer)->SetData(data, size); }
+  void MapBufferData(ID buffer, void **data, std::size_t size);
+  void FreeBufferData(ID id, void** data);
   void ResizeBuffer(ID buffer, std::size_t size) { buffers.Get(buffer)->Resize(size); }
   void AttachUniformBuffer(ID buffer, std::size_t block = 0) { buffers.Get(buffer)->Attach(block); }
   GLBuffer* GetBuffer(ID buffer) { return buffers.Get(buffer); }
@@ -62,8 +64,17 @@ public:
   void Submit(const DrawCommand &command);
 
   void BeginCommandBuffer();
-  void SubmitCommandBuffer();
+  void SubmitCommandBuffer(bool await = false);
   void SchedulePresentation();
+
+  // compute pipeline
+  ID CreateComputePipeline(const ComputePipelineDesc &desc) { return 0; }
+  void DestroyComputePipeline(ID id) {}
+  void BeginComputePass() {}
+  void EndComputePass() {}
+  void SetComputeBuffer(ID buffer, std::size_t binding = 0) {}
+  void SetComputeTexture(ID texture, std::size_t binding = 0) {}
+  void DispatchCompute(ID pipeline, const glm::vec3 &threads) {}
 
 private:
   // swapchain image

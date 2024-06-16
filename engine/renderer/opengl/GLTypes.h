@@ -37,6 +37,7 @@ static GLenum ShaderStageToGLenum(ShaderStage stage)
     case ShaderStage::Hull: return GL_TESS_CONTROL_SHADER;
     case ShaderStage::Domain: return GL_TESS_EVALUATION_SHADER;
     case ShaderStage::Geometry: return GL_GEOMETRY_SHADER;
+    case ShaderStage::Compute: return -1;
   }
 
   SDL_assert(false);
@@ -89,6 +90,7 @@ static GLenum PixelTypeToGLInternalFormat(PixelType type)
     case PixelType::RG16: return GL_RG8;
     case PixelType::RGB24: return GL_RGB8;
     case PixelType::RGBA32: return GL_RGBA8;
+    case PixelType::BGRA32: return GL_BGRA;
     case PixelType::Depth32: return GL_DEPTH_COMPONENT32;
     case PixelType::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
   }
@@ -105,6 +107,7 @@ static GLenum PixelTypeTOGLFormat(PixelType type)
     case PixelType::RG16: return GL_RG;
     case PixelType::RGB24: return GL_RGB;
     case PixelType::RGBA32: return GL_RGBA;
+    case PixelType::BGRA32: return GL_BGRA;
     case PixelType::Depth32: return GL_DEPTH_COMPONENT;
     case PixelType::Depth24Stencil8: return GL_DEPTH_STENCIL;
   }

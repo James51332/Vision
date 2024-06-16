@@ -36,6 +36,7 @@ MetalShader::MetalShader(MTL::Device *device, const std::unordered_map<ShaderSta
     shaderFunctions[stage] = func;
 
     library->release();
+    string->release();
   }
 
   options->release();

@@ -16,6 +16,7 @@ public:
   ~GLBuffer();
 
   GLuint GetID() const { return m_Object; }
+  GLenum GetType() const { return type; }
 
   void SetData(void *data, std::size_t size);
   void Resize(std::size_t size); // Resizes but doesn't give data to gpu
@@ -25,8 +26,8 @@ public:
 
 private:
   GLuint m_Object;
-  GLenum m_Type;
   GLenum m_Usage;
+  GLenum type;
   std::size_t m_Size;
 
   std::string debugName;

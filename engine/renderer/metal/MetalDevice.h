@@ -30,6 +30,8 @@ public:
 
   ID CreateBuffer(const BufferDesc &desc);
   void SetBufferData(ID buffer, void *data, std::size_t size) { buffers.Get(buffer)->SetData(size, data); }
+  void MapBufferData(ID buffer, void** data, std::size_t size);
+  void FreeBufferData(ID id, void **data);
   void ResizeBuffer(ID buffer, std::size_t size) { buffers.Get(buffer)->Reset(gpuDevice, size); }
   void AttachUniformBuffer(ID buffer, std::size_t block = 0);  
   void DestroyBuffer(ID id) { buffers.Destroy(id); }
@@ -54,13 +56,24 @@ public:
   void DestroyRenderPass(ID pass) { renderPasses.Destroy(pass); }
 
   void BeginCommandBuffer();
-  void SubmitCommandBuffer();
+  void SubmitCommandBuffer(bool await = false);
   void SchedulePresentation();
 
   void SetViewport(float x, float y, float width, float height);
   void SetScissorRect(float x, float y, float width, float height);
   void Submit(const DrawCommand& command);
 
+  // compute pipeline
+  ID CreateComputePipeline(const ComputePipelineDesc& desc);
+  void DestroyComputePipeline(ID id) { computePipelines.Destroy(id); }
+
+  void BeginComputePass();
+  void EndComputePass();
+
+  void SetComputeBuffer(ID buffer, std::size_t binding = 0);
+  void SetComputeTexture(ID texture, std::size_t binding = 0);
+
+  void DispatchCompute(ID pipeline, const glm::vec3 &threads);
 
 private:
   // gpu device
@@ -79,11 +92,13 @@ private:
   ObjectCache<MetalCubemap> cubemaps;
   ObjectCache<MetalRenderPass> renderPasses;
   ObjectCache<MetalFramebuffer> framebuffers;
+  ObjectCache<MetalComputePipeline> computePipelines;
 
   // command stuff
-  MTL::CommandQueue* queue;
-  MTL::CommandBuffer* cmdBuffer;
-  MTL::RenderCommandEncoder* encoder;
+  MTL::CommandQueue* queue = nullptr;
+  MTL::CommandBuffer* cmdBuffer = nullptr;
+  MTL::RenderCommandEncoder* encoder = nullptr;
+  MTL::ComputeCommandEncoder* computeEncoder = nullptr;
 };
 
 }

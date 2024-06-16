@@ -26,4 +26,19 @@ private:
   MTL::DepthStencilState* depthState;
 };
 
+// compute pipeline
+class MetalComputePipeline
+{
+public:
+  MetalComputePipeline(MTL::Device *device, ComputePipelineDesc &desc);
+  ~MetalComputePipeline();
+
+  MTL::ComputePipelineState* GetPipeline() const { return pipeline; }
+  MTL::Size GetWorkgroupSize() const { return workGroupSize; }
+
+private:
+  MTL::ComputePipelineState* pipeline;
+  MTL::Size workGroupSize;
+};
+
 }

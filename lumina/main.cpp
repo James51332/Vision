@@ -1,13 +1,7 @@
 #include "core/App.h"
 
-#include "core/Input.h"
-
-#include "renderer/Camera.h"
-#include "renderer/Renderer.h"
-#include "renderer/Mesh.h"
-#include "renderer/MeshGenerator.h"
-#include "renderer/primitive/Shader.h"
-#include "renderer/primitive/Texture.h"
+#include <iostream>
+#include <glm/gtc/random.hpp>
 
 namespace Lumina
 {
@@ -15,121 +9,67 @@ namespace Lumina
   {
   public:
     Lumina()
-      : Vision::App("Lumina")
+        : Vision::App("Lumina")
     {
-      // Initialize the scene
-      perspectiveCamera = Vision::PerspectiveCamera(displayWidth, displayHeight, 0.1f, 1000.0f);
+      // Create our compute pipeline
+      Vision::ComputePipelineDesc desc;
+      desc.FilePath = "resources/computeShader.glsl";
+      Vision::ID pipeline = renderDevice->CreateComputePipeline(desc);
 
-      // create the skybox
-      Vision::CubemapDesc desc;
-      desc.Textures = {
-        "resources/skybox/right.jpg",
-        "resources/skybox/left.jpg",
-        "resources/skybox/top.jpg",
-        "resources/skybox/bottom.jpg",
-        "resources/skybox/front.jpg",
-        "resources/skybox/back.jpg"
-      };
-      skyboxTexture = renderDevice->CreateCubemap(desc);
+      // Create some data
+      constexpr std::size_t elements = 50;
+      constexpr std::size_t bufferSize = elements * sizeof(float);
+      std::vector<float> data(elements);
+      for (std::size_t i = 0; i < elements; i++)
+      {
+        data[i] = glm::linearRand(0.0f, 100.0f);
+        std::cout << data[i] << " ";
+      }
+      std::cout << std::endl;
 
-      skyboxMesh = Vision::MeshGenerator::CreateCubeMesh(1.0f);
+      // Copy the data to the GPU
+      Vision::BufferDesc bufferDesc;
+      bufferDesc.Data = data.data();
+      bufferDesc.Usage = Vision::BufferUsage::Dynamic;
+      bufferDesc.Size = bufferSize;
+      bufferDesc.DebugName = "Compute Buffer";
+      Vision::ID computeBuffer = renderDevice->CreateBuffer(bufferDesc);
 
-      Vision::ShaderDesc shaderDesc;
-      shaderDesc.FilePath = "resources/skyShader.glsl";
-      skyboxShader = renderDevice->CreateShader(shaderDesc);
+      // Tell the GPU to run our compute pass
+      renderDevice->BeginCommandBuffer();
+      renderDevice->BeginComputePass();
 
-      Vision::PipelineDesc pipelineDesc;
-      pipelineDesc.Layouts = 
-      { Vision::BufferLayout({
-        { Vision::ShaderDataType::Float3, "Position"},
-        { Vision::ShaderDataType::Float3, "Normal" },
-        { Vision::ShaderDataType::Float4, "Color" },
-        { Vision::ShaderDataType::Float2, "UV" }}) 
-      };
-      pipelineDesc.Shader = skyboxShader;
-      pipelineDesc.DepthFunc = Vision::DepthFunc::LessEqual;
-      pipelineDesc.PixelFormat = renderContext->GetPixelType();
-      skyboxPS = renderDevice->CreatePipeline(pipelineDesc);
+      renderDevice->SetComputeBuffer(computeBuffer);
+      renderDevice->DispatchCompute(pipeline, {elements, 1, 1});
 
-      // create the plane
-      Vision::Texture2DDesc td;
-      td.FilePath = "resources/iceland_heightmap.png";
-      td.LoadFromFile = true;
-      icelandTexture = renderDevice->CreateTexture2D(td);
+      renderDevice->EndComputePass();
+      renderDevice->SubmitCommandBuffer(true); // await completion
 
-      planeMesh = Vision::MeshGenerator::CreatePlaneMesh(5.0f, 5.0f, 50.0f, 50.0f, true);
+      // Fetch the data
+      float* element;
+      renderDevice->MapBufferData(computeBuffer, (void**)&element, bufferSize);
 
-      Vision::ShaderDesc sd;
-      sd.FilePath = "resources/planeShader.glsl";
-      planeShader = renderDevice->CreateShader(sd);
+      // Log our new data
+      if (element) // only print if the data exists.
+      {
+        for (std::size_t i = 0; i < elements; i++)
+        {
+          std::cout << element[i] << " ";
+        }
+        std::cout << std::endl;
+      }
 
-      Vision::PipelineDesc pd;
-      pd.Layouts = pipelineDesc.Layouts;
-      pd.PixelFormat = renderContext->GetPixelType();
-      pd.Shader = planeShader;
-      planePS = renderDevice->CreatePipeline(pd);
+      renderDevice->FreeBufferData(computeBuffer, (void**)&element);
 
-      // create the render pass
-      Vision::RenderPassDesc rpDesc;
-      rpDesc.Framebuffer = 0;
-      rpDesc.ClearColor = {0.1f, 0.1f, 0.1f, 1.0f};
-      rpDesc.LoadOp = Vision::LoadOp::Clear;
-      renderPass = renderDevice->CreateRenderPass(rpDesc);
-    }
-
-    ~Lumina()
-    {
-      delete skyboxMesh;
-      renderDevice->DestroyCubemap(skyboxTexture);
-      renderDevice->DestroyShader(skyboxShader);
-      renderDevice->DestroyPipeline(skyboxPS);
-
-      renderDevice->DestroyRenderPass(renderPass);
+      // Close the app
+      Stop();
     }
 
     void OnUpdate(float timestep)
     {
-      // Update Camera Controller
-      perspectiveCamera.Update(timestep);
 
-      // Render
-      // TODO: The renderer probably should own the render pass obj.
-      renderDevice->BeginCommandBuffer();
-      renderDevice->BeginRenderPass(renderPass);
-      renderer->Begin(&perspectiveCamera);
-
-      renderDevice->BindTexture2D(icelandTexture);
-      renderer->DrawMesh(planeMesh, planePS);
-
-      renderDevice->BindCubemap(skyboxTexture);
-      renderer->DrawMesh(skyboxMesh, skyboxPS);
-
-      renderer->End();
-      renderDevice->EndRenderPass();
-      renderDevice->SchedulePresentation();
-      renderDevice->SubmitCommandBuffer();
     }
-
-    void OnResize(float width, float height)
-    {
-      perspectiveCamera.SetWindowSize(width, height);
-    }
-
-  private:
-    Vision::PerspectiveCamera perspectiveCamera;
-
-    Vision::Mesh* skyboxMesh;
-    Vision::ID skyboxTexture;
-    Vision::ID skyboxPS;
-    Vision::ID skyboxShader;
-
-    Vision::Mesh* planeMesh;
-    Vision::ID icelandTexture;
-    Vision::ID planePS;
-    Vision::ID planeShader;
-
-    Vision::ID renderPass;
-};
+  };
 }
 
 int main()

@@ -121,6 +121,17 @@ ID MetalDevice::CreateBuffer(const BufferDesc &desc)
   return id;
 }
 
+void MetalDevice::MapBufferData(ID id, void **data, std::size_t size)
+{
+  MetalBuffer* buffer = buffers.Get(id);
+  (*data) = buffer->buffer->contents();
+}
+
+void MetalDevice::FreeBufferData(ID id, void** data)
+{
+  (*data) = nullptr;
+}
+
 void MetalDevice::AttachUniformBuffer(ID buffer, std::size_t block) 
 {
   // We don't know which we're setting so we have to set both.
@@ -248,12 +259,13 @@ void MetalDevice::BeginCommandBuffer()
   cmdBuffer = queue->commandBuffer();
 }
 
-void MetalDevice::SubmitCommandBuffer()
+void MetalDevice::SubmitCommandBuffer(bool await)
 {
   SDL_assert(cmdBuffer);
   NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
   {
     cmdBuffer->commit();
+    if (await) cmdBuffer->waitUntilCompleted();
     cmdBuffer = nullptr;
 
     drawable->release();
@@ -310,6 +322,65 @@ void MetalDevice::Submit(const DrawCommand &command)
   // submit the draw call.
   MetalBuffer* indexBuffer = buffers.Get(command.IndexBuffer);
   encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, command.NumVertices, MTL::IndexTypeUInt32, indexBuffer->buffer, 0);
+}
+
+// compute API
+ID MetalDevice::CreateComputePipeline(const ComputePipelineDesc &desc)
+{
+  ID id = currentID++;
+  ComputePipelineDesc tmp = desc;
+  MetalComputePipeline* pipeline = new MetalComputePipeline(gpuDevice, tmp);
+  computePipelines.Add(id, pipeline);
+  return id;
+}
+
+void MetalDevice::BeginComputePass()
+{
+  SDL_assert(cmdBuffer);
+  SDL_assert(!encoder);
+  SDL_assert(!computeEncoder);
+
+  computeEncoder = cmdBuffer->computeCommandEncoder()->retain();
+}
+
+void MetalDevice::EndComputePass()
+{
+  SDL_assert(computeEncoder);
+
+  NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
+  {
+    computeEncoder->endEncoding();
+    computeEncoder->release();
+    computeEncoder = nullptr;
+  }
+  pool->release();
+}
+
+void MetalDevice::SetComputeBuffer(ID id, std::size_t binding)
+{
+  SDL_assert(computeEncoder);
+
+  MetalBuffer* buffer = buffers.Get(id);
+  computeEncoder->setBuffer(buffer->buffer, 0, binding);
+}
+
+void MetalDevice::SetComputeTexture(ID id, std::size_t binding)
+{
+  SDL_assert(computeEncoder);
+
+  MetalTexture* texture = textures.Get(id);
+  computeEncoder->setTexture(texture->GetTexture(), binding);
+}
+
+void MetalDevice::DispatchCompute(ID pipeline, const glm::vec3& threads)
+{
+  SDL_assert(computeEncoder);
+
+  MetalComputePipeline* ps = computePipelines.Get(pipeline); 
+  computeEncoder->setComputePipelineState(ps->GetPipeline());
+
+  MTL::Size numThreads = { static_cast<NS::UInteger>(threads.x), static_cast<NS::UInteger>(threads.y), static_cast<NS::UInteger>(threads.z) };
+  computeEncoder->dispatchThreads(numThreads, ps->GetWorkgroupSize());
 }
 
 }

@@ -3,6 +3,10 @@
 #include <iostream>
 #include <SDL.h>
 
+#include <spirv_msl.hpp>
+
+#include "renderer/ShaderCompiler.h"
+
 #include "MetalType.h"
 
 namespace Vision
@@ -97,6 +101,81 @@ MetalPipeline::~MetalPipeline()
 {
   pipeline->release();
   depthState->release();
+}
+
+MetalComputePipeline::MetalComputePipeline(MTL::Device *device, ComputePipelineDesc &desc)
+{
+  std::string msl;
+
+  // prepare our shader code
+  if (desc.Source == ShaderSource::File)
+  {
+    ShaderCompiler compiler;
+    compiler.LoadSource(desc);
+    compiler.GenerateSPIRV(desc);
+  }
+
+  if (desc.Source == ShaderSource::StageMap)
+  {
+    ShaderCompiler compiler;
+    compiler.GenerateSPIRV(desc);
+  }
+
+  if (desc.Source == ShaderSource::SPIRV)
+  {
+    spirv_cross::CompilerMSL compiler(std::move(desc.SPIRV));
+    
+    auto mslOpts = compiler.get_msl_options();
+    mslOpts.enable_decoration_binding = true; // tell the compiler to use glsl bindings for buffer indices
+    compiler.set_msl_options(mslOpts);
+
+    msl = compiler.compile();
+    std::cout << msl << std::endl;
+
+    // fetch the threadgroup info from GLSL (HACK: There may be a better way to do this)
+    auto entries = compiler.get_entry_points_and_stages();
+    auto workSize = compiler.get_entry_point(entries.front().name, entries.front().execution_model).workgroup_size;
+    workGroupSize = { workSize.x, workSize.y, workSize.z };
+  }
+
+  // allocate a compiler options object that we'll use for all of the shaders
+  MTL::CompileOptions *options = MTL::CompileOptions::alloc()->init();
+
+  // TODO: We may need other forms of encoding later (e.g. wide-chars)
+  NS::String *string = NS::String::alloc()->init(msl.c_str(), NS::UTF8StringEncoding);
+
+  // construct a library for the shader stage
+  NS::Error *error = nullptr;
+  MTL::Library *library = device->newLibrary(string, options, &error);
+
+  if (error)
+  {
+    std::cout << "Failed to compile compute shader" << std::endl;
+    std::cout << error->description()->cString(NS::UTF8StringEncoding) << std::endl;
+  }
+
+  // extract the main function from the library
+  NS::String *funcName = NS::String::alloc()->init("main0", NS::UTF8StringEncoding);
+  MTL::Function *func = library->newFunction(funcName);
+
+  // build the pipeline
+  pipeline = device->newComputePipelineState(func, &error);
+  if (error)
+  {
+    std::cout << "Failed to link compute pipeline" << std::endl;
+    std::cout << error->description()->cString(NS::UTF8StringEncoding) << std::endl;
+  }
+
+  // free all of our memory.
+  library->release();
+  string->release();
+  options->release();
+  func->release();
+}
+
+MetalComputePipeline::~MetalComputePipeline()
+{
+  pipeline->release();
 }
 
 }

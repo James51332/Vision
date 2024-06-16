@@ -12,7 +12,8 @@ enum class ShaderStage
   Domain,
   Hull,
   Geometry,
-  Pixel
+  Pixel,
+  Compute
 };
 
 static const char* ShaderStageToString(ShaderStage type)
@@ -24,6 +25,7 @@ static const char* ShaderStageToString(ShaderStage type)
     case ShaderStage::Domain: return "domain";
     case ShaderStage::Hull: return "hull";
     case ShaderStage::Geometry: return "geometry";
+    case ShaderStage::Compute: return "compute";
     default:
       return "unknown";
   }

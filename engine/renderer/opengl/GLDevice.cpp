@@ -135,6 +135,21 @@ ID GLDevice::CreateBuffer(const BufferDesc &desc)
   return id;
 }
 
+void GLDevice::MapBufferData(ID id, void **data, std::size_t size)
+{
+  GLBuffer* buffer = buffers.Get(id);
+  buffer->Bind();
+  (*data) = glMapBuffer(buffer->GetType(), GL_READ_BUFFER);
+}
+
+void GLDevice::FreeBufferData(ID id, void** data)
+{
+  GLBuffer* buffer = buffers.Get(id);
+  buffer->Bind();
+  glUnmapBuffer(buffer->GetType());
+  (*data) = nullptr;
+}
+
 ID GLDevice::CreateTexture2D(const Texture2DDesc &desc)
 {
   ID id = currentID++;
@@ -290,7 +305,7 @@ void GLDevice::BeginCommandBuffer()
   commandBufferActive = true;
 }
 
-void GLDevice::SubmitCommandBuffer()
+void GLDevice::SubmitCommandBuffer(bool await)
 {
   SDL_assert(commandBufferActive);
   commandBufferActive = false;
