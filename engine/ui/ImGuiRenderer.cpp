@@ -1,14 +1,17 @@
 #include "ImGuiRenderer.h"
 
 #include <imgui.h>
+#include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include "core/App.h"
 
 namespace Vision
 {
 
-ImGuiRenderer::ImGuiRenderer(float width, float height, float displayScale)
-  : m_Width(width), m_Height(height), m_PixelDensity(displayScale)
+ImGuiRenderer::ImGuiRenderer(RenderDevice* renderDevice, float w, float h, float displayScale)
+  : device(renderDevice), width(w), height(h), pixelDensity(displayScale)
 {
   // Initialize ImGui
   ImGui::CreateContext();
@@ -22,9 +25,9 @@ ImGuiRenderer::ImGuiRenderer(float width, float height, float displayScale)
 
   // Create our rendering resources
   GenerateBuffers();
-  GenerateArrays();
-  GenerateShaders();
-  GenerateTextures();
+  GeneratePipeline();
+  GenerateRenderPass();
+  GenerateTexture();
 }
 
 ImGuiRenderer::~ImGuiRenderer()
@@ -34,19 +37,14 @@ ImGuiRenderer::~ImGuiRenderer()
 
   // Destroy our rendering resources 
   DestroyBuffers();
-  DestroyArrays();
-  DestroyShaders();
-  DestroyTextures();
+  DestroyPipeline();
+  DestroyRenderPass();
+  DestroyTexture();
 }
 
 void ImGuiRenderer::Begin()
 {
   ImGui::NewFrame();
-
-  // Enable Blending and Disable Depth Testing
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glDisable(GL_DEPTH_TEST);
 }
 
 void ImGuiRenderer::End()
@@ -58,25 +56,27 @@ void ImGuiRenderer::End()
   int32_t fbWidth = static_cast<int32_t>(drawData->DisplaySize.x * drawData->FramebufferScale.x);
   int32_t fbHeight = static_cast<int32_t>(drawData->DisplaySize.y * drawData->FramebufferScale.y);
   if (fbWidth <= 0 || fbHeight <= 0)
+  {
+    std::cout << "Error! Zero/Negative UI Framebuffer Size" << std::endl;
     return;
+  }
 
   // We can bind our shader here because it's the same for the entire program
-  m_Shader->Use();
+  device->BeginCommandBuffer();
+  device->BeginRenderPass(renderPass);
 
-  // Setup our projection matrix
+  // bind our projection matrix
   float L = drawData->DisplayPos.x;
   float R = drawData->DisplayPos.x + drawData->DisplaySize.x;
   float T = drawData->DisplayPos.y;
   float B = drawData->DisplayPos.y + drawData->DisplaySize.y;
   glm::mat4 projection = glm::ortho(L, R, B, T);
-  m_Shader->UploadUniformMat4(&projection[0][0], "u_ViewProjection");
-
-  m_Shader->UploadUniformInt(0, "u_Texture");
+  device->SetBufferData(ubo, &projection, sizeof(glm::mat4));
+  device->AttachUniformBuffer(ubo);
 
   // Calculate our clip rect offset and scale
   glm::vec2 clipOff = { drawData->DisplayPos.x, drawData->DisplayPos.y };
   glm::vec2 clipScale = { drawData->FramebufferScale.x, drawData->FramebufferScale.y };
-  glEnable(GL_SCISSOR_TEST);
 
   for (std::size_t i = 0; i < drawData->CmdListsCount; i++)
   {
@@ -86,22 +86,26 @@ void ImGuiRenderer::End()
     if (cmdList->VtxBuffer.Size > m_MaxVertices)
     {
       m_MaxVertices *= 2;
-      m_VBO->Resize(m_MaxVertices * sizeof(ImDrawVert));
+      device->ResizeBuffer(vbo, m_MaxVertices * sizeof(ImDrawVert));
     }
 
     if (cmdList->IdxBuffer.Size > m_MaxIndices)
     {
       m_MaxIndices *= 2;
-      m_IBO->Resize(m_MaxIndices * sizeof(ImDrawIdx));
+      device->ResizeBuffer(ibo, m_MaxIndices * sizeof(ImDrawIdx));
     }
 
     // Copy the draw data into our buffers
-    m_VBO->SetData(cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
-    m_IBO->SetData(cmdList->IdxBuffer.Data, cmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
+    device->SetBufferData(vbo, cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
+    device->SetBufferData(ibo, cmdList->IdxBuffer.Data, cmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
 
-    // Bind our vertex array and buffers
-    m_VertexArray->Bind();
-    m_IBO->Bind();
+    // Prepare a draw command that we can reuse
+    DrawCommand drawCmd;
+    drawCmd.VertexBuffers = { vbo };
+    drawCmd.IndexBuffer = ibo;
+    drawCmd.IndexType = sizeof(ImDrawIdx) == 2 ? IndexType::U16 : IndexType::U32;
+    drawCmd.Pipeline = pipeline;
+    drawCmd.Type = PrimitiveType::Triangle;
 
     // Iterate over each command in the list
     for (std::size_t j = 0; j < cmdList->CmdBuffer.Size; j++)
@@ -120,7 +124,7 @@ void ImGuiRenderer::End()
       if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y) continue;
       if (command->ElemCount == 0) continue;
 
-      glScissor(clipMin.x, fbHeight - clipMax.y, (clipMax.x - clipMin.x), (clipMax.y - clipMin.y));
+     	device->SetScissorRect(clipMin.x, fbHeight - clipMax.y, (clipMax.x - clipMin.x), (clipMax.y - clipMin.y));
 
       if (command->UserCallback)
       {
@@ -128,28 +132,30 @@ void ImGuiRenderer::End()
       } 
       else
       {
-        glActiveTexture(GL_TEXTURE0);
-        if (command->TextureId == 0)
-          glBindTexture(GL_TEXTURE_2D, m_FontTexture);
+      	if (command->TextureId == 0)
+        	device->BindTexture2D(fontTexture, 0);
         else
-          glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)command->TextureId);
-        
-        glDrawElements(GL_TRIANGLES, command->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, reinterpret_cast<void*>(command->IdxOffset * sizeof(ImDrawIdx)));
+        	device->BindTexture2D(static_cast<ID>((intptr_t)command->TextureId));
+
+        drawCmd.IndexOffset = command->IdxOffset * sizeof(ImDrawIdx);
+        drawCmd.NumVertices = command->ElemCount;
+        device->Submit(drawCmd);
       }
     }
   }
 
-  // Disable Scissoring
-  glDisable(GL_SCISSOR_TEST);
+  device->EndRenderPass();
+  device->SchedulePresentation();
+  device->SubmitCommandBuffer();
 }
 
-void ImGuiRenderer::Resize(float width, float height)
+void ImGuiRenderer::Resize(float w, float h)
 {
   ImGuiIO& io = ImGui::GetIO();
-  io.DisplaySize = { width, height };
+  io.DisplaySize = { w, h };
 
-  m_Width = width * m_PixelDensity;
-  m_Height = height * m_PixelDensity;
+  width = w * pixelDensity;
+  height = h * pixelDensity;
 }
 
 void ImGuiRenderer::GenerateBuffers()
@@ -159,38 +165,37 @@ void ImGuiRenderer::GenerateBuffers()
   vboDesc.Usage = BufferUsage::Dynamic;
   vboDesc.Size = sizeof(ImDrawVert) * m_MaxVertices;
   vboDesc.Data = nullptr;
-
-  
-  m_VBO = new GLBuffer(vboDesc);
+  vboDesc.DebugName = "ImGui Vertex Buffer";
+  vbo = device->CreateBuffer(vboDesc);
 
   BufferDesc iboDesc;
   iboDesc.Type = BufferType::Index;
   iboDesc.Usage = BufferUsage::Dynamic;
   iboDesc.Size = sizeof(ImDrawIdx) * m_MaxIndices;
   iboDesc.Data = nullptr;
+  iboDesc.DebugName = "ImGui Index Buffer";
+  ibo = device->CreateBuffer(iboDesc);
 
-  m_IBO = new GLBuffer(iboDesc);
-}
-
-void ImGuiRenderer::GenerateArrays()
-{
-  m_VertexArray = new GLVertexArray();
-  BufferLayout layout = { // ImDrawVert layout
-    { ShaderDataType::Float2, "a_Position"},
-    { ShaderDataType::Float2, "a_UV"},
-    { ShaderDataType::UByte4, "a_Color", true }
-  };
-  m_VertexArray->AttachBuffer(m_VBO, layout);
+  BufferDesc uboDesc;
+  uboDesc.Type = BufferType::Uniform;
+  uboDesc.Usage = BufferUsage::Dynamic;
+  uboDesc.Size = sizeof(glm::mat4);
+  uboDesc.Data = nullptr;
+  uboDesc.DebugName = "ImGui View Projection";
+  ubo = device->CreateBuffer(uboDesc);
 }
 
 static const char *vertexShader = R"(
-#version 410 core
+#version 450 core
 
 layout (location = 0) in vec2 a_Position;
 layout (location = 1) in vec2 a_UV;
 layout (location = 2) in vec4 a_Color;
 
-uniform mat4 u_ViewProjection;
+layout (binding = 0) uniform matrices
+{
+  mat4 u_ViewProjection;
+};
 
 out vec4 v_FragColor;
 out vec2 v_FragUV;
@@ -199,33 +204,63 @@ void main()
 {
   v_FragColor = a_Color;
   v_FragUV = a_UV;
-  gl_Position = u_ViewProjection * vec4(a_Position, 0.0f, 1.0f);
+  gl_Position = u_ViewProjection * vec4(a_Position, 0.0, 1.0);
 })";
 
-static const char* fragmentShader = R"(
-#version 410 core
+static const char *pixelShader = R"(
+#version 450 core
 
 in vec4 v_FragColor;
 in vec2 v_FragUV;
 
-uniform sampler2D u_Texture;
+layout (binding = 0) uniform sampler2D u_Texture;
 
 layout (location = 0) out vec4 f_FragColor;
 
 void main()
 {
-  f_FragColor = v_FragColor * texture(u_Texture, v_FragUV.st);
+  f_FragColor = v_FragColor * texture(u_Texture, v_FragUV);
 })";
 
-void ImGuiRenderer::GenerateShaders()
+void ImGuiRenderer::GeneratePipeline()
 {
-  ShaderDesc desc;
-  desc.StageMap[ShaderStage::Vertex] = vertexShader;
-  desc.StageMap[ShaderStage::Pixel] = fragmentShader;
-  m_Shader = new GLProgram(desc.StageMap);
+  PipelineDesc pipelineDesc;
+
+  // set the layout
+  BufferLayout imVertLayout = { // ImDrawVert layout
+    { ShaderDataType::Float2, "a_Position" },
+    { ShaderDataType::Float2, "a_UV" },
+    { ShaderDataType::UByte4, "a_Color", true }
+  };
+  pipelineDesc.Layouts = { imVertLayout };
+  
+  // create and set the shader
+  ShaderDesc shaderDesc;
+  shaderDesc.Source = ShaderSource::GLSL;
+  shaderDesc.StageMap[ShaderStage::Vertex] = vertexShader;
+  shaderDesc.StageMap[ShaderStage::Pixel] = pixelShader;
+  pipelineDesc.Shader = device->CreateShader(shaderDesc);
+
+  // set the imgui rendering state info
+  pipelineDesc.Blending = true;
+  pipelineDesc.DepthTest = true;
+  pipelineDesc.DepthWrite = false;
+
+  // finally create the pipeline
+  pipeline = device->CreatePipeline(pipelineDesc);
 }
 
-void ImGuiRenderer::GenerateTextures()
+void ImGuiRenderer::GenerateRenderPass()
+{
+  RenderPassDesc rpDesc;
+  rpDesc.LoadOp = LoadOp::Clear;
+  rpDesc.ClearColor = {0.2f, 0.2f, 0.5f, 1.0f};
+  rpDesc.StoreOp = StoreOp::Store;
+  rpDesc.Framebuffer = 0;
+  renderPass = device->CreateRenderPass(rpDesc);
+}
+
+void ImGuiRenderer::GenerateTexture()
 {
   ImGuiIO& io = ImGui::GetIO();
 
@@ -233,33 +268,35 @@ void ImGuiRenderer::GenerateTextures()
   int32_t width, height;
   io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
-  glGenTextures(1, &m_FontTexture);
-  glBindTexture(GL_TEXTURE_2D, m_FontTexture);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+  Texture2DDesc textureDesc;
+  textureDesc.LoadFromFile = false;
+  textureDesc.Width = width;
+  textureDesc.Height = height;
+  textureDesc.PixelType = PixelType::RGBA32;
+  textureDesc.Data = pixels;
+  fontTexture = device->CreateTexture2D(textureDesc);
 }
 
 void ImGuiRenderer::DestroyBuffers()
 {
-  delete m_VBO;
-  delete m_IBO;
+  device->DestroyBuffer(vbo);
+  device->DestroyBuffer(ibo);
+  device->DestroyBuffer(ubo);
 }
 
-void ImGuiRenderer::DestroyArrays()
+void ImGuiRenderer::DestroyPipeline()
 {
-  delete m_VertexArray;
+  device->DestroyPipeline(pipeline);
 }
 
-void ImGuiRenderer::DestroyShaders()
+void ImGuiRenderer::DestroyRenderPass()
 {
-  delete m_Shader;
+  device->DestroyRenderPass(renderPass);
 }
 
-void ImGuiRenderer::DestroyTextures()
+void ImGuiRenderer::DestroyTexture()
 {
-  glDeleteTextures(1, &m_FontTexture);
+  device->DestroyTexture2D(fontTexture);
 }
 
 }

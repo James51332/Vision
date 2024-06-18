@@ -18,6 +18,13 @@ MetalPipeline::MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shad
 
   // set the pixel format
   attribs->colorAttachments()->object(0)->setPixelFormat(PixelTypeToMTLPixelFormat(desc.PixelFormat));
+  attribs->colorAttachments()->object(0)->setBlendingEnabled(desc.Blending);
+  attribs->colorAttachments()->object(0)->setSourceAlphaBlendFactor(MTL::BlendFactorSourceAlpha);
+  attribs->colorAttachments()->object(0)->setDestinationAlphaBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
+  attribs->colorAttachments()->object(0)->setAlphaBlendOperation(MTL::BlendOperationAdd);
+  attribs->colorAttachments()->object(0)->setSourceRGBBlendFactor(MTL::BlendFactorSourceAlpha);
+  attribs->colorAttachments()->object(0)->setDestinationRGBBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
+  attribs->colorAttachments()->object(0)->setRgbBlendOperation(MTL::BlendOperationAdd);
 
   // link the shader
   MetalShader *shader = shaders.Get(desc.Shader);
@@ -63,7 +70,7 @@ MetalPipeline::MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shad
     for (auto elem : layout.Elements)
     {
       vtxDesc->attributes()->object(attrib)->setBufferIndex(layoutIndex);
-      vtxDesc->attributes()->object(attrib)->setFormat(ShaderDataTypeToMTLVertexFormat(elem.Type));
+      vtxDesc->attributes()->object(attrib)->setFormat(ShaderDataTypeToMTLVertexFormat(elem.Type, elem.Normalized));
       vtxDesc->attributes()->object(attrib)->setOffset(elem.Offset);
 
       attrib++;
@@ -74,6 +81,8 @@ MetalPipeline::MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shad
   }
 
   attribs->setVertexDescriptor(vtxDesc);
+  
+  attribs->setDepthAttachmentPixelFormat(MTL::PixelFormatDepth32Float);
 
   // build the pipeline
   NS::Error *error = nullptr;
@@ -115,7 +124,7 @@ MetalComputePipeline::MetalComputePipeline(MTL::Device *device, ComputePipelineD
     compiler.GenerateSPIRV(desc);
   }
 
-  if (desc.Source == ShaderSource::StageMap)
+  if (desc.Source == ShaderSource::GLSL)
   {
     ShaderCompiler compiler;
     compiler.GenerateSPIRV(desc);

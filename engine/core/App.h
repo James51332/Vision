@@ -7,6 +7,7 @@
 #include "ui/UIInput.h"
 #include "ui/ImGuiRenderer.h"
 
+#include "renderer/RenderDevice.h"
 #include "renderer/RenderContext.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
@@ -25,6 +26,7 @@ public:
 
   static App* GetApp() { return appInstance; }
   static RenderDevice* GetDevice() { return appInstance->renderDevice; }
+  static PixelType GetPixelFormat() { return appInstance->renderContext->GetPixelType(); }
 
 protected:
   virtual void OnUpdate(float timestep) = 0;

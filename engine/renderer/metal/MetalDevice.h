@@ -82,6 +82,11 @@ private:
   // render target
   CA::MetalLayer* layer;
   CA::MetalDrawable* drawable = nullptr;
+  bool drawablePresented = false;
+  
+  // depth texture (for now depth format is always depth32)
+  MetalTexture* depthTexture;
+  glm::vec2 depthSize;
 
   // gpu data
   ID currentID = 1;

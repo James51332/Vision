@@ -61,12 +61,12 @@ void ShaderCompiler::GenerateStageMap(ShaderDesc& desc)
   SDL_assert(desc.StageMap[ShaderStage::Pixel].size() != 0);
 
   // set the source to be stage map
-  desc.Source = ShaderSource::StageMap;
+  desc.Source = ShaderSource::GLSL;
 }
 
 void ShaderCompiler::GenerateSPIRVMap(ShaderDesc& desc)
 {
-  SDL_assert(desc.Source == ShaderSource::StageMap);
+  SDL_assert(desc.Source == ShaderSource::GLSL);
 
   for (auto pair : desc.StageMap)
   {
@@ -85,12 +85,12 @@ void ShaderCompiler::LoadSource(ComputePipelineDesc &desc)
   SDL_assert(desc.Source == ShaderSource::File);
 
   desc.GLSL = ReadFile(desc.FilePath);
-  desc.Source = ShaderSource::StageMap;
+  desc.Source = ShaderSource::GLSL;
 }
 
 void ShaderCompiler::GenerateSPIRV(ComputePipelineDesc &desc)
 {
-  SDL_assert(desc.Source == ShaderSource::StageMap);
+  SDL_assert(desc.Source == ShaderSource::GLSL);
 
   auto map = Parse(desc.GLSL);
   SDL_assert(map.size() == 1);

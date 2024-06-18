@@ -16,7 +16,7 @@ MetalRenderPass::MetalRenderPass(const RenderPassDesc& desc)
   descriptor->colorAttachments()->object(0)->setStoreAction(StoreOpToMTLStoreAction(desc.StoreOp));
 
   depthAttachmentDesc = MTL::RenderPassDepthAttachmentDescriptor::alloc()->init();
-  depthAttachmentDesc->setClearDepth(1.0f); // We have no API for this yet.
+  depthAttachmentDesc->setClearDepth(1.0f); // We have no API for this yet. Idk if we need it.
   descriptor->setDepthAttachment(depthAttachmentDesc);
 }
 

@@ -59,16 +59,17 @@ void App::Init()
   Input::Init();
 
   // Initialize
+  displayScale = window->GetDisplayScale();
   renderDevice = renderContext->GetRenderDevice();
   renderer = new Renderer(displayWidth, displayHeight, displayScale);
   // renderer2D = new Renderer2D(displayWidth, displayHeight, m_DisplayScale);
-  // uiRenderer = new ImGuiRenderer(displayWidth, displayHeight, displayScale);
+  uiRenderer = new ImGuiRenderer(renderDevice, displayWidth, displayHeight, displayScale);
 }
 
 void App::Shutdown()
 {
   // delete renderer2D;
-  // delete uiRenderer;
+  delete uiRenderer;
   delete renderer;
   delete window;
 }
@@ -90,7 +91,7 @@ void App::ProcessEvents()
 
         renderer->Resize(displayWidth, displayHeight);
         //renderer2D->Resize(displayWidth, displayHeight);
-        //uiRenderer->Resize(displayWidth, displayHeight);
+        uiRenderer->Resize(displayWidth, displayHeight);
 
         OnResize(displayWidth, displayHeight);
         break;

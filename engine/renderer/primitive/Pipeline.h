@@ -40,6 +40,9 @@ struct PipelineDesc
 
   PixelType PixelFormat;
   // TODO: Other pipeline features, and dynamic states?
+
+  PipelineDesc() // default ctor to automatically set pixel format
+    : PixelFormat(PixelType::BGRA32) {}
 };
 
 struct ComputePipelineDesc

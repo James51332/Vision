@@ -58,16 +58,16 @@ ID GLDevice::CreateShader(const ShaderDesc& tmp)
   {
     ShaderCompiler compiler;
     compiler.GenerateStageMap(desc);
+  }
+
+  if (desc.Source == ShaderSource::GLSL)
+  {
+    ShaderCompiler compiler;
     compiler.GenerateSPIRVMap(desc);
     desc.Source = ShaderSource::SPIRV;
   }
 
-  // if we manully give the shader code, we won't run the compiler (hack for renderers)
-  if (desc.Source == ShaderSource::StageMap)
-  {
-    shader = new GLProgram(desc.StageMap);
-  } 
-  else if (desc.Source == ShaderSource::SPIRV)
+  if (desc.Source == ShaderSource::SPIRV)
   {
     // first we need to decompile
     std::unordered_map<ShaderStage, std::string> stages;
@@ -121,7 +121,12 @@ ID GLDevice::CreateShader(const ShaderDesc& tmp)
       shader->SetUniformBlock(pair.second.c_str(), pair.first);
     }
   }
-
+  else
+  {
+    SDL_Log("Unsupported Shader Source in OpenGL!"); // atp, all valid source have been handled.
+    SDL_assert(false);
+    return 0;
+  }
 
   shaders.Add(id, shader);
   return id;
@@ -221,6 +226,7 @@ void GLDevice::EndRenderPass()
   activePass = 0;
 
   // render pass StoreOps are pointless in GL.
+  glDisable(GL_SCISSOR_TEST);
 }
 
 void GLDevice::SetScissorRect(float x, float y, float width, float height)
@@ -248,7 +254,7 @@ void GLDevice::Submit(const DrawCommand& command)
   shader->Use();
 
   // HACK: we shouldn't do this forever, just getting it working
-  shader->SetUniformBlock("pushConstants", 0);
+  // shader->SetUniformBlock("pushConstants", 0);
 
   // setup our GL state
   glDepthMask(pipeline->DepthWrite ? GL_TRUE : GL_FALSE);
@@ -281,7 +287,8 @@ void GLDevice::Submit(const DrawCommand& command)
   vao->Bind();
 
   // set the patch size
-  glPatchParameteri(GL_PATCH_VERTICES, command.PatchSize);
+  if (shader->UsesTesselation())
+    glPatchParameteri(GL_PATCH_VERTICES, command.PatchSize);
 
   // draw
   if (command.IndexBuffer)
@@ -291,7 +298,7 @@ void GLDevice::Submit(const DrawCommand& command)
     indexBuffer->Bind();
 
     // TODO: Vtx Offsets
-    glDrawElements(primitive, command.NumVertices, indexType, nullptr);
+    glDrawElements(primitive, command.NumVertices, indexType, reinterpret_cast<void *>(command.IndexOffset));
   }
   else
   {

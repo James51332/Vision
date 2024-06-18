@@ -11,7 +11,7 @@ namespace Lumina
     Lumina()
         : Vision::App("Lumina")
     {
-      // Create our compute pipeline
+      /*// Create our compute pipeline
       Vision::ComputePipelineDesc desc;
       desc.FilePath = "resources/computeShader.glsl";
       Vision::ID pipeline = renderDevice->CreateComputePipeline(desc);
@@ -62,12 +62,18 @@ namespace Lumina
       renderDevice->FreeBufferData(computeBuffer, (void**)&element);
 
       // Close the app
-      Stop();
+      Stop();*/
     }
 
     void OnUpdate(float timestep)
     {
+      uiRenderer->Begin();
+      ImGui::ShowDemoWindow();
+      uiRenderer->End();
 
+//      renderDevice->BeginCommandBuffer();
+//      renderDevice->SchedulePresentation();
+//      renderDevice->SubmitCommandBuffer();
     }
   };
 }

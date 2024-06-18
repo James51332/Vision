@@ -10,6 +10,8 @@
 #include "renderer/primitive/Pipeline.h"
 #include "renderer/primitive/RenderPass.h"
 
+#include "renderer/RenderCommand.h"
+
 namespace Vision
 {
 
@@ -50,22 +52,38 @@ static PixelType MTLPixelFormatToPixelType(MTL::PixelFormat type)
   return PixelType::R8;
 }
 
-static MTL::VertexFormat ShaderDataTypeToMTLVertexFormat(ShaderDataType type)
+static MTL::VertexFormat ShaderDataTypeToMTLVertexFormat(ShaderDataType type, bool normalized = false)
 {
-  switch (type)
+  if (!normalized)
   {
-    case ShaderDataType::Int: return MTL::VertexFormatInt;
-    case ShaderDataType::Float: return MTL::VertexFormatFloat;
-    case ShaderDataType::Float2: return MTL::VertexFormatFloat2;
-    case ShaderDataType::Float3: return MTL::VertexFormatFloat3;
-    case ShaderDataType::Float4: return MTL::VertexFormatFloat4;
-    case ShaderDataType::UByte4: return MTL::VertexFormatUChar;
-    default:
-      break;
+    switch (type)
+    {
+      case ShaderDataType::Int: return MTL::VertexFormatInt;
+      case ShaderDataType::Float: return MTL::VertexFormatFloat;
+      case ShaderDataType::Float2: return MTL::VertexFormatFloat2;
+      case ShaderDataType::Float3: return MTL::VertexFormatFloat3;
+      case ShaderDataType::Float4: return MTL::VertexFormatFloat4;
+      case ShaderDataType::UByte4: return MTL::VertexFormatUChar4;
+      default:
+        break;
+    }
+
+    std::cout << "Unknown Shader Data Type!" << std::endl;
+    return MTL::VertexFormatInvalid;
+  } 
+  else
+  {
+    switch (type)
+    {
+      case ShaderDataType::UByte4: return MTL::VertexFormatUChar4Normalized;
+      default:
+        break;
+    }
+
+    std::cout << "Unknown Shader Data Type!" << std::endl;
+    return MTL::VertexFormatInvalid;
   }
 
-  std::cout << "Unknown Shader Data Type!" << std::endl;
-  return MTL::VertexFormatInvalid;
 }
 
 static PixelType ChannelsToPixelType(int channels)
@@ -116,6 +134,38 @@ static MTL::StoreAction StoreOpToMTLStoreAction(StoreOp op)
     default:
       return MTL::StoreActionDontCare;
   }
+}
+
+static MTL::IndexType IndexTypeToMTLIndexType(IndexType type)
+{
+  switch (type)
+  {
+    case IndexType::U16: return MTL::IndexTypeUInt16;
+    case IndexType::U32: return MTL::IndexTypeUInt32;
+    case IndexType::U8: break;
+    default:
+      break;
+  }
+
+  std::cout << "Unsupported Index Type in Metal: Use U16 or U32" << std::endl;
+  return MTL::IndexTypeUInt16;
+}
+
+static int PixelTypeToChannels(PixelType type)
+{
+  switch (type)
+  {
+    case PixelType::R8: return 1;
+    case PixelType::RG16: return 2;
+    case PixelType::RGBA32: return 4;
+    case PixelType::BGRA32: return 4;
+    case PixelType::Depth32: return 4;
+    case PixelType::Depth24Stencil8: return 4;
+    default: break;
+  }
+  
+  std::cout << "Unknown PixelType" << std::endl;
+  return -1;
 }
 
 }

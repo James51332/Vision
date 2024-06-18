@@ -32,6 +32,7 @@ struct DrawCommand
   ID Pipeline;
   std::vector<ID> VertexBuffers;
   ID IndexBuffer = 0;
+  std::size_t IndexOffset = 0;
 
   std::vector<ID> Textures;
   glm::mat4 Transform;

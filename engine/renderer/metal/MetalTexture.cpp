@@ -9,12 +9,24 @@
 namespace Vision
 {
 
-MetalTexture::MetalTexture(MTL::Device *device, float width, float height, PixelType pixelType)
+static MTL::SamplerState* NewSamplerState(MTL::Device* device)
+{
+  MTL::SamplerDescriptor* samplerDesc = MTL::SamplerDescriptor::alloc()->init();
+  samplerDesc->setMinFilter(MTL::SamplerMinMagFilterLinear);
+  samplerDesc->setMagFilter(MTL::SamplerMinMagFilterLinear);
+  MTL::SamplerState* samplerState = device->newSamplerState(samplerDesc);
+  samplerDesc->release();
+  return samplerState;
+}
+
+MetalTexture::MetalTexture(MTL::Device *device, float width, float height, PixelType pixel)
+	: samplerState(NewSamplerState(device)), pixelType(pixel), channels(PixelTypeToChannels(pixel))
 {
   Resize(device, width, height);
 }
 
 MetalTexture::MetalTexture(MTL::Device *device, const char *filePath)
+	: samplerState(NewSamplerState(device))
 {
   int w, h, comp, desired;
   stbi_info(filePath, &w, &h, &comp);
@@ -38,13 +50,6 @@ MetalTexture::MetalTexture(MTL::Device *device, const char *filePath)
   // set the data
   SetData(data);
   stbi_image_free(data);
-
-  // create a hard-coded sampler state (we need to add options for GL too!)
-  MTL::SamplerDescriptor* samplerDesc = MTL::SamplerDescriptor::alloc()->init();
-  samplerDesc->setMinFilter(MTL::SamplerMinMagFilterLinear);
-  samplerDesc->setMagFilter(MTL::SamplerMinMagFilterLinear);
-  samplerState = device->newSamplerState(samplerDesc);
-  samplerDesc->release();
 }
 
 MetalTexture::~MetalTexture()

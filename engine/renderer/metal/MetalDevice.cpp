@@ -17,10 +17,15 @@ MetalDevice::MetalDevice(MTL::Device *device, CA::MetalLayer* l)
   queue = gpuDevice->newCommandQueue();
   cmdBuffer = nullptr;
   encoder = nullptr; 
+  
+  depthSize = { layer->drawableSize().width, layer->drawableSize().height };
+  depthTexture = new MetalTexture(gpuDevice, depthSize.x, depthSize.y, PixelType::Depth32);
 }
 
 MetalDevice::~MetalDevice()
 {
+  delete depthTexture;
+  
   // These are all retain so they don't get delete before this class.
   layer->release();
   gpuDevice->release();
@@ -49,6 +54,11 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
   {
     ShaderCompiler compiler;
     compiler.GenerateStageMap(desc);
+  }
+
+  if (desc.Source == ShaderSource::GLSL)
+  {
+    ShaderCompiler compiler;
     compiler.GenerateSPIRVMap(desc);
     desc.Source = ShaderSource::SPIRV;
   }
@@ -96,7 +106,7 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
       std::cout << source << std::endl << std::endl;
     }
 
-    desc.Source = ShaderSource::StageMap;
+    desc.Source = ShaderSource::MSL;
   }
 
   // final stage is to to prepare the msl. note that this pipeline may potentially
@@ -104,7 +114,7 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
   // we could manufacture some sort of shader cache that is automatically built by
   // the engine. we'll need to make change for the shader descriptor to include the
   // stage map language since internal renderers provide shader source in GLSL.
-  if (desc.Source == ShaderSource::StageMap)
+  if (desc.Source == ShaderSource::MSL)
   {
     shader = new MetalShader(gpuDevice, desc.StageMap, ubos); 
   }
@@ -147,7 +157,11 @@ ID MetalDevice::CreateTexture2D(const Texture2DDesc &desc)
   if (desc.LoadFromFile)
     texture = new MetalTexture(gpuDevice, desc.FilePath.c_str());
   else
+  {
     texture = new MetalTexture(gpuDevice, desc.Width, desc.Height, desc.PixelType);
+    if (desc.Data)
+    	texture->SetData(desc.Data);
+  }
 
   textures.Add(id, texture);
   return id;
@@ -223,7 +237,10 @@ void MetalDevice::BeginRenderPass(ID pass)
     if (renderpass->GetTarget() == 0)
     {
       if (!drawable) // only fetch if hasn't fetched since last presented.
+      {
         drawable = layer->nextDrawable()->retain();
+        drawablePresented = false;
+      }
 
       rpDesc->colorAttachments()->object(0)->setTexture(drawable->texture());
     }
@@ -232,6 +249,10 @@ void MetalDevice::BeginRenderPass(ID pass)
       MetalFramebuffer* fb = framebuffers.Get(renderpass->GetTarget());
       rpDesc->colorAttachments()->object(0)->setTexture(fb->GetTexture());
     }
+    
+    rpDesc->depthAttachment()->setTexture(depthTexture->GetTexture());
+    rpDesc->depthAttachment()->setLoadAction(MTL::LoadActionClear);
+    rpDesc->depthAttachment()->setStoreAction(MTL::StoreActionStore);
 
     encoder = cmdBuffer->renderCommandEncoder(rpDesc)->retain();
   }
@@ -268,8 +289,11 @@ void MetalDevice::SubmitCommandBuffer(bool await)
     if (await) cmdBuffer->waitUntilCompleted();
     cmdBuffer = nullptr;
 
-    drawable->release();
-    drawable = nullptr; // free the drawable only if presented.
+    if (drawablePresented)
+    {
+      drawable->release();
+      drawable = nullptr; // free the drawable only if presented.
+    }
   }
   pool->release();
 }
@@ -280,6 +304,7 @@ void MetalDevice::SchedulePresentation()
   SDL_assert(drawable);
 
   cmdBuffer->presentDrawable(drawable);
+  drawablePresented = true;
 }
 
 void MetalDevice::SetViewport(float x, float y, float width, float height)
@@ -298,7 +323,7 @@ void MetalDevice::SetScissorRect(float x, float y, float width, float height)
 
 void MetalDevice::Submit(const DrawCommand &command)
 {
-  assert(encoder != nullptr);
+  SDL_assert(encoder);
 
   // fetch the pipeline state
   MetalPipeline* ps = pipelines.Get(command.Pipeline);
@@ -321,7 +346,8 @@ void MetalDevice::Submit(const DrawCommand &command)
 
   // submit the draw call.
   MetalBuffer* indexBuffer = buffers.Get(command.IndexBuffer);
-  encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, command.NumVertices, MTL::IndexTypeUInt32, indexBuffer->buffer, 0);
+  MTL::IndexType indexType = IndexTypeToMTLIndexType(command.IndexType);
+  encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, command.NumVertices, indexType, indexBuffer->buffer, command.IndexOffset);
 }
 
 // compute API

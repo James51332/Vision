@@ -51,7 +51,8 @@ strings, or SPV.
 enum class ShaderSource
 {
   File,
-  StageMap,
+  GLSL,
+  MSL,
   SPIRV
 };
 
