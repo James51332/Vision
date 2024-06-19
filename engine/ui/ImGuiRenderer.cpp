@@ -26,7 +26,6 @@ ImGuiRenderer::ImGuiRenderer(RenderDevice* renderDevice, float w, float h, float
   // Create our rendering resources
   GenerateBuffers();
   GeneratePipeline();
-  GenerateRenderPass();
   GenerateTexture();
 }
 
@@ -38,7 +37,6 @@ ImGuiRenderer::~ImGuiRenderer()
   // Destroy our rendering resources 
   DestroyBuffers();
   DestroyPipeline();
-  DestroyRenderPass();
   DestroyTexture();
 }
 
@@ -61,10 +59,6 @@ void ImGuiRenderer::End()
     return;
   }
 
-  // We can bind our shader here because it's the same for the entire program
-  device->BeginCommandBuffer();
-  device->BeginRenderPass(renderPass);
-
   // bind our projection matrix
   float L = drawData->DisplayPos.x;
   float R = drawData->DisplayPos.x + drawData->DisplaySize.x;
@@ -83,16 +77,16 @@ void ImGuiRenderer::End()
     const ImDrawList* cmdList = drawData->CmdLists[i];
 
     // Ensure our buffers are big enough for the draw data
-    if (cmdList->VtxBuffer.Size > m_MaxVertices)
+    if (cmdList->VtxBuffer.Size > maxVertices)
     {
-      m_MaxVertices *= 2;
-      device->ResizeBuffer(vbo, m_MaxVertices * sizeof(ImDrawVert));
+      maxVertices *= 2;
+      device->ResizeBuffer(vbo, maxVertices * sizeof(ImDrawVert));
     }
 
-    if (cmdList->IdxBuffer.Size > m_MaxIndices)
+    if (cmdList->IdxBuffer.Size > maxIndices)
     {
-      m_MaxIndices *= 2;
-      device->ResizeBuffer(ibo, m_MaxIndices * sizeof(ImDrawIdx));
+      maxIndices *= 2;
+      device->ResizeBuffer(ibo, maxIndices * sizeof(ImDrawIdx));
     }
 
     // Copy the draw data into our buffers
@@ -143,10 +137,6 @@ void ImGuiRenderer::End()
       }
     }
   }
-
-  device->EndRenderPass();
-  device->SchedulePresentation();
-  device->SubmitCommandBuffer();
 }
 
 void ImGuiRenderer::Resize(float w, float h)
@@ -163,7 +153,7 @@ void ImGuiRenderer::GenerateBuffers()
   BufferDesc vboDesc;
   vboDesc.Type = BufferType::Vertex;
   vboDesc.Usage = BufferUsage::Dynamic;
-  vboDesc.Size = sizeof(ImDrawVert) * m_MaxVertices;
+  vboDesc.Size = sizeof(ImDrawVert) * maxVertices;
   vboDesc.Data = nullptr;
   vboDesc.DebugName = "ImGui Vertex Buffer";
   vbo = device->CreateBuffer(vboDesc);
@@ -171,7 +161,7 @@ void ImGuiRenderer::GenerateBuffers()
   BufferDesc iboDesc;
   iboDesc.Type = BufferType::Index;
   iboDesc.Usage = BufferUsage::Dynamic;
-  iboDesc.Size = sizeof(ImDrawIdx) * m_MaxIndices;
+  iboDesc.Size = sizeof(ImDrawIdx) * maxIndices;
   iboDesc.Data = nullptr;
   iboDesc.DebugName = "ImGui Index Buffer";
   ibo = device->CreateBuffer(iboDesc);
@@ -250,16 +240,6 @@ void ImGuiRenderer::GeneratePipeline()
   pipeline = device->CreatePipeline(pipelineDesc);
 }
 
-void ImGuiRenderer::GenerateRenderPass()
-{
-  RenderPassDesc rpDesc;
-  rpDesc.LoadOp = LoadOp::Clear;
-  rpDesc.ClearColor = {0.2f, 0.2f, 0.5f, 1.0f};
-  rpDesc.StoreOp = StoreOp::Store;
-  rpDesc.Framebuffer = 0;
-  renderPass = device->CreateRenderPass(rpDesc);
-}
-
 void ImGuiRenderer::GenerateTexture()
 {
   ImGuiIO& io = ImGui::GetIO();
@@ -287,11 +267,6 @@ void ImGuiRenderer::DestroyBuffers()
 void ImGuiRenderer::DestroyPipeline()
 {
   device->DestroyPipeline(pipeline);
-}
-
-void ImGuiRenderer::DestroyRenderPass()
-{
-  device->DestroyRenderPass(renderPass);
 }
 
 void ImGuiRenderer::DestroyTexture()

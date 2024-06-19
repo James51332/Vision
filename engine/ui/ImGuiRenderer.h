@@ -26,12 +26,10 @@ public:
 private:
   void GenerateBuffers();
   void GeneratePipeline();
-  void GenerateRenderPass();
   void GenerateTexture();
 
   void DestroyBuffers();
   void DestroyPipeline();
-  void DestroyRenderPass();
   void DestroyTexture();
 
 private:
@@ -39,11 +37,10 @@ private:
 
   ID vbo, ibo, ubo;
   ID pipeline;
-  ID renderPass;
   ID fontTexture;
 
-  std::size_t m_MaxVertices = 1000000; // 5MB GPU buffer
-  std::size_t m_MaxIndices = 1000000;
+  std::size_t maxVertices = 1000000; // 5MB GPU buffer
+  std::size_t maxIndices = 1000000;
 
   float pixelDensity = 1.0f;
   float width, height;

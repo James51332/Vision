@@ -81,6 +81,7 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
 
       auto mslOpts = compiler.get_msl_options();
       mslOpts.enable_decoration_binding = true; // set the compiler to use glsl bindings for buffer indices.
+      mslOpts.set_msl_version(2,0);
       compiler.set_msl_options(mslOpts);
 
       // uniform buffers take up the same space as stage buffers,

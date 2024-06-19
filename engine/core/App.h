@@ -55,7 +55,7 @@ protected:
   RenderDevice* renderDevice;
   RenderContext* renderContext;
   Renderer* renderer;
- // Renderer2D* renderer2D;
+  Renderer2D* renderer2D;
   ImGuiRenderer* uiRenderer;
 };
 

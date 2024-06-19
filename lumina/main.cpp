@@ -61,20 +61,43 @@ namespace Lumina
 
       renderDevice->FreeBufferData(computeBuffer, (void**)&element);
 
-      // Close the app
-      Stop();*/
+    */
+      // Prepare the renderer data
+      Vision::RenderPassDesc rpDesc;
+      rpDesc.ClearColor = { 0.2f, 0.2f, 0.2f, 1.0f };
+      rpDesc.Framebuffer = 0;
+      rpDesc.LoadOp = Vision::LoadOp::Clear;
+      rpDesc.StoreOp = Vision::StoreOp::Store;
+      renderPass = renderDevice->CreateRenderPass(rpDesc);
+
+      camera = Vision::PerspectiveCamera(displayWidth, displayHeight, 0.1f, 50.0f);
     }
 
     void OnUpdate(float timestep)
     {
+      camera.Update(timestep);
+
+      renderDevice->BeginCommandBuffer();
+      renderDevice->BeginRenderPass(renderPass);
+
+      renderer2D->Begin(&camera);
+
+      renderer2D->DrawBox(glm::vec3(0.0f));
+
+      renderer2D->End();
+
       uiRenderer->Begin();
       ImGui::ShowDemoWindow();
       uiRenderer->End();
 
-//      renderDevice->BeginCommandBuffer();
-//      renderDevice->SchedulePresentation();
-//      renderDevice->SubmitCommandBuffer();
+      renderDevice->EndRenderPass();
+      renderDevice->SchedulePresentation();
+      renderDevice->SubmitCommandBuffer(false);
     }
+
+  private:
+    Vision::ID renderPass;
+    Vision::PerspectiveCamera camera;
   };
 }
 

@@ -62,13 +62,13 @@ void App::Init()
   displayScale = window->GetDisplayScale();
   renderDevice = renderContext->GetRenderDevice();
   renderer = new Renderer(displayWidth, displayHeight, displayScale);
-  // renderer2D = new Renderer2D(displayWidth, displayHeight, m_DisplayScale);
+  renderer2D = new Renderer2D(renderDevice, displayWidth, displayHeight, displayScale);
   uiRenderer = new ImGuiRenderer(renderDevice, displayWidth, displayHeight, displayScale);
 }
 
 void App::Shutdown()
 {
-  // delete renderer2D;
+  delete renderer2D;
   delete uiRenderer;
   delete renderer;
   delete window;
@@ -90,7 +90,7 @@ void App::ProcessEvents()
         displayHeight = static_cast<float>(event.window.data2);
 
         renderer->Resize(displayWidth, displayHeight);
-        //renderer2D->Resize(displayWidth, displayHeight);
+        renderer2D->Resize(displayWidth, displayHeight);
         uiRenderer->Resize(displayWidth, displayHeight);
 
         OnResize(displayWidth, displayHeight);
