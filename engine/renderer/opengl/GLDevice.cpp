@@ -50,7 +50,14 @@ ID GLDevice::CreateShader(const ShaderDesc& tmp)
   ShaderDesc desc = tmp; // we need to modify, but we'll just copy (don't mess w/ user stuff—offline anyways)
   
   // our naive approach to shader reflection.
-  std::unordered_map<GLuint, std::string> samplerBindings; 
+  struct Sampler
+  {
+    std::string name;
+    int binding;
+    int size;
+  };
+
+  std::vector<Sampler> samplers;
   std::unordered_map<GLuint, std::string> uniformBindings;
 
   // compiler our shader
@@ -91,12 +98,22 @@ ID GLDevice::CreateShader(const ShaderDesc& tmp)
       // we're also going to handle automatically binding shader resources for now.
       // in the future, we may want a more robust system, but this should get us going.
       spirv_cross::ShaderResources res = decompiler.get_shader_resources();
-      
-      for (auto sampler : res.separate_samplers)
+
+      for (auto &e : res.sampled_images)
       {
-        auto binding = decompiler.get_decoration(sampler.id, spv::DecorationBinding);
-        std::string name = sampler.name;
-        samplerBindings.emplace(binding, name);
+        const spirv_cross::SPIRType &type = decompiler.get_type(e.type_id);
+
+        Sampler s;
+        s.name = e.name;
+        s.binding = decompiler.get_decoration(e.id, spv::DecorationBinding);
+
+        // handle sampler2D[]
+        if (type.array_size_literal.front())
+          s.size = type.array.front();
+        else
+          s.size = 1;
+
+        samplers.push_back(s);
       }
 
       for (auto uniform : res.uniform_buffers)
@@ -111,9 +128,19 @@ ID GLDevice::CreateShader(const ShaderDesc& tmp)
     shader = new GLProgram(stages);
 
     // finally we can do the reflection stuff
-    for (auto pair : samplerBindings)
+    for (auto sampler : samplers)
     {
-      shader->UploadUniformInt(pair.first, pair.second.c_str());
+      if (sampler.size == 1)
+        shader->UploadUniformInt(sampler.binding, sampler.name.c_str());
+      else
+      {
+        // ensure that our binding array is {binding, binding + 1, binding + 2, ...}
+        std::vector bindings(sampler.size, sampler.binding);
+        for (std::size_t i = 0; i < sampler.size; i++) 
+          bindings[i] += i;
+
+        shader->UploadUniformIntArray(bindings.data(), sampler.size, sampler.name.c_str());
+      }
     }
 
     for (auto pair : uniformBindings)
@@ -250,11 +277,7 @@ void GLDevice::Submit(const DrawCommand& command)
   // bind the shader and upload uniforms
   GLPipeline* pipeline = pipelines.Get(command.Pipeline);
   GLProgram* shader = pipeline->Shader;
-
   shader->Use();
-
-  // HACK: we shouldn't do this forever, just getting it working
-  // shader->SetUniformBlock("pushConstants", 0);
 
   // setup our GL state
   glDepthMask(pipeline->DepthWrite ? GL_TRUE : GL_FALSE);

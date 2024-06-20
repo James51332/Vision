@@ -90,7 +90,7 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
       {
         auto res = compiler.get_shader_resources();
         
-        for (auto buffer : res.uniform_buffers)
+        for (auto& buffer : res.uniform_buffers)
         {
           auto slot = compiler.get_decoration(buffer.id, spv::DecorationBinding);
           std::string name = compiler.get_name(buffer.id);
