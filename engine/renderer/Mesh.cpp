@@ -1,5 +1,9 @@
 #include "Mesh.h"
 
+#include "core/App.h"
+
+#include "RenderDevice.h"
+
 namespace Vision
 {
 
@@ -9,42 +13,30 @@ Mesh::Mesh(const MeshDesc& desc)
   // Create vertex buffer
   {
     BufferDesc bufferDesc;
-    bufferDesc.Type = GL_ARRAY_BUFFER;
+    bufferDesc.Type = BufferType::Vertex;
     bufferDesc.Data = (void*)desc.Vertices.data();
     bufferDesc.Size = desc.NumVertices * sizeof(MeshVertex);
-    bufferDesc.Usage = GL_DYNAMIC_DRAW;
-    bufferDesc.Layout = {
-      { ShaderDataType::Float3, "Position"},
-      { ShaderDataType::Float3, "Normal" },
-      { ShaderDataType::Float4, "Color" },
-      { ShaderDataType::Float2, "UV"}
-    };
+    bufferDesc.Usage = BufferUsage::Dynamic;
 
-    m_VertexBuffer = new Buffer(bufferDesc);
-  }
-
-  // Create vertex array
-  {
-    m_VertexArray = new VertexArray();
-    m_VertexArray->AttachBuffer(m_VertexBuffer);
+    m_VertexBuffer = App::GetDevice()->CreateBuffer(bufferDesc);
   }
 
   // Create index buffer
   {
     BufferDesc bufferDesc;
-    bufferDesc.Type = GL_ELEMENT_ARRAY_BUFFER;
+    bufferDesc.Type = BufferType::Index;
     bufferDesc.Data = (void*)desc.Indices.data();
     bufferDesc.Size = desc.NumIndices * sizeof(MeshIndex);
-    bufferDesc.Usage = GL_DYNAMIC_DRAW;
+    bufferDesc.Usage = BufferUsage::Dynamic;
 
-    m_IndexBuffer = new Buffer(bufferDesc);
+    m_IndexBuffer = App::GetDevice()->CreateBuffer(bufferDesc);
   }
 }
 
-void Mesh::Bind()
+Mesh::~Mesh()
 {
-  m_VertexArray->Bind();
-  m_IndexBuffer->Bind();
+  App::GetDevice()->DestroyBuffer(m_VertexBuffer);
+  App::GetDevice()->DestroyBuffer(m_IndexBuffer);
 }
 
 }

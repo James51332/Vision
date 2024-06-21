@@ -1,5 +1,5 @@
 #type vertex
-#version 410 core
+#version 450 core
 
 layout (location = 0) in vec3 a_Position;
 layout (location = 1) in vec3 a_Normal;
@@ -14,8 +14,8 @@ void main()
   v_UV = a_UV;
 }
 
-#type tcs
-#version 410 core
+#type hull
+#version 450 core
 
 in vec2 v_UV[];
 
@@ -23,11 +23,16 @@ layout(vertices = 4) out;
 
 out vec2 UV[];
 
-uniform sampler2D heightMap;
-uniform mat4 u_View;
-uniform mat4 u_Projection;
-uniform mat4 u_Transform;
-uniform vec2 u_ViewportSize;
+layout (binding = 0) uniform sampler2D heightMap;
+
+layout (push_constant) uniform pushConstants
+{
+  mat4 u_View;
+  mat4 u_Projection;
+  mat4 u_ViewProjection;
+  vec2 u_ViewportSize;
+  float u_Time;
+};
 
 float distanceTess(vec4 p0, vec4 p1, vec2 t0, vec2 t1)
 {
@@ -42,7 +47,7 @@ float distanceTess(vec4 p0, vec4 p1, vec2 t0, vec2 t1)
   float radius = distance(p0, p1) / 2.0;
 
   // transform points to eye space
-  vec4 sc0 = u_View * u_Transform * center;
+  vec4 sc0 = u_View * center;
 	vec4 sc1 = sc0;
 	sc0.x -= radius;
 	sc1.x += radius;
@@ -86,15 +91,23 @@ void main()
   }
 }
 
-#type tes
-#version 410 core
+#type domain
+#version 450 core
 
 layout(quads, fractional_odd_spacing, ccw) in;
 
 in vec2 UV[];
 
-uniform mat4 u_ViewProjection;
-uniform sampler2D heightMap;
+layout (push_constant) uniform pushConstants
+{
+  mat4 u_View;
+  mat4 u_Projection;
+  mat4 u_ViewProjection;
+  vec2 u_ViewportSize;
+  float u_Time;
+};
+
+layout (binding = 0) uniform sampler2D heightMap;
 
 out float height;
 
@@ -137,7 +150,7 @@ void main()
 }
 
 #type fragment
-#version 410 core
+#version 450 core
 
 in float height;
 

@@ -1,13 +1,7 @@
 #include "core/App.h"
 
-#include "core/Input.h"
-
-#include "renderer/Camera.h"
-#include "renderer/Renderer.h"
-#include "renderer/Mesh.h"
-#include "renderer/MeshGenerator.h"
-#include "renderer/Shader.h"
-#include "renderer/Texture.h"
+#include <iostream>
+#include <glm/gtc/random.hpp>
 
 namespace Lumina
 {
@@ -15,95 +9,96 @@ namespace Lumina
   {
   public:
     Lumina()
+        : Vision::App("Lumina")
     {
-      // Initialize the renderer
-      m_Renderer = new Vision::Renderer(m_DisplayWidth, m_DisplayHeight, m_DisplayScale);
-      m_PerspectiveCamera = new Vision::PerspectiveCamera(m_DisplayWidth, m_DisplayHeight, 0.1f, 1000.0f);
+      /*// Create our compute pipeline
+      Vision::ComputePipelineDesc desc;
+      desc.FilePath = "resources/computeShader.glsl";
+      Vision::ID pipeline = renderDevice->CreateComputePipeline(desc);
 
-      m_PlaneMesh = Vision::MeshGenerator::CreatePlaneMesh(50.0f, 50.0f, 128, 128, true, false);
-      m_TesselationShader = new Vision::Shader("resources/distShader.glsl");
-      m_TesselationShader->Use();
-      m_TesselationShader->UploadUniformInt(0, "heightMap");
+      // Create some data
+      constexpr std::size_t elements = 50;
+      constexpr std::size_t bufferSize = elements * sizeof(float);
+      std::vector<float> data(elements);
+      for (std::size_t i = 0; i < elements; i++)
+      {
+        data[i] = glm::linearRand(0.0f, 100.0f);
+        std::cout << data[i] << " ";
+      }
+      std::cout << std::endl;
 
-      m_HeightMap = new Vision::Texture2D("resources/iceland_heightmap.png");
+      // Copy the data to the GPU
+      Vision::BufferDesc bufferDesc;
+      bufferDesc.Data = data.data();
+      bufferDesc.Usage = Vision::BufferUsage::Dynamic;
+      bufferDesc.Size = bufferSize;
+      bufferDesc.DebugName = "Compute Buffer";
+      Vision::ID computeBuffer = renderDevice->CreateBuffer(bufferDesc);
 
-      Vision::CubemapDesc desc;
-      desc.Textures = {
-        "resources/skybox/right.jpg",
-        "resources/skybox/left.jpg",
-        "resources/skybox/top.jpg",
-        "resources/skybox/bottom.jpg",
-        "resources/skybox/front.jpg",
-        "resources/skybox/back.jpg"
-      };
-      m_SkyMesh = Vision::MeshGenerator::CreateCubeMesh(1.0f);
-      m_Skybox = new Vision::Cubemap(desc);
-      m_SkyShader = new Vision::Shader("resources/skyShader.glsl");
-      m_SkyShader->Use();
-      m_SkyShader->UploadUniformInt(0, "skybox");
-    }
+      // Tell the GPU to run our compute pass
+      renderDevice->BeginCommandBuffer();
+      renderDevice->BeginComputePass();
 
-    ~Lumina()
-    {
-      delete m_Renderer;
-      delete m_PerspectiveCamera;
+      renderDevice->SetComputeBuffer(computeBuffer);
+      renderDevice->DispatchCompute(pipeline, {elements, 1, 1});
 
-      delete m_PlaneMesh;
-      delete m_TesselationShader;
-      delete m_HeightMap;
+      renderDevice->EndComputePass();
+      renderDevice->SubmitCommandBuffer(true); // await completion
 
-      delete m_SkyMesh;
-      delete m_Skybox;
-      delete m_SkyShader;
+      // Fetch the data
+      float* element;
+      renderDevice->MapBufferData(computeBuffer, (void**)&element, bufferSize);
+
+      // Log our new data
+      if (element) // only print if the data exists.
+      {
+        for (std::size_t i = 0; i < elements; i++)
+        {
+          std::cout << element[i] << " ";
+        }
+        std::cout << std::endl;
+      }
+
+      renderDevice->FreeBufferData(computeBuffer, (void**)&element);
+
+    */
+      // Prepare the renderer data
+      Vision::RenderPassDesc rpDesc;
+      rpDesc.ClearColor = { 0.2f, 0.2f, 0.2f, 1.0f };
+      rpDesc.Framebuffer = 0;
+      rpDesc.LoadOp = Vision::LoadOp::Clear;
+      rpDesc.StoreOp = Vision::StoreOp::Store;
+      renderPass = renderDevice->CreateRenderPass(rpDesc);
+
+      camera = Vision::PerspectiveCamera(displayWidth, displayHeight, 0.1f, 50.0f);
     }
 
     void OnUpdate(float timestep)
     {
-      // Update Camera Controller
-      m_PerspectiveCamera->Update(timestep);
+      camera.Update(timestep);
 
-      // Render
-      glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      renderDevice->BeginCommandBuffer();
+      renderDevice->BeginRenderPass(renderPass);
 
-      // for debugging
-      if (Vision::Input::KeyDown(SDL_SCANCODE_TAB))
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      else
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-      
-      m_Renderer->Begin(m_PerspectiveCamera);
+      renderer2D->Begin(&camera);
 
-      m_HeightMap->Bind();
-      m_Renderer->DrawMesh(m_PlaneMesh, m_TesselationShader);
+      renderer2D->DrawBox(glm::vec3(0.0f));
 
-      // Skybox
-      glDepthFunc(GL_LEQUAL);
-      m_Skybox->Bind();      
-      m_Renderer->DrawMesh(m_SkyMesh, m_SkyShader);
+      renderer2D->End();
 
-      m_Renderer->End();
-    }
+      uiRenderer->Begin();
+      ImGui::ShowDemoWindow();
+      uiRenderer->End();
 
-    void OnResize()
-    {
-      m_Renderer->Resize(m_DisplayWidth, m_DisplayHeight);
-      m_PerspectiveCamera->SetWindowSize(m_DisplayWidth, m_DisplayHeight);
+      renderDevice->EndRenderPass();
+      renderDevice->SchedulePresentation();
+      renderDevice->SubmitCommandBuffer(false);
     }
 
   private:
-    Vision::Renderer *m_Renderer;
-    Vision::PerspectiveCamera *m_PerspectiveCamera;
-
-    Vision::Mesh* m_PlaneMesh;
-    Vision::Shader* m_TesselationShader;
-    Vision::Texture2D* m_HeightMap;
-
-    Vision::Cubemap* m_Skybox;
-    Vision::Mesh* m_SkyMesh;
-    Vision::Shader* m_SkyShader;
-};
-
+    Vision::ID renderPass;
+    Vision::PerspectiveCamera camera;
+  };
 }
 
 int main()

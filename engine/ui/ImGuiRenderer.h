@@ -4,9 +4,10 @@
 
 #include <glad/glad.h>
 
-#include "renderer/Buffer.h"
-#include "renderer/Shader.h"
-#include "renderer/VertexArray.h"
+#include "renderer/RenderDevice.h"
+#include "renderer/primitive/Buffer.h"
+#include "renderer/primitive/Shader.h"
+#include "renderer/opengl/GLVertexArray.h"
 
 namespace Vision
 {
@@ -14,7 +15,7 @@ namespace Vision
 class ImGuiRenderer
 {
 public:
-  ImGuiRenderer(float width, float height, float displayScale = 1.0f);
+  ImGuiRenderer(RenderDevice* device, float width, float height, float displayScale = 1.0f);
   ~ImGuiRenderer();
 
   void Begin();
@@ -24,26 +25,25 @@ public:
 
 private:
   void GenerateBuffers();
-  void GenerateArrays();
-  void GenerateShaders();
-  void GenerateTextures();
+  void GeneratePipeline();
+  void GenerateTexture();
 
   void DestroyBuffers();
-  void DestroyArrays();
-  void DestroyShaders();
-  void DestroyTextures();
+  void DestroyPipeline();
+  void DestroyTexture();
 
 private:
-  Buffer *m_VBO, *m_IBO;
-  VertexArray *m_VertexArray;
-  Shader *m_Shader;
-  GLuint m_FontTexture;
+  RenderDevice* device;
 
-  std::size_t m_MaxVertices = 1000000; // 5MB GPU buffer
-  std::size_t m_MaxIndices = 1000000;
+  ID vbo, ibo, ubo;
+  ID pipeline;
+  ID fontTexture;
 
-  float m_PixelDensity = 1.0f;
-  float m_Width, m_Height;
+  std::size_t maxVertices = 1000000; // 5MB GPU buffer
+  std::size_t maxIndices = 1000000;
+
+  float pixelDensity = 1.0f;
+  float width, height;
 };
 
 }

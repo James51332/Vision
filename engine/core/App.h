@@ -2,8 +2,15 @@
 
 #include <SDL3/SDL.h>
 
+#include "core/Window.h"
+
 #include "ui/UIInput.h"
 #include "ui/ImGuiRenderer.h"
+
+#include "renderer/RenderDevice.h"
+#include "renderer/RenderContext.h"
+#include "renderer/Renderer.h"
+#include "renderer/Renderer2D.h"
 
 namespace Vision
 {
@@ -11,15 +18,19 @@ namespace Vision
 class App
 {
 public:
-  App();
+  App(const std::string& title = "Vision");
   ~App();
 
   void Run();
-  void Stop() { m_Running = false; }
+  void Stop() { running = false; }
+
+  static App* GetApp() { return appInstance; }
+  static RenderDevice* GetDevice() { return appInstance->renderDevice; }
+  static PixelType GetPixelFormat() { return appInstance->renderContext->GetPixelType(); }
 
 protected:
   virtual void OnUpdate(float timestep) = 0;
-  virtual void OnResize() {} // Not mandatory to implement
+  virtual void OnResize(float width, float height) {} // Not mandatory to implement
 
 private:
   void Init();
@@ -27,16 +38,25 @@ private:
   void ProcessEvents();
 
 private:
+  // A vision app is a singleton. One per process.
+  static App* appInstance;
+
   // Run Loop
-  bool m_Running = false;
+  bool running = false;
 
   // Platform Data
-  SDL_Window* m_Window;
-  SDL_GLContext m_Context;
+  Window* window;
+  float displayScale; // Used for retina rendering
+  std::string title;
 
 protected:
-  float m_DisplayWidth = 1280.0f, m_DisplayHeight = 720.0f;
-  float m_DisplayScale = 1.0f; // Used for retina rendering
+  float displayWidth = 1280.0f, displayHeight = 720.0f;
+
+  RenderDevice* renderDevice;
+  RenderContext* renderContext;
+  Renderer* renderer;
+  Renderer2D* renderer2D;
+  ImGuiRenderer* uiRenderer;
 };
 
 }

@@ -25,49 +25,44 @@ constexpr static PointVertex pointVertices[] = {
   {{-1.0f, -1.0f}, glm::vec4(1.0f), {0.0f, 0.0f}}
 };
 
-Renderer2D::Renderer2D(float width, float height, float pixelDensity)
-: m_Width(width), m_Height(height), m_PixelDensity(pixelDensity)
+Renderer2D::Renderer2D(RenderDevice* dev, float w, float h, float density)
+: device(dev), width(w), height(h), pixelDensity(density)
 {
   GenerateBuffers();
-  GenerateArrays();
-  GenerateShaders();
+  GeneratePipelines();
   GenerateTextures();
 }
 
 Renderer2D::~Renderer2D()
 {
-  DestroyArrays();
   DestroyBuffers();
-  DestroyShaders();
+  DestroyPipelines();
   DestroyTextures();
 }
 
-void Renderer2D::Resize(float width, float height)
+void Renderer2D::Resize(float w, float h)
 {
-  m_Width = width;
-  m_Height = height;
-
-  glViewport(0, 0, static_cast<GLsizei>(width * m_PixelDensity), static_cast<GLsizei>(height * m_PixelDensity));
+  width = w;
+  height = h;
 }
 
-void Renderer2D::Begin(Camera *camera, bool useTransform, const glm::mat4& globalTransform)
+void Renderer2D::Begin(Camera *cam, bool useTransform, const glm::mat4& transform)
 {
-  assert(!m_InFrame);
+  assert(!inFrame);
+  inFrame = true;
+  camera = cam;
 
-  m_InFrame = true;
-  m_Camera = camera;
-
-  m_UseGlobalTransform = useTransform;
-  m_GlobalTransform = globalTransform;
+  useGlobalTransform = useTransform;
+  globalTransform = transform;
 }
 
 void Renderer2D::End()
 {
-  assert(m_InFrame);
+  assert(inFrame);
   Flush();
 
-  m_InFrame = false;
-  m_Camera = nullptr;
+  inFrame = false;
+  camera = nullptr;
 }
 
 // Renderer 2D API
@@ -86,23 +81,23 @@ void Renderer2D::DrawSquare(const glm::vec2 &position, const glm::vec4 &color, f
 
 void Renderer2D::DrawQuad(const glm::mat4 &transform, const glm::vec4 &color)
 {
-  DrawTexturedQuad(transform, color, nullptr);
+  DrawTexturedQuad(transform, color, 0);
 }
 
-void Renderer2D::DrawTexturedQuad(const glm::mat4 &transform, const glm::vec4 &color, Texture2D *texture, float tilingFactor)
+void Renderer2D::DrawTexturedQuad(const glm::mat4 &transform, const glm::vec4 &color, ID texture, float tilingFactor)
 {
-  assert(m_InFrame);
+  assert(inFrame);
 
-  if (m_NumQuads == m_MaxQuads)
+  if (numQuads == maxQuads)
     Flush();
   
   std::size_t textureID = 0; // white texture
   if (texture)
   {
     // look to see if already usiig
-    for (std::size_t i = 0; i < m_NumUserTextures; i++)
+    for (std::size_t i = 0; i < numUserTextures; i++)
     {
-      if (m_Textures[i]->m_TextureID == texture->m_TextureID)
+      if (textures[i] == texture)
       {
         textureID = i;
         break;
@@ -110,12 +105,12 @@ void Renderer2D::DrawTexturedQuad(const glm::mat4 &transform, const glm::vec4 &c
     }
 
     // if no more texture slots, flush
-    if (textureID == 0 && m_NumUserTextures == m_MaxTextures)
+    if (textureID == 0 && numUserTextures == maxTextures)
       Flush();
 
-    m_Textures[m_NumUserTextures] = texture;
-    m_NumUserTextures++;
-    textureID = m_NumUserTextures;
+    textures[numUserTextures] = texture;
+    numUserTextures++;
+    textureID = numUserTextures;
   }
 
   // draw the quad by adding the next four vertices to the buffer
@@ -127,18 +122,17 @@ void Renderer2D::DrawTexturedQuad(const glm::mat4 &transform, const glm::vec4 &c
     vertex.TextureID = textureID;
     vertex.TilingFactor = tilingFactor;
 
-    (*m_QuadBufferHead) = vertex;
-    m_QuadBufferHead++;
+    (*quadBufferHead) = vertex;
+    quadBufferHead++;
   }
 
-  m_NumQuads++;
+  numQuads++;
 }
 
 // The line renderer converts a line into a quad and two endpoints.
 void Renderer2D::DrawLine(const glm::vec2 &pos1, const glm::vec2 &pos2, const glm::vec4& color, float thickness)
 {
-  assert(m_InFrame);
-
+  assert(inFrame);
   thickness /= 2.0f; // radius and height are half of total
 
   // basic line data
@@ -169,9 +163,9 @@ void Renderer2D::DrawLine(const glm::vec2 &pos1, const glm::vec2 &pos2, const gl
 
 void Renderer2D::DrawCircle(const glm::vec2 &position, const glm::vec4 &color, float radius, float thickness)
 {
-  assert(m_InFrame);
+  assert(inFrame);
 
-  if (m_NumPoints == m_MaxPoints)
+  if (numPoints == maxPoints)
     Flush();
 
   // The border of circles is on the inside. Therefore new radius = r + thickness / 2
@@ -185,11 +179,11 @@ void Renderer2D::DrawCircle(const glm::vec2 &position, const glm::vec4 &color, f
     vertex.Color = color;
     vertex.Border = border;
 
-    (*m_PointBufferHead) = vertex;
-    m_PointBufferHead++;
+    (*pointBufferHead) = vertex;
+    pointBufferHead++;
   }
 
-  m_NumPoints++;
+  numPoints++;
 }
 
 void Renderer2D::DrawBox(const glm::vec2 &position, const glm::vec4 &color, float size, float thickness)
@@ -208,92 +202,81 @@ void Renderer2D::DrawBox(const glm::vec2 &position, const glm::vec4 &color, floa
 
 void Renderer2D::Flush()
 {
-  // TODO: Right now, the most recent quads will draw over each other, and the points will draw over quads
-  // maybe some form a z-value to sort by draw order? We could have an API to push layer to the render 2D.
-  glDisable(GL_DEPTH_TEST);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  // upload model view projection matrix to GPU
+  glm::mat4 mvp;
+  if (useGlobalTransform)
+    mvp = camera->GetViewProjectionMatrix() * globalTransform;
+  else
+    mvp = camera->GetViewProjectionMatrix();
+
+  device->SetBufferData(matrixUBO, &mvp[0][0], sizeof(glm::mat4));
+  device->AttachUniformBuffer(matrixUBO);
 
   // Quads
-  if (m_NumQuads != 0)
+  if (numQuads != 0)
   {
     // copy the quad buffer into the vbo
-    m_QuadVBO->SetData(m_QuadBuffer, sizeof(QuadVertex) * 4 * m_NumQuads);
-
-    m_QuadShader->Use();
-    m_QuadShader->UploadUniformMat4(&m_Camera->GetViewProjectionMatrix()[0][0], "u_ViewProjection");
-
-    glm::mat4 transform(1.0f);
-    if (m_UseGlobalTransform)
-      transform = m_GlobalTransform;
-    m_QuadShader->UploadUniformMat4(&transform[0][0], "u_Transform");
+    device->SetBufferData(quadVBO, quadBuffer, sizeof(QuadVertex) * 4 * numQuads);
 
     // Bind Textures
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_WhiteTexture->m_TextureID);
-
-    for (std::size_t i = 1; i <= m_MaxTextures; ++i)
+    device->BindTexture2D(whiteTexture);
+    for (std::size_t i = 1; i <= maxTextures; ++i)
     {
       // HACK: macOS prefers we bind a texture, even if not used.
-      Texture2D *texture = m_Textures[i] ? m_Textures[i] : m_WhiteTexture;
-      glActiveTexture(GL_TEXTURE0 + i);
-      glBindTexture(GL_TEXTURE_2D, texture->m_TextureID);
+      ID texture = textures[i] ? textures[i] : whiteTexture;
+      device->BindTexture2D(texture, i);
     }
 
-    m_QuadVAO->Bind();
-    m_QuadIBO->Bind();
-    glDrawElements(GL_TRIANGLES, m_NumQuads * 6, GL_UNSIGNED_INT, nullptr);
+    DrawCommand cmd;
+    cmd.Type = PrimitiveType::Triangle;
+    cmd.VertexBuffers = { quadVBO };
+    cmd.NumVertices = numQuads * 6;
+    cmd.IndexType = IndexType::U32;
+    cmd.IndexBuffer = quadIBO;
+    cmd.Pipeline = quadPipeline;
+    device->Submit(cmd);
   }
   
-  m_QuadBufferHead = m_QuadBuffer;
-  m_NumQuads = 0;
-  m_NumUserTextures = 0;
+  quadBufferHead = quadBuffer;
+  numQuads = 0;
+  numUserTextures = 0;
 
   // Points
-  if (m_NumPoints != 0)
+  if (numPoints != 0)
   {
-    m_PointVBO->SetData(m_PointBuffer, sizeof(PointVertex) * 4 * m_NumPoints);
+    device->SetBufferData(pointVBO, pointBuffer, sizeof(PointVertex) * 4 * numPoints);
 
-    m_PointShader->Use();
-    m_PointShader->UploadUniformMat4(&m_Camera->GetViewProjectionMatrix()[0][0], "u_ViewProjection");
-
-    glm::mat4 transform(1.0f);
-    if (m_UseGlobalTransform)
-      transform = m_GlobalTransform;
-    m_PointShader->UploadUniformMat4(&transform[0][0], "u_Transform");
-
-    m_PointVAO->Bind();
-    m_QuadIBO->Bind();
-    glDrawElements(GL_TRIANGLES, m_NumPoints * 6, GL_UNSIGNED_INT, nullptr);
+    DrawCommand cmd;
+    cmd.Type = PrimitiveType::Triangle;
+    cmd.VertexBuffers = { pointVBO };
+    cmd.NumVertices = numPoints * 6;
+    cmd.IndexType = IndexType::U32;
+    cmd.IndexBuffer = quadIBO;
+    cmd.Pipeline = pointPipeline;
+    device->Submit(cmd);
   }
 
-  m_PointBufferHead = m_PointBuffer;
-  m_NumPoints = 0;
+  pointBufferHead = pointBuffer;
+  numPoints = 0;
 }
 
 void Renderer2D::GenerateBuffers()
 { 
   // Quad Buffers
   {
-    std::size_t numVertices = m_MaxQuads * 4; // 4 vertices per quad
-    std::size_t numIndices = m_MaxQuads * 6; // 6 indices per quad
+    std::size_t numVertices = maxQuads * 4; // 4 vertices per quad
+    std::size_t numIndices = maxQuads * 6; // 6 indices per quad
 
-    m_QuadBuffer = new QuadVertex[numVertices];
-    m_QuadBufferHead = m_QuadBuffer;
+    quadBuffer = new QuadVertex[numVertices];
+    quadBufferHead = quadBuffer;
 
     BufferDesc vboDesc;
-    vboDesc.Type = GL_ARRAY_BUFFER;
-    vboDesc.Usage = GL_DYNAMIC_DRAW;
+    vboDesc.Type = BufferType::Vertex;
+    vboDesc.Usage = BufferUsage::Dynamic;
     vboDesc.Size = sizeof(QuadVertex) * numVertices;
     vboDesc.Data = nullptr;
-    vboDesc.Layout = {
-      { ShaderDataType::Float2, "a_Position" },
-      { ShaderDataType::Float4, "a_Color" },
-      { ShaderDataType::Float2, "a_UV" },
-      { ShaderDataType::Int, "a_TextureID"},
-      { ShaderDataType::Float, "a_TilingFactor" }
-    };
-    m_QuadVBO = new Buffer(vboDesc);
+    vboDesc.DebugName = "Renderer2D Quad VBO";
+    quadVBO = device->CreateBuffer(vboDesc);
 
     // Populate index buffer
     std::vector<std::uint32_t> indices(numIndices);
@@ -304,49 +287,44 @@ void Renderer2D::GenerateBuffers()
     }
 
     BufferDesc iboDesc;
-    iboDesc.Type = GL_ELEMENT_ARRAY_BUFFER;
-    iboDesc.Usage = GL_STATIC_DRAW;
+    iboDesc.Type = BufferType::Index;
+    iboDesc.Usage = BufferUsage::Static;
     iboDesc.Size = sizeof(std::uint32_t) * numIndices;
     iboDesc.Data = indices.data();
-    m_QuadIBO = new Buffer(iboDesc);
+    iboDesc.DebugName = "Renderer2D IBO";
+    quadIBO = device->CreateBuffer(iboDesc);
   }
 
   // Point Buffers
   {
-    std::size_t numVertices = m_MaxPoints * 4; // 4 vertices per point
-    std::size_t numIndices = m_MaxPoints * 6;  // 6 indices per point
+    std::size_t numVertices = maxPoints * 4; // 4 vertices per point
+    std::size_t numIndices = maxPoints * 6;  // 6 indices per point
 
-    m_PointBuffer = new PointVertex[numVertices];
-    m_PointBufferHead = m_PointBuffer;
+    pointBuffer = new PointVertex[numVertices];
+    pointBufferHead = pointBuffer;
 
     BufferDesc vboDesc;
-    vboDesc.Type = GL_ARRAY_BUFFER;
-    vboDesc.Usage = GL_DYNAMIC_DRAW;
+    vboDesc.Type = BufferType::Vertex;
+    vboDesc.Usage = BufferUsage::Dynamic;
     vboDesc.Size = sizeof(PointVertex) * numVertices;
     vboDesc.Data = nullptr;
-    vboDesc.Layout = {
-      { ShaderDataType::Float2, "a_Position" },
-      { ShaderDataType::Float4, "a_Color" },
-      { ShaderDataType::Float2, "a_UV" },
-      { ShaderDataType::Float, "a_Border" },
-    };
-    m_PointVBO = new Buffer(vboDesc);
+    vboDesc.DebugName = "Renderer2D Point VBO";
+    pointVBO = device->CreateBuffer(vboDesc);
+  }
+
+  // UBO
+  {
+    BufferDesc uboDesc;
+    uboDesc.Type = BufferType::Uniform;
+    uboDesc.Usage = BufferUsage::Dynamic;
+    uboDesc.Size = sizeof(glm::mat4);
+    uboDesc.Data = nullptr;
+    matrixUBO = device->CreateBuffer(uboDesc);
   }
 }
 
-void Renderer2D::GenerateArrays()
-{
-  // Quads
-  m_QuadVAO = new VertexArray();
-  m_QuadVAO->AttachBuffer(m_QuadVBO);
-
-  // Point
-  m_PointVAO = new VertexArray();
-  m_PointVAO->AttachBuffer(m_PointVBO);
-}
-
 const char *quadVertex = R"(
-#version 410 core
+#version 450 core
 
 layout (location = 0) in vec2 a_Position;
 layout (location = 1) in vec4 a_Color;
@@ -358,20 +336,22 @@ out vec2 v_UV;
 out vec4 v_Color;
 flat out int v_TextureID;
 
-uniform mat4 u_ViewProjection;
-uniform mat4 u_Transform;
+layout (binding = 0) uniform matrices 
+{
+  mat4 mvp;
+};
 
 void main()
 {  
-  gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 0.0, 1.0);
+  gl_Position = mvp * vec4(a_Position, 0.0, 1.0);
   
   v_UV = a_UV * a_TilingFactor;
   v_Color = a_Color;
   v_TextureID = a_TextureID;
 })";
 
-const char *quadFragment = R"(
-#version 410 core
+const char *quadPixel = R"(
+#version 450 core
 
 in vec2 v_UV;
 in vec4 v_Color;
@@ -379,7 +359,7 @@ flat in int v_TextureID;
 
 out vec4 FragColor;
 
-uniform sampler2D u_Textures[16];
+layout (binding = 0) uniform sampler2D u_Textures[16];
 
 void main()
 {
@@ -387,7 +367,7 @@ void main()
 })";
 
 const char *pointVertex = R"(
-#version 410 core
+#version 450 core
 
 layout (location = 0) in vec2 a_Position;
 layout (location = 1) in vec4 a_Color;
@@ -398,23 +378,25 @@ out vec2 v_UVNorm;
 out vec4 v_Color;
 out float v_Border;
 
-uniform mat4 u_ViewProjection;
-uniform mat4 u_Transform;
+layout (binding = 0) uniform matrices 
+{
+  mat4 mvp;
+};
 
 void main()
 {  
-  gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 0.0, 1.0);
+  gl_Position = mvp * vec4(a_Position, 0.0, 1.0);
 
   v_Color = a_Color;
   v_UVNorm = a_UV * 2.0 - 1.0; // normalize from -1 to 1
   v_Border = a_Border;
 })";
 
-const char *pointFragment = R"(
-#version 410 core
+const char *pointPixel = R"(
+#version 450 core
 
-in vec4 v_Color;
 in vec2 v_UVNorm;
+in vec4 v_Color;
 in float v_Border;
 
 out vec4 FragColor;
@@ -432,51 +414,87 @@ void main()
 	FragColor = vec4(v_Color.xyz, v_Color.w * alpha);
 })";
 
-void Renderer2D::GenerateShaders()
+void Renderer2D::GeneratePipelines()
 {
-  m_QuadShader = new Shader(quadVertex, quadFragment);
-  
-  static std::int32_t textures[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-  m_QuadShader->Use();
-  m_QuadShader->UploadUniformIntArray(textures, 16, "u_Textures");
+  // Quads
+  ShaderDesc quadShaderDesc;
+  quadShaderDesc.Source = ShaderSource::GLSL;
+  quadShaderDesc.StageMap[ShaderStage::Vertex] = quadVertex;
+  quadShaderDesc.StageMap[ShaderStage::Pixel] = quadPixel;
+  quadShader = device->CreateShader(quadShaderDesc);
 
-  m_PointShader = new Shader(pointVertex, pointFragment);
+  PipelineDesc quadDesc;
+  quadDesc.Layouts = { BufferLayout({
+    { ShaderDataType::Float2, "a_Position" },
+    { ShaderDataType::Float4, "a_Color" },
+    { ShaderDataType::Float2, "a_UV" },
+    { ShaderDataType::Int, "a_TextureID"},
+    { ShaderDataType::Float, "a_TilingFactor" }
+  })};
+  quadDesc.DepthTest = false;
+  quadDesc.DepthWrite = false;
+  quadDesc.Blending = true;
+  quadDesc.Shader = quadShader;
+  quadPipeline = device->CreatePipeline(quadDesc);
+
+  // Point
+  ShaderDesc pointShaderDesc;
+  pointShaderDesc.Source = ShaderSource::GLSL;
+  pointShaderDesc.StageMap[ShaderStage::Vertex] = pointVertex;
+  pointShaderDesc.StageMap[ShaderStage::Pixel] = pointPixel;
+  pointShader = device->CreateShader(pointShaderDesc);
+
+  PipelineDesc pointDesc;
+  pointDesc.Layouts = {BufferLayout( {
+                        { ShaderDataType::Float2, "a_Position" },
+                        { ShaderDataType::Float4, "a_Color" },
+                        { ShaderDataType::Float2, "a_UV" },
+                        { ShaderDataType::Float, "a_Border" },
+                      })};
+  pointDesc.DepthTest = false;
+  pointDesc.DepthWrite = false;
+  pointDesc.Blending = true;
+  pointDesc.Shader = pointShader;
+  pointPipeline = device->CreatePipeline(pointDesc);
 }
 
 void Renderer2D::GenerateTextures()
 {
   std::uint32_t data = 0xffffffff;
-  m_WhiteTexture = new Texture2D(1, 1, PixelType::RGBA32);
-  m_WhiteTexture->SetData((uint8_t*)&data);
-
-  m_Textures = std::vector<Texture2D*>(m_MaxTextures, nullptr);
+  Texture2DDesc desc;
+  desc.LoadFromFile = false;
+  desc.PixelType = PixelType::RGBA32;
+  desc.Width = 1;
+  desc.Height = 1;
+  desc.Data =(uint8_t*)(&data);
+  desc.WriteOnly = false;
+  
+  whiteTexture = device->CreateTexture2D(desc);
+  textures = std::vector<ID>(maxTextures, 0);
 }
 
 void Renderer2D::DestroyBuffers()
 {
-  delete[] m_QuadBuffer;
-  delete m_QuadVBO;
-  delete m_QuadIBO;
+  delete[] quadBuffer;
+  device->DestroyBuffer(quadVBO);
+  device->DestroyBuffer(quadIBO);
 
-  delete[] m_PointBuffer;
-  delete m_PointVBO;
+  delete[] pointBuffer;
+  device->DestroyBuffer(pointVBO);
 }
 
-void Renderer2D::DestroyArrays()
+void Renderer2D::DestroyPipelines()
 {
-  delete m_QuadVAO;
-  delete m_PointVAO;
-}
-
-void Renderer2D::DestroyShaders()
-{
-  delete m_QuadShader;
-  delete m_PointShader;
+  device->DestroyPipeline(quadPipeline);
+  device->DestroyPipeline(pointPipeline);
+  
+  device->DestroyShader(quadShader);
+  device->DestroyShader(pointShader);
 }
 
 void Renderer2D::DestroyTextures()
 {
-  delete m_WhiteTexture;
+  device->DestroyTexture2D(whiteTexture);
 }
 
 }

@@ -3,8 +3,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-#include "VertexArray.h"
-#include "Buffer.h"
+#include "primitive/Buffer.h"
 
 namespace Vision
 {
@@ -33,16 +32,14 @@ class Mesh
   friend class Renderer;
 public:
   Mesh(const MeshDesc& desc);
-
-  void Bind();
+  ~Mesh();
 
   std::size_t GetNumIndices() const { return m_NumIndices; }
   std::size_t GetNumVertices() const { return m_NumVertices; }
 
 private:
-  VertexArray* m_VertexArray;
-  Buffer* m_VertexBuffer;
-  Buffer* m_IndexBuffer;
+  ID m_VertexBuffer;
+  ID m_IndexBuffer;
 
   std::size_t m_NumVertices;
   std::size_t m_NumIndices;

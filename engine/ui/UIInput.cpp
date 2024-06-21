@@ -130,6 +130,8 @@ namespace Vision::UI
 
 bool ProcessEvent(SDL_Event* event)
 {
+  if (!ImGui::GetCurrentContext()) return false;
+
   ImGuiIO& io = ImGui::GetIO();
 
   switch (event->type)

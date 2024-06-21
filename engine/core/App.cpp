@@ -5,8 +5,14 @@
 namespace Vision
 {
 
-App::App()
+App* App::appInstance = nullptr;
+
+App::App(const std::string& name)
+  : title(name)
 {
+  SDL_assert(!appInstance);
+  appInstance = this;
+
   Init();
 }
 
@@ -17,12 +23,11 @@ App::~App()
 
 void App::Run()
 {
-  // Show Window
-  SDL_ShowWindow(m_Window);
+  window->Show();
 
   float lastTime = 0;
-  m_Running = true;
-  while (m_Running)
+  running = true;
+  while (running)
   {
     // Calculate Timestep
     float timestep;
@@ -39,41 +44,34 @@ void App::Run()
 
     // Update App
     OnUpdate(timestep);
-
-    SDL_GL_SwapWindow(m_Window);
   }
 }
 
 void App::Init()
 {
-  m_Window = SDL_CreateWindow("Vision", m_DisplayWidth, m_DisplayHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN);
-  m_DisplayScale = SDL_GetWindowDisplayScale(m_Window);
-
-  // Get our OpenGL surface to draw on
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-  SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
-  m_Context = SDL_GL_CreateContext(m_Window);
-  SDL_GL_MakeCurrent(m_Window, m_Context);
-
-  // VSync
-  SDL_GL_SetSwapInterval(1);
+  WindowDesc desc;
+  desc.Title = title;
+  desc.API = RenderAPI::Metal;
+  window = new Window(desc);
+  renderContext = window->GetRenderContext();
 
   // Initialize Input System
   Input::Init();
 
-  // Load OpenGL function pointers
-  gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
+  // Initialize
+  displayScale = window->GetDisplayScale();
+  renderDevice = renderContext->GetRenderDevice();
+  renderer = new Renderer(displayWidth, displayHeight, displayScale);
+  renderer2D = new Renderer2D(renderDevice, displayWidth, displayHeight, displayScale);
+  uiRenderer = new ImGuiRenderer(renderDevice, displayWidth, displayHeight, displayScale);
 }
 
 void App::Shutdown()
 {
-  SDL_DestroyWindow(m_Window);
-
-  m_Window = nullptr;
+  delete renderer2D;
+  delete uiRenderer;
+  delete renderer;
+  delete window;
 }
 
 void App::ProcessEvents()
@@ -81,19 +79,21 @@ void App::ProcessEvents()
   SDL_Event event;
   while (SDL_PollEvent(&event))
   {
-    if (ImGui::GetCurrentContext())
-    {
-      bool processed = UI::ProcessEvent(&event);
-      if (processed) continue;
-    }
+    bool processed = UI::ProcessEvent(&event);
+    if (processed) continue;
 
     switch (event.type)
     {
       case SDL_EVENT_WINDOW_RESIZED:
       {
-        m_DisplayWidth = static_cast<float>(event.window.data1);
-        m_DisplayHeight = static_cast<float>(event.window.data2);
-        OnResize();
+        displayWidth = static_cast<float>(event.window.data1);
+        displayHeight = static_cast<float>(event.window.data2);
+
+        renderer->Resize(displayWidth, displayHeight);
+        renderer2D->Resize(displayWidth, displayHeight);
+        uiRenderer->Resize(displayWidth, displayHeight);
+
+        OnResize(displayWidth, displayHeight);
         break;
       }
       case SDL_EVENT_QUIT:

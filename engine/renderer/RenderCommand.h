@@ -2,10 +2,10 @@
 
 #include <glm/glm.hpp>
 
-#include "Buffer.h"
-#include "VertexArray.h"
-#include "Shader.h"
-#include "Texture.h"
+#include "primitive/Buffer.h"
+#include "primitive/Shader.h"
+#include "primitive/Texture.h"
+#include "primitive/Pipeline.h"
 
 namespace Vision
 {
@@ -24,13 +24,17 @@ enum class PrimitiveType
   Patch
 };
 
-struct RenderCommand
+using ID = std::size_t;
+
+struct DrawCommand
 {
   // Data
-  VertexArray* VertexArray = nullptr;
-  Buffer* IndexBuffer = nullptr;
-  Shader* Shader;
-  std::vector<Texture2D*> Textures;
+  ID Pipeline;
+  std::vector<ID> VertexBuffers;
+  ID IndexBuffer = 0;
+  std::size_t IndexOffset = 0;
+
+  std::vector<ID> Textures;
   glm::mat4 Transform;
 
   // Settings
@@ -39,8 +43,7 @@ struct RenderCommand
   std::size_t NumVertices = 0;
 
   // Tesselation
-  bool UseTesselation = false;
-  std::size_t PatchSize;
+  std::size_t PatchSize = 4;
 };
 
 }

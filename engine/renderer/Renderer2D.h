@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Camera.h"
-#include "Buffer.h"
-#include "Shader.h"
-#include "VertexArray.h"
-#include "Texture.h"
+#include "RenderDevice.h"
+
+#include "primitive/Buffer.h"
+#include "primitive/Texture.h"
+#include "primitive/Pipeline.h"
 
 namespace Vision
 {
@@ -30,7 +31,7 @@ struct PointVertex
 class Renderer2D
 {
 public:
-  Renderer2D(float width, float height, float displayScale = 1.0f);
+  Renderer2D(RenderDevice* device, float width, float height, float displayScale = 1.0f);
   ~Renderer2D();
 
   void Resize(float width, float height);
@@ -43,7 +44,7 @@ public:
   void DrawPoint(const glm::vec2 &position, const glm::vec4 &color = glm::vec4(1.0f), float radius = 1.0f);
   void DrawSquare(const glm::vec2 &position, const glm::vec4& color = glm::vec4(1.0f), float size = 1.0f);
   void DrawQuad(const glm::mat4& transform, const glm::vec4& color = glm::vec4(1.0f));
-  void DrawTexturedQuad(const glm::mat4& transform, const glm::vec4& color, Texture2D* texture, float tilingFactor = 1.0f);
+  void DrawTexturedQuad(const glm::mat4& transform, const glm::vec4& color, ID texture, float tilingFactor = 1.0f);
   
   // Outlines
   void DrawLine(const glm::vec2& pos1, const glm::vec2& pos2, const glm::vec4& color = glm::vec4(1.0f), float thickness = 1.0f);
@@ -54,47 +55,47 @@ private:
   void Flush();
 
   void GenerateBuffers();
-  void GenerateArrays();
-  void GenerateShaders();
+  void GeneratePipelines();
   void GenerateTextures();
 
   void DestroyBuffers();
-  void DestroyArrays();
-  void DestroyShaders();
+  void DestroyPipelines();
   void DestroyTextures();
 
 private:
   // General Rendering Data
-  bool m_InFrame = false;
-  Camera *m_Camera = nullptr;
-  float m_PixelDensity = 1.0f;
-  float m_Width, m_Height;
+  RenderDevice* device = nullptr;
+  bool inFrame = false;
+  Camera *camera = nullptr;
+  float pixelDensity = 1.0f;
+  float width, height;
+
+  // Matrix UBO
+  ID matrixUBO;
 
   // Mode
-  bool m_UseGlobalTransform = false;
-  glm::mat4 m_GlobalTransform = glm::mat4(1.0f);
+  bool useGlobalTransform = false;
+  glm::mat4 globalTransform = glm::mat4(1.0f);
 
   // Quad Info
-  const std::size_t m_MaxQuads = 10000;
-  std::size_t m_NumQuads = 0;
-  QuadVertex *m_QuadBuffer, *m_QuadBufferHead;
-  Buffer *m_QuadVBO, *m_QuadIBO;
-  VertexArray* m_QuadVAO;
-  Shader* m_QuadShader;
+  const std::size_t maxQuads = 10000;
+  std::size_t numQuads = 0;
+  QuadVertex *quadBuffer, *quadBufferHead;
+  ID quadVBO, quadIBO;
+  ID quadPipeline, quadShader;
   
   // Texture Info
-  const std::size_t m_MaxTextures = 15;
-  Texture2D* m_WhiteTexture;
-  std::vector<Texture2D*> m_Textures;
-  std::size_t m_NumUserTextures = 0;
+  const std::size_t maxTextures = 15;
+  ID whiteTexture;
+  std::vector<ID> textures;
+  std::size_t numUserTextures = 0;
 
   // Point Info
-  const std::size_t m_MaxPoints = 10000;
-  std::size_t m_NumPoints = 0;
-  PointVertex *m_PointBuffer, *m_PointBufferHead;
-  Buffer* m_PointVBO; // We can use the same ibo because the indices for points are the same
-  VertexArray* m_PointVAO;
-  Shader* m_PointShader;
+  const std::size_t maxPoints = 10000;
+  std::size_t numPoints = 0;
+  PointVertex *pointBuffer, *pointBufferHead;
+  ID pointVBO; // We can use the same ibo because the indices for points are the same
+  ID pointPipeline, pointShader;
 };
 
 }
