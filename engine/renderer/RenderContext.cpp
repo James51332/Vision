@@ -1,5 +1,7 @@
 #include "RenderContext.h"
 
+#include "core/Macros.h"
+
 #include "renderer/RenderAPI.h"
 
 #include "renderer/opengl/GLContext.h"
