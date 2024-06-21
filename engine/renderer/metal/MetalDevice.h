@@ -75,6 +75,8 @@ public:
 
   void DispatchCompute(ID pipeline, const glm::vec3 &threads);
 
+  RenderAPI GetRenderAPI() const { return RenderAPI::Metal; }
+
 private:
   // gpu device
   MTL::Device* gpuDevice;

@@ -76,6 +76,8 @@ public:
   void SetComputeTexture(ID texture, std::size_t binding = 0) {}
   void DispatchCompute(ID pipeline, const glm::vec3 &threads) {}
 
+  RenderAPI GetRenderAPI() const { return RenderAPI::OpenGL; }
+
 private:
   // swapchain image
   SDL_Window* window;

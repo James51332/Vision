@@ -77,6 +77,8 @@ public:
   virtual void SetComputeTexture(ID texture, std::size_t binding = 0) = 0;
 
   virtual void DispatchCompute(ID pipeline, const glm::vec3 &threads) = 0;
+
+  virtual RenderAPI GetRenderAPI() const = 0; 
 };
 
 }
