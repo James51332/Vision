@@ -118,7 +118,7 @@ void ImGuiRenderer::End()
       if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y) continue;
       if (command->ElemCount == 0) continue;
 
-     	device->SetScissorRect(clipMin.x, fbHeight - clipMax.y, (clipMax.x - clipMin.x), (clipMax.y - clipMin.y));
+     	device->SetScissorRect(clipMin.x, clipMin.y, (clipMax.x - clipMin.x), (clipMax.y - clipMin.y));
 
       if (command->UserCallback)
       {

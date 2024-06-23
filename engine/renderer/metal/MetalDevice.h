@@ -19,7 +19,7 @@ namespace Vision
 class MetalDevice : public RenderDevice
 {
 public:
-  MetalDevice(MTL::Device* device, CA::MetalLayer* layer);
+  MetalDevice(MTL::Device* device, CA::MetalLayer* layer, float w, float h);
   ~MetalDevice();
 
   ID CreatePipeline(const PipelineDesc& desc);
@@ -76,6 +76,13 @@ public:
   void DispatchCompute(ID pipeline, const glm::vec3 &threads);
 
   RenderAPI GetRenderAPI() const { return RenderAPI::Metal; }
+
+private:
+  // metal requires a little bit of set up in order to adjust to resizes.
+  friend class MetalContext;
+
+  void UpdateSize(float w, float h);
+  float width, height;
 
 private:
   // gpu device

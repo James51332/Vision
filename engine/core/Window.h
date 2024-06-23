@@ -27,11 +27,9 @@ public:
   void Hide();
 
   RenderContext* GetRenderContext() const { return context; }
-  float GetDisplayScale() const { return displayScale; }
 
 private:
   SDL_Window* window;
-  float displayScale;
   RenderContext* context;
 };
 

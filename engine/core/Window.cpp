@@ -7,11 +7,12 @@ Window::Window(const WindowDesc& desc)
 {
   unsigned int flags = SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN;
   if (desc.Resizeable) flags |= SDL_WINDOW_RESIZABLE;
+
+  // Setup our various API settings
   if (desc.API == RenderAPI::OpenGL) flags |= SDL_WINDOW_OPENGL;
+  else if (desc.API == RenderAPI::Metal) flags |= SDL_WINDOW_METAL;
 
   window = SDL_CreateWindow(desc.Title.c_str(), desc.Width, desc.Height, flags);
-  displayScale = SDL_GetWindowDisplayScale(window);
-
   context = RenderContext::Create(desc.API, window);
 }
 

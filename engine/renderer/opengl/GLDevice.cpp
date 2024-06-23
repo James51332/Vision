@@ -11,8 +11,8 @@
 namespace Vision
 {
 
-GLDevice::GLDevice(SDL_Window* wind)
-  : window(wind)
+GLDevice::GLDevice(SDL_Window* wind, float w, float h)
+  : window(wind), width(w), height(h)
 {
   gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
 }
@@ -256,7 +256,7 @@ void GLDevice::EndRenderPass()
   glDisable(GL_SCISSOR_TEST);
 }
 
-void GLDevice::SetScissorRect(float x, float y, float width, float height)
+void GLDevice::SetScissorRect(float x, float y, float w, float h)
 {
   SDL_assert(commandBufferActive);
 
@@ -267,7 +267,7 @@ void GLDevice::SetScissorRect(float x, float y, float width, float height)
   }
 
   glEnable(GL_SCISSOR_TEST);
-  glScissor(x, y, width, height);
+  glScissor(x, this->height - (y + h), w, h);
 }
 
 void GLDevice::Submit(const DrawCommand& command)

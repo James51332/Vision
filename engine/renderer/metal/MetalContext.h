@@ -18,7 +18,10 @@ public:
   MetalContext(SDL_Window* window);
   ~MetalContext();
 
-  RenderDevice* GetRenderDevice();
+  void Resize(float width, float height);
+
+  RenderDevice* GetRenderDevice() { return device; }
+  float GetDisplayScale() const { return displayScale; }
   PixelType GetPixelType() const { return MTLPixelFormatToPixelType(metalLayer->pixelFormat()); }
 
 private:
@@ -27,6 +30,9 @@ private:
   CA::MetalLayer* metalLayer = nullptr;
 
   MetalDevice* device = nullptr;
+
+  float displayScale;
+  float width, height;
 };
 
 }

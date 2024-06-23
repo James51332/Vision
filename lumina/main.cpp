@@ -95,6 +95,11 @@ namespace Lumina
       renderDevice->SubmitCommandBuffer(false);
     }
 
+    void OnResize(float width, float height)
+    {
+      camera.SetWindowSize(width, height);
+    }
+
   private:
     Vision::ID renderPass;
     Vision::PerspectiveCamera camera;

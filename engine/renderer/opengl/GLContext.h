@@ -13,13 +13,19 @@ public:
   GLContext(SDL_Window* window);
   ~GLContext();
 
+  void Resize(float width, float height);
+
   RenderDevice* GetRenderDevice();
+  float GetDisplayScale() const { return displayScale; }
   PixelType GetPixelType() const { return PixelType::RGBA32; }
 
 private:
   SDL_Window* window;
   SDL_GLContext context;
   GLDevice* device;
+
+  float displayScale;
+  float width, height;
 };
 
 }

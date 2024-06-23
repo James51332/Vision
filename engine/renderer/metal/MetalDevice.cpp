@@ -11,15 +11,14 @@
 namespace Vision
 {
 
-MetalDevice::MetalDevice(MTL::Device *device, CA::MetalLayer* l)
-  : gpuDevice(device->retain()), layer(l->retain())
+MetalDevice::MetalDevice(MTL::Device *device, CA::MetalLayer* l, float w, float h)
+  : gpuDevice(device->retain()), layer(l->retain()), width(w), height(h)
 {
   queue = gpuDevice->newCommandQueue();
   cmdBuffer = nullptr;
-  encoder = nullptr; 
-  
-  depthSize = { layer->drawableSize().width, layer->drawableSize().height };
-  depthTexture = new MetalTexture(gpuDevice, depthSize.x, depthSize.y, PixelType::Depth32);
+  encoder = nullptr;
+
+  depthTexture = new MetalTexture(gpuDevice, width, height, PixelType::Depth32);
 }
 
 MetalDevice::~MetalDevice()
@@ -103,8 +102,8 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
       desc.StageMap[stage] = source;
 
       // Log the generated shader code.
-      std::cout << ShaderStageToString(stage) << std::endl;
-      std::cout << source << std::endl << std::endl;
+      // std::cout << ShaderStageToString(stage) << std::endl;
+      // std::cout << source << std::endl << std::endl;
     }
 
     desc.Source = ShaderSource::MSL;
@@ -311,14 +310,19 @@ void MetalDevice::SchedulePresentation()
 void MetalDevice::SetViewport(float x, float y, float width, float height)
 {
   SDL_assert(encoder);
-  MTL::Viewport viewport{ x, y, width, height, 0.0f, 0.0f };
+  MTL::Viewport viewport{ x, y, width, height, 0.0f, 1.0f };
   encoder->setViewport(viewport);
 }
 
 void MetalDevice::SetScissorRect(float x, float y, float width, float height)
 {
   SDL_assert(encoder);
-  MTL::ScissorRect rect{static_cast<uint32_t>(x), static_cast<uint32_t>(y), static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+  MTL::ScissorRect rect {
+    NS::UInteger(x), 
+    NS::UInteger(y), 
+    NS::UInteger(width), 
+    NS::UInteger(height)
+  };
   encoder->setScissorRect(rect);
 }
 
@@ -408,6 +412,14 @@ void MetalDevice::DispatchCompute(ID pipeline, const glm::vec3& threads)
 
   MTL::Size numThreads = { static_cast<NS::UInteger>(threads.x), static_cast<NS::UInteger>(threads.y), static_cast<NS::UInteger>(threads.z) };
   computeEncoder->dispatchThreads(numThreads, ps->GetWorkgroupSize());
+}
+
+void MetalDevice::UpdateSize(float w, float h)
+{
+  // Recreate the depth texture.
+  width = w;
+  height = h;
+  depthTexture->Resize(gpuDevice, width, height);
 }
 
 }

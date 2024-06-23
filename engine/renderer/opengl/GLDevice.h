@@ -18,7 +18,7 @@ namespace Vision
 class GLDevice : public RenderDevice
 {
 public:
-  GLDevice(SDL_Window* wind);
+  GLDevice(SDL_Window* wind, float w, float h);
 
   ID CreatePipeline(const PipelineDesc& desc);
   GLPipeline* GetPipeline(ID pipeline) { return pipelines.Get(pipeline); }
@@ -79,8 +79,17 @@ public:
   RenderAPI GetRenderAPI() const { return RenderAPI::OpenGL; }
 
 private:
+  friend class GLContext;
+  void UpdateSize(float w, float h)
+  {
+    width = w;
+    height = h;
+  }
+
+private:
   // swapchain image
   SDL_Window* window;
+  float width, height;
 
   // GPU data
   std::size_t currentID = 1;

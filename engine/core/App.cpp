@@ -54,12 +54,12 @@ void App::Init()
   desc.API = RenderAPI::Metal;
   window = new Window(desc);
   renderContext = window->GetRenderContext();
+  displayScale = renderContext->GetDisplayScale();
 
   // Initialize Input System
   Input::Init();
 
-  // Initialize
-  displayScale = window->GetDisplayScale();
+  // Initialize Rendering Objects
   renderDevice = renderContext->GetRenderDevice();
   renderer = new Renderer(displayWidth, displayHeight, displayScale);
   renderer2D = new Renderer2D(renderDevice, displayWidth, displayHeight, displayScale);
@@ -85,10 +85,16 @@ void App::ProcessEvents()
     switch (event.type)
     {
       case SDL_EVENT_WINDOW_RESIZED:
+      case SDL_EVENT_WINDOW_MAXIMIZED:
       {
+        // FIX: SDL sends a size of zero after a fullscreen on macOS
+        if (event.window.data1 <= 0 || event.window.data2 <= 0)
+          break;
+
         displayWidth = static_cast<float>(event.window.data1);
         displayHeight = static_cast<float>(event.window.data2);
-
+        
+        renderContext->Resize(displayWidth, displayHeight);
         renderer->Resize(displayWidth, displayHeight);
         renderer2D->Resize(displayWidth, displayHeight);
         uiRenderer->Resize(displayWidth, displayHeight);
