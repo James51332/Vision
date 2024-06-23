@@ -2,10 +2,15 @@
 
 #include "core/Macros.h"
 
+#include <iostream>
+
 #include "renderer/RenderAPI.h"
 
 #include "renderer/opengl/GLContext.h"
+
+#ifdef VISION_MACOS
 #include "renderer/metal/MetalContext.h"
+#endif
 
 namespace Vision
 {

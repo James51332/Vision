@@ -108,10 +108,14 @@ ID GLDevice::CreateShader(const ShaderDesc& tmp)
         s.binding = decompiler.get_decoration(e.id, spv::DecorationBinding);
 
         // handle sampler2D[]
-        if (type.array_size_literal.front())
+        if (type.array.size())
+        {
           s.size = type.array.front();
+        }
         else
+        {
           s.size = 1;
+        }
 
         samplers.push_back(s);
       }
@@ -262,6 +266,7 @@ void GLDevice::SetScissorRect(float x, float y, float w, float h)
 
   if (width <= 0 || height <= 0)
   {
+    glScissor(0, 0, width, height);
     glDisable(GL_SCISSOR_TEST);
     return;
   }

@@ -15,7 +15,12 @@ static GLenum IndexTypeToGLenum(IndexType type)
     case IndexType::U8: return GL_UNSIGNED_BYTE;
     case IndexType::U16: return GL_UNSIGNED_SHORT;
     case IndexType::U32: return GL_UNSIGNED_INT;
+    default:
+      break;
   }
+
+  SDL_assert(false);
+  return 0;
 }
 
 static GLenum PrimitiveTypeToGLenum(PrimitiveType type)
@@ -25,7 +30,12 @@ static GLenum PrimitiveTypeToGLenum(PrimitiveType type)
     case PrimitiveType::Triangle: return GL_TRIANGLES;
     case PrimitiveType::TriangleStrip: return GL_TRIANGLE_STRIP;
     case PrimitiveType::Patch: return GL_PATCHES;
+    default:
+      break;
   }
+
+  SDL_assert(false);
+  return 0;
 }
 
 static GLenum ShaderStageToGLenum(ShaderStage stage)
@@ -37,7 +47,9 @@ static GLenum ShaderStageToGLenum(ShaderStage stage)
     case ShaderStage::Hull: return GL_TESS_CONTROL_SHADER;
     case ShaderStage::Domain: return GL_TESS_EVALUATION_SHADER;
     case ShaderStage::Geometry: return GL_GEOMETRY_SHADER;
-    case ShaderStage::Compute: return -1;
+    case ShaderStage::Compute: return -1; // TODO: Newer GL Version
+    default:
+      break;
   }
 
   SDL_assert(false);
@@ -125,7 +137,12 @@ static GLenum DepthFuncToGLenum(DepthFunc func)
     case DepthFunc::Greater: return GL_GREATER;
     case DepthFunc::GreaterEqual: return GL_GEQUAL;
     case DepthFunc::Equal: return GL_EQUAL;
+    default:
+      break;
   }
+
+  SDL_assert(false);
+  return 0;
 }
 
 }

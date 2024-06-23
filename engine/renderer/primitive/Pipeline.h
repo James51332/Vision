@@ -28,7 +28,7 @@ enum class DepthFunc
 struct PipelineDesc
 {
   PipelineType Type;
-  ID Shader;
+  ID Shader = 0;
   std::vector<BufferLayout> Layouts;
 
   bool DepthTest = true;

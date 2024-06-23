@@ -137,6 +137,9 @@ void ImGuiRenderer::End()
       }
     }
   }
+
+  // Disable the scissor rect when we are done rendering
+  device->SetScissorRect(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 void ImGuiRenderer::Resize(float w, float h)
@@ -233,7 +236,7 @@ void ImGuiRenderer::GeneratePipeline()
 
   // set the imgui rendering state info
   pipelineDesc.Blending = true;
-  pipelineDesc.DepthTest = true;
+  pipelineDesc.DepthTest = false;
   pipelineDesc.DepthWrite = false;
 
   // finally create the pipeline

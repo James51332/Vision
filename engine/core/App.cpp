@@ -51,7 +51,7 @@ void App::Init()
 {
   WindowDesc desc;
   desc.Title = title;
-  desc.API = RenderAPI::Metal;
+  //desc.API = RenderAPI::Metal;
   window = new Window(desc);
   renderContext = window->GetRenderContext();
   displayScale = renderContext->GetDisplayScale();

@@ -33,8 +33,8 @@ protected:
   virtual void CalculateMatrices() = 0;
 
 protected:
-  glm::vec3 m_Position;
-  glm::vec3 m_Rotation; // pitch, yaw, and roll
+  glm::vec3 m_Position = glm::vec3(0.0f);
+  glm::vec3 m_Rotation = glm::vec3(0.0f); // pitch, yaw, and roll
   
   glm::vec2 m_WindowSize;
   float m_Aspect;

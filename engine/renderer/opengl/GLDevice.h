@@ -84,6 +84,7 @@ private:
   {
     width = w;
     height = h;
+    glViewport(0,0,width,height);
   }
 
 private:

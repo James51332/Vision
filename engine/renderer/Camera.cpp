@@ -305,6 +305,11 @@ bool PerspectiveCamera::HandleTurning(float timestep)
   mouseX = Input::GetMouseX();
   mouseY = Input::GetMouseY();
 
+  // We can safely return (without updating) if the dx and dy are very small.
+  float epsilon = 0.001;
+  if (glm::abs(dx) <= epsilon && glm::abs(dy) <= epsilon)
+    return false;
+
   if (Input::MouseDown(SDL_BUTTON_LEFT))
   {
     update = true;

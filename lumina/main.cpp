@@ -9,7 +9,7 @@ namespace Lumina
   {
   public:
     Lumina()
-        : Vision::App("Lumina")
+      : Vision::App("Lumina")
     {
       /*// Create our compute pipeline
       Vision::ComputePipelineDesc desc;
@@ -62,7 +62,7 @@ namespace Lumina
       renderDevice->FreeBufferData(computeBuffer, (void**)&element);
 
     */
-      // Prepare the renderer data
+    // Prepare the renderer data
       Vision::RenderPassDesc rpDesc;
       rpDesc.ClearColor = { 0.2f, 0.2f, 0.2f, 1.0f };
       rpDesc.Framebuffer = 0;
@@ -71,6 +71,7 @@ namespace Lumina
       renderPass = renderDevice->CreateRenderPass(rpDesc);
 
       camera = Vision::PerspectiveCamera(displayWidth, displayHeight, 0.1f, 50.0f);
+      camera.SetPosition({0.0f,0.0f,2.0f});
     }
 
     void OnUpdate(float timestep)
@@ -79,11 +80,10 @@ namespace Lumina
 
       renderDevice->BeginCommandBuffer();
       renderDevice->BeginRenderPass(renderPass);
+      renderDevice->SetViewport(0, 0, displayWidth * displayScale, displayHeight * displayScale);
 
       renderer2D->Begin(&camera);
-
       renderer2D->DrawBox(glm::vec3(0.0f));
-
       renderer2D->End();
 
       uiRenderer->Begin();
@@ -108,7 +108,7 @@ namespace Lumina
 
 int main()
 {
-  Lumina::Lumina *lumina = new Lumina::Lumina();
+  Lumina::Lumina* lumina = new Lumina::Lumina();
   lumina->Run();
   delete lumina;
 }
