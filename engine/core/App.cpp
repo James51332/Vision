@@ -1,6 +1,7 @@
 #include "App.h"
 
 #include "Input.h"
+#include "Macros.h"
 
 namespace Vision
 {
