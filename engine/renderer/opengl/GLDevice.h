@@ -68,13 +68,13 @@ public:
   void SchedulePresentation();
 
   // compute pipeline
-  ID CreateComputePipeline(const ComputePipelineDesc &desc) { return 0; }
-  void DestroyComputePipeline(ID id) {}
-  void BeginComputePass() {}
-  void EndComputePass() {}
-  void SetComputeBuffer(ID buffer, std::size_t binding = 0) {}
-  void SetComputeTexture(ID texture, std::size_t binding = 0) {}
-  void DispatchCompute(ID pipeline, const glm::vec3 &threads) {}
+  ID CreateComputePipeline(const ComputePipelineDesc &desc);
+  void DestroyComputePipeline(ID id) { computePrograms.Destroy(id); }
+  void BeginComputePass();
+  void EndComputePass();
+  void SetComputeBuffer(ID buffer, std::size_t binding = 0);
+  void SetComputeTexture(ID texture, std::size_t binding = 0);
+  void DispatchCompute(ID pipeline, const glm::vec3 &threads);
 
   RenderAPI GetRenderAPI() const { return RenderAPI::OpenGL; }
 
@@ -84,12 +84,13 @@ private:
   {
     width = w;
     height = h;
-    glViewport(0,0,width,height);
+    glViewport(0, 0, width, height);
   }
 
 private:
   // swapchain image
   SDL_Window* window;
+  GLint versionMajor, versionMinor;
   float width, height;
 
   // GPU data
@@ -101,6 +102,7 @@ private:
   ObjectCache<GLCubemap> cubemaps;
   ObjectCache<GLFramebuffer> framebuffers;
   ObjectCache<RenderPassDesc> renderpasses;
+  ObjectCache<GLComputeProgram> computePrograms;
 
   // vertex arrays aren't really real outside of opengl, so the engine caches them.
   // we hash to select one without having to rebuild each render.
@@ -109,6 +111,8 @@ private:
   // renderer data
   ID activePass = 0;
   bool commandBufferActive = false;
+  bool computePass = false;
+
   bool schedulePresent = false;
 };
 

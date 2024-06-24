@@ -100,9 +100,8 @@ void ShaderCompiler::GenerateSPIRV(ComputePipelineDesc &desc)
   desc.Source = ShaderSource::SPIRV;
 }
 
-std::string ShaderCompiler::ReadFile(std::string &filePath)
+std::string ShaderCompiler::ReadFile(const std::string &filePath)
 {
-  // read the file from disc (TODO: create an API)
   SDL_RWops *file = SDL_RWFromFile(filePath.c_str(), "r+");
   if (!file)
   {

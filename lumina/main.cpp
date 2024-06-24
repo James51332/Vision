@@ -11,7 +11,7 @@ namespace Lumina
     Lumina()
       : Vision::App("Lumina")
     {
-      /*// Create our compute pipeline
+      // Create our compute pipeline
       Vision::ComputePipelineDesc desc;
       desc.FilePath = "resources/computeShader.glsl";
       Vision::ID pipeline = renderDevice->CreateComputePipeline(desc);
@@ -25,10 +25,11 @@ namespace Lumina
         data[i] = glm::linearRand(0.0f, 100.0f);
         std::cout << data[i] << " ";
       }
-      std::cout << std::endl;
+      std::cout << std::endl << std::endl << std::endl;
 
       // Copy the data to the GPU
       Vision::BufferDesc bufferDesc;
+      bufferDesc.Type = Vision::BufferType::ShaderStorage;
       bufferDesc.Data = data.data();
       bufferDesc.Usage = Vision::BufferUsage::Dynamic;
       bufferDesc.Size = bufferSize;
@@ -61,8 +62,7 @@ namespace Lumina
 
       renderDevice->FreeBufferData(computeBuffer, (void**)&element);
 
-    */
-    // Prepare the renderer data
+      // Prepare the renderer data
       Vision::RenderPassDesc rpDesc;
       rpDesc.ClearColor = { 0.2f, 0.2f, 0.2f, 1.0f };
       rpDesc.Framebuffer = 0;

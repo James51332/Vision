@@ -109,7 +109,7 @@ void GLTexture2D::SetData(uint8_t *data)
                     GL_UNSIGNED_BYTE,
                     static_cast<void *>(data));
 
-    glBindTexture(GL_TEXTURE0, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
   }
   else
   {

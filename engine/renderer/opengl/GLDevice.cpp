@@ -15,6 +15,10 @@ GLDevice::GLDevice(SDL_Window* wind, float w, float h)
   : window(wind), width(w), height(h)
 {
   gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
+
+  // Query the version of OpenGL that our context supports
+  glGetIntegerv(GL_MAJOR_VERSION, &versionMajor);
+  glGetIntegerv(GL_MINOR_VERSION, &versionMinor);
 }
 
 ID GLDevice::CreatePipeline(const PipelineDesc &desc)
@@ -130,6 +134,7 @@ ID GLDevice::CreateShader(const ShaderDesc& tmp)
 
     // then we need to build
     shader = new GLProgram(stages);
+    shader->Use();
 
     // finally we can do the reflection stuff
     for (auto sampler : samplers)
@@ -175,7 +180,7 @@ void GLDevice::MapBufferData(ID id, void **data, std::size_t size)
 {
   GLBuffer* buffer = buffers.Get(id);
   buffer->Bind();
-  (*data) = glMapBuffer(buffer->GetType(), GL_READ_BUFFER);
+  (*data) = glMapBuffer(buffer->GetType(), GL_READ_ONLY);
 }
 
 void GLDevice::FreeBufferData(ID id, void** data)
@@ -229,7 +234,9 @@ ID GLDevice::CreateRenderPass(const RenderPassDesc &desc)
 
 void GLDevice::BeginRenderPass(ID pass)
 {
+  SDL_assert(commandBufferActive);
   SDL_assert(!activePass);
+  SDL_assert(!computePass);
 
   activePass = pass;
   RenderPassDesc* rp = renderpasses.Get(activePass);
@@ -262,7 +269,7 @@ void GLDevice::EndRenderPass()
 
 void GLDevice::SetScissorRect(float x, float y, float w, float h)
 {
-  SDL_assert(commandBufferActive);
+  SDL_assert(activePass);
 
   if (width <= 0 || height <= 0)
   {
@@ -342,6 +349,8 @@ void GLDevice::BeginCommandBuffer()
 
 void GLDevice::SubmitCommandBuffer(bool await)
 {
+  SDL_assert(!activePass);
+  SDL_assert(!computePass);
   SDL_assert(commandBufferActive);
   commandBufferActive = false;
 
@@ -350,6 +359,9 @@ void GLDevice::SubmitCommandBuffer(bool await)
     SDL_GL_SwapWindow(window);
     schedulePresent = false;
   }
+
+  if (await)
+    glFinish();
 }
 
 void GLDevice::SchedulePresentation()
@@ -359,5 +371,57 @@ void GLDevice::SchedulePresentation()
   
   schedulePresent = true;
 }
+
+ID GLDevice::CreateComputePipeline(const ComputePipelineDesc& desc)
+{
+  // Compute shaders are only suppored on OpenGL 4.3+
+  SDL_assert(versionMajor >= 4 && versionMinor >= 3);
+
+  ID id = currentID++;
+  GLComputeProgram* program = new GLComputeProgram(desc);
+  computePrograms.Add(id, program);
+  return id;
+}
+
+void GLDevice::BeginComputePass() 
+{
+  SDL_assert(commandBufferActive);
+  SDL_assert(!activePass);
+  SDL_assert(!computePass);
+
+  // If we assert that all of the conditions are true before beginning,
+  // we can simply verify that a valid compute pass is active for each
+  // command, instead of checking for a command buffer, etc.
+  computePass = true;
+}
+
+void GLDevice::EndComputePass() 
+{
+  SDL_assert(computePass);
+
+  computePass = false;
+}
+
+void GLDevice::SetComputeBuffer(ID buffer, std::size_t binding) 
+{
+  SDL_assert(computePass);
+  AttachUniformBuffer(buffer, binding);
+}
+
+void GLDevice::SetComputeTexture(ID texture, std::size_t binding) 
+{
+  SDL_assert(computePass);
+  BindTexture2D(texture, binding);
+}
+
+void GLDevice::DispatchCompute(ID pipeline, const glm::vec3& threads) 
+{
+  SDL_assert(computePass);
+
+  GLComputeProgram* program = computePrograms.Get(pipeline);
+  program->Use();
+  glDispatchCompute(threads.x, threads.y, threads.z);
+}
+
 
 }

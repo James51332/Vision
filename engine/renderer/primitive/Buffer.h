@@ -9,7 +9,8 @@ enum class BufferType
 {
   Vertex,
   Index,
-  Uniform
+  Uniform,
+  ShaderStorage
 };
 
 enum class BufferUsage

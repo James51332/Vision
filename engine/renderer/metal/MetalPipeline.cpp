@@ -12,6 +12,8 @@
 namespace Vision
 {
 
+// ----- MetalPipeline -----
+
 MetalPipeline::MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shaders, const PipelineDesc& desc)
 {
   MTL::RenderPipelineDescriptor *attribs = MTL::RenderPipelineDescriptor::alloc()->init();
@@ -111,6 +113,8 @@ MetalPipeline::~MetalPipeline()
   pipeline->release();
   depthState->release();
 }
+
+// ----- MetalComputePipeline -----
 
 MetalComputePipeline::MetalComputePipeline(MTL::Device *device, ComputePipelineDesc &desc)
 {

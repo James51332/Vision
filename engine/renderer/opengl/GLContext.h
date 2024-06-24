@@ -24,6 +24,8 @@ private:
   SDL_GLContext context;
   GLDevice* device;
 
+  GLint versionMajor, versionMinor;
+
   float displayScale;
   float width, height;
 };

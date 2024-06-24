@@ -5,8 +5,13 @@
 #include "renderer/primitive/Shader.h"
 #include "renderer/primitive/Buffer.h"
 
+// Compute pipelines in OpenGL map to GLComputeProgram
+#include "renderer/primitive/Pipeline.h"
+
 namespace Vision
 {
+
+// ----- GLProgram -----
 
 class GLProgram
 {
@@ -30,9 +35,25 @@ public:
 
   void SetUniformBlock(const char *name, std::size_t binding);
 
+protected:
+  void CreateProgramFromMap(const std::unordered_map<ShaderStage, std::string>& shaders);
+
 private:
   GLuint program;
   bool usesTesselation = false;
+};
+
+// ----- GLComputeProgram -----
+
+// In OpenGL, there are no such things as pipelines. However, we do emulate the concept
+// in the rendering pipeline because there is no data structure pipelines could exist as.
+// However, for compute pipelines, we can simply use a GLProgram, since compute dispatches
+// only require the program in OpenGL, whereas other APIs only require the pipeline state.
+
+class GLComputeProgram : public GLProgram
+{
+public:
+  GLComputeProgram(const ComputePipelineDesc& desc);
 };
 
 }

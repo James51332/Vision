@@ -47,7 +47,7 @@ static GLenum ShaderStageToGLenum(ShaderStage stage)
     case ShaderStage::Hull: return GL_TESS_CONTROL_SHADER;
     case ShaderStage::Domain: return GL_TESS_EVALUATION_SHADER;
     case ShaderStage::Geometry: return GL_GEOMETRY_SHADER;
-    case ShaderStage::Compute: return -1; // TODO: Newer GL Version
+    case ShaderStage::Compute: return GL_COMPUTE_SHADER;
     default:
       break;
   }
@@ -63,6 +63,7 @@ static GLenum BufferTypeToGLenum(BufferType type)
     case BufferType::Vertex: return GL_ARRAY_BUFFER;
     case BufferType::Index: return GL_ELEMENT_ARRAY_BUFFER;
     case BufferType::Uniform: return GL_UNIFORM_BUFFER;
+    case BufferType::ShaderStorage: return GL_SHADER_STORAGE_BUFFER;
   }
 
   SDL_assert(false);

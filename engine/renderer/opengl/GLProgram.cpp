@@ -6,19 +6,28 @@
 
 #include "GLTypes.h"
 
+#include "renderer/ShaderCompiler.h"
+
 namespace Vision
 {
 
-GLProgram::GLProgram(const std::unordered_map<ShaderStage, std::string>& shaders)
+// ----- GLProgram -----
+
+GLProgram::GLProgram()
+  : program(0), usesTesselation(false)
+{
+}
+
+void GLProgram::CreateProgramFromMap(const std::unordered_map<ShaderStage, std::string>& shaders)
 {
   std::unordered_map<GLenum, GLuint> shaderIDs;
-  
+
   // Compile all shaders
   for (auto pair : shaders)
   {
     GLenum type = ShaderStageToGLenum(pair.first);
     std::string text = pair.second;
-    const char *c_str = text.c_str();
+    const char* c_str = text.c_str();
 
     // give the source code to gl compiler
     GLuint id = glCreateShader(type);
@@ -78,6 +87,11 @@ GLProgram::GLProgram(const std::unordered_map<ShaderStage, std::string>& shaders
     glDeleteShader(pair.second);
 }
 
+GLProgram::GLProgram(const std::unordered_map<ShaderStage, std::string>& shaders)
+{
+  CreateProgramFromMap(shaders);
+}
+
 GLProgram::~GLProgram()
 {
   glDeleteProgram(program);
@@ -134,6 +148,32 @@ void GLProgram::SetUniformBlock(const char* name, std::size_t binding)
 {
   unsigned int waves_index = glGetUniformBlockIndex(program, name);
   glUniformBlockBinding(program, waves_index, binding);
+}
+
+// ----- GLComputeProgram -----
+GLComputeProgram::GLComputeProgram(const ComputePipelineDesc& desc)
+{
+  ShaderCompiler compiler;
+  std::string source;
+
+  // Read the shader code from any valid source
+  if (desc.Source == ShaderSource::File)
+    source = compiler.ReadFile(desc.FilePath);
+  else if (desc.Source == ShaderSource::GLSL)
+    source = desc.GLSL;
+  else
+  {
+    std::cout << "Invalid Compute Shader Source!" << std::endl;
+    SDL_assert(false);
+  }
+
+  // Parse the shader code and ensure it's a valid compute shader
+  auto map = compiler.Parse(source);
+  SDL_assert(map.size() == 1);
+  SDL_assert(map[ShaderStage::Compute].size() != 0);
+
+  // Create the program from the map using parent method
+  CreateProgramFromMap(map);
 }
 
 }

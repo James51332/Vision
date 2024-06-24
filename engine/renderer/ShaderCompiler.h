@@ -20,8 +20,7 @@ public:
   void LoadSource(ComputePipelineDesc& desc);
   void GenerateSPIRV(ComputePipelineDesc& desc);
 
-private:
-  std::string ReadFile(std::string& filePath);
+  std::string ReadFile(const std::string& filePath);
   std::unordered_map<ShaderStage, std::string> Parse(std::string& source);
   std::vector<uint32_t> Compile(std::string& source, ShaderStage stage);
 };
