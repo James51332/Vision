@@ -1,5 +1,7 @@
 #include "GLContext.h"
 
+#include "core/Macros.h"
+
 #include <iostream>
 
 namespace Vision

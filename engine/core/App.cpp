@@ -51,7 +51,12 @@ void App::Init()
 {
   WindowDesc desc;
   desc.Title = title;
-  //desc.API = RenderAPI::Metal;
+
+  // Use Metal on macOS
+#ifdef VISION_MACOS
+  desc.API = RenderAPI::Metal;
+#endif
+
   window = new Window(desc);
   renderContext = window->GetRenderContext();
   displayScale = renderContext->GetDisplayScale();
