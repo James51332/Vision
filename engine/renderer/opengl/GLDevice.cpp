@@ -372,6 +372,34 @@ void GLDevice::SchedulePresentation()
   schedulePresent = true;
 }
 
+void GLDevice::BufferBarrier()
+{
+  SDL_assert(versionMajor >= 4 && versionMinor >= 3);
+
+  // Until we have a more verbose API, or an intelligent dependency 
+  // system, we must block all accesses to buffers in the GPU until
+  // the memory becomes visible and accessible.
+  glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT 
+                 | GL_ELEMENT_ARRAY_BARRIER_BIT
+                 | GL_UNIFORM_BARRIER_BIT
+                 | GL_BUFFER_UPDATE_BARRIER_BIT
+                 | GL_SHADER_STORAGE_BARRIER_BIT
+                 | GL_QUERY_BUFFER_BARRIER_BIT);
+}
+
+void GLDevice::ImageBarrier()
+{
+  // Memory barriers don't exist in old GL. only use
+  SDL_assert(versionMajor >= 4 && versionMinor >= 2);
+
+  glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT
+                | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
+                | GL_PIXEL_BUFFER_BARRIER_BIT
+                | GL_TEXTURE_UPDATE_BARRIER_BIT
+                | GL_FRAMEBUFFER_BARRIER_BIT);
+}
+
+
 ID GLDevice::CreateComputePipeline(const ComputePipelineDesc& desc)
 {
   // Compute shaders are only suppored on OpenGL 4.3+

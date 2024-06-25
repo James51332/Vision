@@ -57,7 +57,13 @@ public:
   virtual void BeginCommandBuffer() = 0;
   virtual void SubmitCommandBuffer(bool await = false) = 0;
 
-  // TODO: GPU memory synchronization
+  // TODO: This API could be much more explicit, but since this is
+  // really all OpenGL has to offer, we'll use it. If we ever consider
+  // supporting vulkan and are looking to squeeze the most performance
+  // out of the renderer, we definitely can refine this system to saturate
+  // the GPU much better.
+  virtual void BufferBarrier() = 0;
+  virtual void ImageBarrier() = 0;
 
   // used to present the next swapchain image to the screen.
   virtual void SchedulePresentation() = 0;

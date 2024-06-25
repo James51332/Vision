@@ -63,6 +63,10 @@ public:
   virtual void SetScissorRect(float x, float y, float width, float height);
   void Submit(const DrawCommand &command);
 
+  // Only should be used for RAW dependencies, since GL automatically handles others.
+  void BufferBarrier();
+  void ImageBarrier();
+
   void BeginCommandBuffer();
   void SubmitCommandBuffer(bool await = false);
   void SchedulePresentation();

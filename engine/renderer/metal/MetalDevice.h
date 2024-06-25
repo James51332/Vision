@@ -63,6 +63,15 @@ public:
   void SetScissorRect(float x, float y, float width, float height);
   void Submit(const DrawCommand& command);
 
+  // GPU-GPU memory sync in Metal is extremely easy, since the driver
+  // will manage all memory created from a device unless explicitly disabled.
+  // However, if we eventually support vulkan and want to get the most out of
+  // our renderer, it may be worth it to match the verbosity in Metal using an
+  // MTLHeap, and explicitly inserting barriers, since boost in perf will be
+  // very high at the cost of simple changes to the Metal rendering engine.
+  void BufferBarrier() {}
+  void ImageBarrier() {}
+
   // compute pipeline
   ID CreateComputePipeline(const ComputePipelineDesc& desc);
   void DestroyComputePipeline(ID id) { computePipelines.Destroy(id); }
