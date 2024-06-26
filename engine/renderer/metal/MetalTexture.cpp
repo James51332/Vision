@@ -40,7 +40,7 @@ MetalTexture::MetalTexture(MTL::Device *device, const char *filePath)
   Resize(device, static_cast<float>(w), static_cast<float>(h));
 
   // load from disc
-  unsigned char *data = stbi_load(filePath, &w, &h, &channels, 4); 
+  unsigned char *data = stbi_load(filePath, &w, &h, nullptr, 4);
   if (!data)
   {
     std::cout << "Failed to load image:" << std::endl;
