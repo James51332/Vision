@@ -439,7 +439,8 @@ void GLDevice::SetComputeBuffer(ID buffer, std::size_t binding)
 void GLDevice::SetComputeTexture(ID texture, std::size_t binding) 
 {
   SDL_assert(computePass);
-  BindTexture2D(texture, binding);
+  GLTexture2D* tex = textures.Get(texture);
+  glBindImageTexture(binding, tex->GetGLID(), 0, GL_FALSE, 0, GL_READ_WRITE, PixelTypeToGLInternalFormat(tex->GetPixelType()));
 }
 
 void GLDevice::DispatchCompute(ID pipeline, const glm::vec3& threads) 

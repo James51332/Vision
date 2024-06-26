@@ -36,7 +36,7 @@ private:
 
   float m_Width, m_Height;
   PixelType m_PixelType;
-  bool m_Renderbuffer;
+  bool m_Renderbuffer = false;
 };
 
 // ----- GLCubemap -----
