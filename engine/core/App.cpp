@@ -27,7 +27,6 @@ void App::Run()
   window->Show();
 
   float lastTime = 0;
-  running = true;
   while (running)
   {
     // Calculate Timestep

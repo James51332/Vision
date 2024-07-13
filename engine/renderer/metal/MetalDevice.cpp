@@ -410,8 +410,13 @@ void MetalDevice::DispatchCompute(ID pipeline, const glm::vec3& threads)
   MetalComputePipeline* ps = computePipelines.Get(pipeline); 
   computeEncoder->setComputePipelineState(ps->GetPipeline());
 
-  MTL::Size numThreads = { static_cast<NS::UInteger>(threads.x), static_cast<NS::UInteger>(threads.y), static_cast<NS::UInteger>(threads.z) };
-  computeEncoder->dispatchThreads(numThreads, ps->GetWorkgroupSize());
+  // Metal asks for grid size and group size, not number of groups like GL.
+  MTL::Size groupSize = ps->GetWorkgroupSize();
+  MTL::Size gridSize = {static_cast<NS::UInteger>(threads.x) * groupSize.width,
+                        static_cast<NS::UInteger>(threads.y) * groupSize.height,
+                        static_cast<NS::UInteger>(threads.z) * groupSize.depth};
+
+  computeEncoder->dispatchThreads(gridSize, groupSize);
 }
 
 void MetalDevice::UpdateSize(float w, float h)

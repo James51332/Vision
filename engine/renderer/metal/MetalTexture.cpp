@@ -13,7 +13,7 @@ static MTL::SamplerState* NewSamplerState(MTL::Device* device)
 {
   MTL::SamplerDescriptor* samplerDesc = MTL::SamplerDescriptor::alloc()->init();
   samplerDesc->setMinFilter(MTL::SamplerMinMagFilterLinear);
-  samplerDesc->setMagFilter(MTL::SamplerMinMagFilterLinear);
+  samplerDesc->setMagFilter(MTL::SamplerMinMagFilterNearest);
   MTL::SamplerState* samplerState = device->newSamplerState(samplerDesc);
   samplerDesc->release();
   return samplerState;

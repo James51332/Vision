@@ -42,7 +42,7 @@ private:
   static App* appInstance;
 
   // Run Loop
-  bool running = false;
+  bool running = true;
 
   // Platform Data
   Window* window;

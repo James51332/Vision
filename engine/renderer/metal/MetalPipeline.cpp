@@ -143,7 +143,7 @@ MetalComputePipeline::MetalComputePipeline(MTL::Device *device, ComputePipelineD
     compiler.set_msl_options(mslOpts);
 
     msl = compiler.compile();
-    std::cout << msl << std::endl;
+    // std::cout << msl << std::endl;
 
     // fetch the threadgroup info from GLSL (HACK: There may be a better way to do this)
     auto entries = compiler.get_entry_points_and_stages();
