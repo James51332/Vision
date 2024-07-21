@@ -80,7 +80,7 @@ void GLTexture2D::Resize(float width, float height)
                  static_cast<GLsizei>(m_Width),
                  static_cast<GLsizei>(m_Height),
                  0,
-                 PixelTypeTOGLFormat(m_PixelType),
+                 GL_RGBA,
                  GL_UNSIGNED_BYTE,
                  nullptr);
     // TODO: Expose these parameters to the API
@@ -111,7 +111,7 @@ void GLTexture2D::SetData(uint8_t *data)
                     0,
                     static_cast<GLsizei>(m_Width),
                     static_cast<GLsizei>(m_Height),
-                    PixelTypeTOGLFormat(m_PixelType),
+                    GL_RGBA,
                     GL_UNSIGNED_BYTE,
                     static_cast<void *>(data));
 
@@ -169,7 +169,7 @@ GLCubemap::GLCubemap(const CubemapDesc &desc)
                  w,
                  h,
                  0,
-                 PixelTypeTOGLFormat(pixelType),
+                 GL_RGBA, // all textures passed as uint8_t*
                  GL_UNSIGNED_BYTE,
                  data);
     side++;
