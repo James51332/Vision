@@ -5,21 +5,12 @@
 
 namespace Vision
 {
-  
-enum class ShaderStage
-{
-  Vertex,
-  Domain,
-  Hull,
-  Geometry,
-  Pixel,
-  Compute
-};
 
 static const char* ShaderStageToString(ShaderStage type)
 {
   switch (type)
   {
+    case ShaderStage::Invalid: return "invalid";
     case ShaderStage::Vertex: return "vertex";
     case ShaderStage::Pixel: return "pixel";
     case ShaderStage::Domain: return "domain";
@@ -48,7 +39,7 @@ Let's create an enum that determines the source of the shader, whether it's a fi
 strings, or SPV.
 */
 
-enum class ShaderSource
+enum class ShaderInput
 {
   File,
   GLSL,
@@ -61,7 +52,7 @@ enum class ShaderSource
 // important.
 struct ShaderDesc
 {
-  ShaderSource Source = ShaderSource::File;
+  ShaderInput Source = ShaderInput::File;
 
   // These are all of the load sources.
   std::string FilePath;

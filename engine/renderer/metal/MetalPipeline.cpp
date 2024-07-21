@@ -121,20 +121,20 @@ MetalComputePipeline::MetalComputePipeline(MTL::Device *device, ComputePipelineD
   std::string msl;
 
   // prepare our shader code
-  if (desc.Source == ShaderSource::File)
+  if (desc.Source == ShaderInput::File)
   {
     ShaderCompiler compiler;
     compiler.LoadSource(desc);
     compiler.GenerateSPIRV(desc);
   }
 
-  if (desc.Source == ShaderSource::GLSL)
+  if (desc.Source == ShaderInput::GLSL)
   {
     ShaderCompiler compiler;
     compiler.GenerateSPIRV(desc);
   }
 
-  if (desc.Source == ShaderSource::SPIRV)
+  if (desc.Source == ShaderInput::SPIRV)
   {
     spirv_cross::CompilerMSL compiler(std::move(desc.SPIRV));
     

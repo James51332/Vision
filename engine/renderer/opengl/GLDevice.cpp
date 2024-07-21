@@ -65,20 +65,20 @@ ID GLDevice::CreateShader(const ShaderDesc& tmp)
   std::unordered_map<GLuint, std::string> uniformBindings;
 
   // compiler our shader
-  if (desc.Source == ShaderSource::File)
+  if (desc.Source == ShaderInput::File)
   {
     ShaderCompiler compiler;
     compiler.GenerateStageMap(desc);
   }
 
-  if (desc.Source == ShaderSource::GLSL)
+  if (desc.Source == ShaderInput::GLSL)
   {
     ShaderCompiler compiler;
     compiler.GenerateSPIRVMap(desc);
-    desc.Source = ShaderSource::SPIRV;
+    desc.Source = ShaderInput::SPIRV;
   }
 
-  if (desc.Source == ShaderSource::SPIRV)
+  if (desc.Source == ShaderInput::SPIRV)
   {
     // first we need to decompile
     std::unordered_map<ShaderStage, std::string> stages;

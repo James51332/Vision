@@ -34,16 +34,21 @@ set(SRC_FILES engine/core/App.cpp
               engine/renderer/Renderer2D.cpp
               engine/renderer/ShaderCompiler.cpp
               engine/renderer/opengl/GLBuffer.cpp
+              engine/renderer/opengl/GLCompiler.cpp
               engine/renderer/opengl/GLContext.cpp
               engine/renderer/opengl/GLDevice.cpp
               engine/renderer/opengl/GLFramebuffer.cpp
               engine/renderer/opengl/GLProgram.cpp
               engine/renderer/opengl/GLTexture.cpp
               engine/renderer/opengl/GLVertexArray.cpp
+              engine/renderer/shader/ShaderCompiler.cpp
+              engine/renderer/shader/ShaderParser.cpp
+              engine/renderer/shader/ShaderReflector.cpp
               engine/ui/ImGuiRenderer.cpp
               engine/ui/UIInput.cpp)
 
 set(APPLE_FILES engine/renderer/metal/MetalBuffer.cpp
+                engine/renderer/metal/MetalCompiler.cpp
                 engine/renderer/metal/MetalContext.cpp
                 engine/renderer/metal/MetalDevice.cpp
                 engine/renderer/metal/MetalFramebuffer.cpp

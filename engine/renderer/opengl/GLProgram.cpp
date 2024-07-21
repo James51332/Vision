@@ -157,9 +157,9 @@ GLComputeProgram::GLComputeProgram(const ComputePipelineDesc& desc)
   std::string source;
 
   // Read the shader code from any valid source
-  if (desc.Source == ShaderSource::File)
+  if (desc.Source == ShaderInput::File)
     source = compiler.ReadFile(desc.FilePath);
-  else if (desc.Source == ShaderSource::GLSL)
+  else if (desc.Source == ShaderInput::GLSL)
     source = desc.GLSL;
   else
   {

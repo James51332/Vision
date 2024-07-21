@@ -47,7 +47,7 @@ struct PipelineDesc
 
 struct ComputePipelineDesc
 {
-  ShaderSource Source = ShaderSource::File;
+  ShaderInput Source = ShaderInput::File;
 
   std::string FilePath;
   std::string GLSL;

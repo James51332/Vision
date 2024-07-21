@@ -421,7 +421,7 @@ void main()
   {
     // Quads
     ShaderDesc quadShaderDesc;
-    quadShaderDesc.Source = ShaderSource::GLSL;
+    quadShaderDesc.Source = ShaderInput::GLSL;
     quadShaderDesc.StageMap[ShaderStage::Vertex] = quadVertex;
     quadShaderDesc.StageMap[ShaderStage::Pixel] = quadPixel;
     quadShader = device->CreateShader(quadShaderDesc);
@@ -442,7 +442,7 @@ void main()
 
     // Point
     ShaderDesc pointShaderDesc;
-    pointShaderDesc.Source = ShaderSource::GLSL;
+    pointShaderDesc.Source = ShaderInput::GLSL;
     pointShaderDesc.StageMap[ShaderStage::Vertex] = pointVertex;
     pointShaderDesc.StageMap[ShaderStage::Pixel] = pointPixel;
     pointShader = device->CreateShader(pointShaderDesc);

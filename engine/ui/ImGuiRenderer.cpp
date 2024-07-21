@@ -229,7 +229,7 @@ void ImGuiRenderer::GeneratePipeline()
   
   // create and set the shader
   ShaderDesc shaderDesc;
-  shaderDesc.Source = ShaderSource::GLSL;
+  shaderDesc.Source = ShaderInput::GLSL;
   shaderDesc.StageMap[ShaderStage::Vertex] = vertexShader;
   shaderDesc.StageMap[ShaderStage::Pixel] = pixelShader;
   pipelineDesc.Shader = device->CreateShader(shaderDesc);

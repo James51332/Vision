@@ -49,22 +49,22 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
   // the user sets. the first stage is just to load the text and parse is into each
   // individual shader program.
   ShaderDesc desc = tmp;
-  if (desc.Source == ShaderSource::File)
+  if (desc.Source == ShaderInput::File)
   {
     ShaderCompiler compiler;
     compiler.GenerateStageMap(desc);
   }
 
-  if (desc.Source == ShaderSource::GLSL)
+  if (desc.Source == ShaderInput::GLSL)
   {
     ShaderCompiler compiler;
     compiler.GenerateSPIRVMap(desc);
-    desc.Source = ShaderSource::SPIRV;
+    desc.Source = ShaderInput::SPIRV;
   }
 
   // the second stage is to convert the raw shader source code into spirv, so we can perform
   // reflection and convert it to msl via spirv cross.
-  if (desc.Source == ShaderSource::SPIRV)
+  if (desc.Source == ShaderInput::SPIRV)
   {
     // clear the stage map as we build the sources.
     desc.StageMap.clear();
@@ -106,7 +106,7 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
       // std::cout << source << std::endl << std::endl;
     }
 
-    desc.Source = ShaderSource::MSL;
+    desc.Source = ShaderInput::MSL;
   }
 
   // final stage is to to prepare the msl. note that this pipeline may potentially
@@ -114,7 +114,7 @@ ID MetalDevice::CreateShader(const ShaderDesc &tmp)
   // we could manufacture some sort of shader cache that is automatically built by
   // the engine. we'll need to make change for the shader descriptor to include the
   // stage map language since internal renderers provide shader source in GLSL.
-  if (desc.Source == ShaderSource::MSL)
+  if (desc.Source == ShaderInput::MSL)
   {
     shader = new MetalShader(gpuDevice, desc.StageMap, ubos); 
   }

@@ -3,6 +3,10 @@
 #include <iostream>
 #include <glm/gtc/random.hpp>
 
+#include "renderer/primitive/Shader.h"
+#include "renderer/shader/Shader.h"
+#include "renderer/shader/ShaderParser.h"
+
 namespace Lumina
 {
   class Lumina : public Vision::App
@@ -61,6 +65,16 @@ namespace Lumina
       }
 
       renderDevice->FreeBufferData(computeBuffer, (void**)&element);
+
+      Vision::ShaderParser parser;
+      std::vector<Vision::ShaderSource> sources = parser.ParseFile("resources/newShader.glsl");
+
+      for (auto source : sources)
+      {
+        std::cout << "Parsed Shader " << source.Name << " as a " << Vision::ShaderStageToString(source.Stage) << " shader\n";
+        std::cout << source.Source << std::endl << std::endl;
+      }
+
 
       // Prepare the renderer data
       Vision::RenderPassDesc rpDesc;

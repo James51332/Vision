@@ -49,7 +49,7 @@ static EShLanguage ShaderStageToEShLanguage(ShaderStage stage)
 void ShaderCompiler::GenerateStageMap(ShaderDesc& desc)
 {
   // don't override existing stage map if manually enabled.
-  SDL_assert(desc.Source == ShaderSource::File);
+  SDL_assert(desc.Source == ShaderInput::File);
   std::string rawCode = ReadFile(desc.FilePath);
 
   // prepare our stage map
@@ -61,12 +61,12 @@ void ShaderCompiler::GenerateStageMap(ShaderDesc& desc)
   SDL_assert(desc.StageMap[ShaderStage::Pixel].size() != 0);
 
   // set the source to be stage map
-  desc.Source = ShaderSource::GLSL;
+  desc.Source = ShaderInput::GLSL;
 }
 
 void ShaderCompiler::GenerateSPIRVMap(ShaderDesc& desc)
 {
-  SDL_assert(desc.Source == ShaderSource::GLSL);
+  SDL_assert(desc.Source == ShaderInput::GLSL);
 
   for (auto pair : desc.StageMap)
   {
@@ -77,27 +77,27 @@ void ShaderCompiler::GenerateSPIRVMap(ShaderDesc& desc)
   }
 
   // set the new source mode to SPIRV map
-  desc.Source = ShaderSource::SPIRV;
+  desc.Source = ShaderInput::SPIRV;
 }
 
 void ShaderCompiler::LoadSource(ComputePipelineDesc &desc)
 {
-  SDL_assert(desc.Source == ShaderSource::File);
+  SDL_assert(desc.Source == ShaderInput::File);
 
   desc.GLSL = ReadFile(desc.FilePath);
-  desc.Source = ShaderSource::GLSL;
+  desc.Source = ShaderInput::GLSL;
 }
 
 void ShaderCompiler::GenerateSPIRV(ComputePipelineDesc &desc)
 {
-  SDL_assert(desc.Source == ShaderSource::GLSL);
+  SDL_assert(desc.Source == ShaderInput::GLSL);
 
   auto map = Parse(desc.GLSL);
   SDL_assert(map.size() == 1);
   SDL_assert(map[ShaderStage::Compute].size() != 0);
 
   desc.SPIRV = Compile(map[ShaderStage::Compute], ShaderStage::Compute);
-  desc.Source = ShaderSource::SPIRV;
+  desc.Source = ShaderInput::SPIRV;
 }
 
 std::string ShaderCompiler::ReadFile(const std::string &filePath)
