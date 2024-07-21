@@ -9,7 +9,7 @@ namespace Vision
 
 struct GLPipeline
 {
-  GLProgram* Shader;
+  GLProgram* Program;
   std::vector<BufferLayout> Layouts;
 
   bool DepthTest;

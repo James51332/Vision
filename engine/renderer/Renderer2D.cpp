@@ -4,6 +4,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glad/glad.h>
 
+#include "renderer/shader/ShaderCompiler.h"
+
 namespace Vision
 {
 
@@ -236,7 +238,7 @@ namespace Vision
       cmd.NumVertices = numQuads * 6;
       cmd.IndexType = IndexType::U32;
       cmd.IndexBuffer = quadIBO;
-      cmd.Pipeline = quadPipeline;
+      cmd.RenderPipeline = quadPipeline;
       device->Submit(cmd);
     }
 
@@ -255,7 +257,7 @@ namespace Vision
       cmd.NumVertices = numPoints * 6;
       cmd.IndexType = IndexType::U32;
       cmd.IndexBuffer = quadIBO;
-      cmd.Pipeline = pointPipeline;
+      cmd.RenderPipeline = pointPipeline;
       device->Submit(cmd);
     }
 
@@ -420,13 +422,13 @@ void main()
   void Renderer2D::GeneratePipelines()
   {
     // Quads
-    ShaderDesc quadShaderDesc;
-    quadShaderDesc.Source = ShaderInput::GLSL;
-    quadShaderDesc.StageMap[ShaderStage::Vertex] = quadVertex;
-    quadShaderDesc.StageMap[ShaderStage::Pixel] = quadPixel;
-    quadShader = device->CreateShader(quadShaderDesc);
+    ShaderCompiler compiler;
+    ShaderSource quadVS = { ShaderStage::Vertex, "quadVertex", quadVertex };
+    ShaderSource quadFS = { ShaderStage::Pixel, "quadPixel", quadPixel };
 
-    PipelineDesc quadDesc;
+    RenderPipelineDesc quadDesc;
+    quadDesc.VertexShader = compiler.CompileSource(quadVS);
+    quadDesc.PixelShader = compiler.CompileSource(quadFS);
     quadDesc.Layouts = { BufferLayout({
       { ShaderDataType::Float2, "a_Position" },
       { ShaderDataType::Float4, "a_Color" },
@@ -437,17 +439,15 @@ void main()
     quadDesc.DepthTest = false;
     quadDesc.DepthWrite = false;
     quadDesc.Blending = true;
-    quadDesc.Shader = quadShader;
-    quadPipeline = device->CreatePipeline(quadDesc);
+    quadPipeline = device->CreateRenderPipeline(quadDesc);
 
     // Point
-    ShaderDesc pointShaderDesc;
-    pointShaderDesc.Source = ShaderInput::GLSL;
-    pointShaderDesc.StageMap[ShaderStage::Vertex] = pointVertex;
-    pointShaderDesc.StageMap[ShaderStage::Pixel] = pointPixel;
-    pointShader = device->CreateShader(pointShaderDesc);
+    ShaderSource pointVS = {ShaderStage::Vertex, "pointVertex", pointVertex };
+    ShaderSource pointFS = {ShaderStage::Pixel, "pointPixel", pointPixel };
 
-    PipelineDesc pointDesc;
+    RenderPipelineDesc pointDesc;
+    pointDesc.VertexShader = compiler.CompileSource(pointVS);
+    pointDesc.PixelShader = compiler.CompileSource(pointFS);
     pointDesc.Layouts = { BufferLayout({
                           { ShaderDataType::Float2, "a_Position" },
                           { ShaderDataType::Float4, "a_Color" },
@@ -457,8 +457,7 @@ void main()
     pointDesc.DepthTest = false;
     pointDesc.DepthWrite = false;
     pointDesc.Blending = true;
-    pointDesc.Shader = pointShader;
-    pointPipeline = device->CreatePipeline(pointDesc);
+    pointPipeline = device->CreateRenderPipeline(pointDesc);
   }
 
   void Renderer2D::GenerateTextures()
@@ -466,7 +465,7 @@ void main()
     std::uint32_t data = 0xffffffff;
     Texture2DDesc desc;
     desc.LoadFromFile = false;
-    desc.PixelType = PixelType::RGBA32;
+    desc.PixelType = PixelType::RGBA8;
     desc.Width = 1;
     desc.Height = 1;
     desc.Data = (uint8_t*)(&data);
@@ -490,9 +489,6 @@ void main()
   {
     device->DestroyPipeline(quadPipeline);
     device->DestroyPipeline(pointPipeline);
-
-    device->DestroyShader(quadShader);
-    device->DestroyShader(pointShader);
   }
 
   void Renderer2D::DestroyTextures()

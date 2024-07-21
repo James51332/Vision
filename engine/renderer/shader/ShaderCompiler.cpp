@@ -24,7 +24,11 @@ static EShLanguage ShaderStageToEShLanguage(ShaderStage stage)
     case ShaderStage::Domain: return EShLangTessEvaluation;
     case ShaderStage::Geometry: return EShLangGeometry;
     case ShaderStage::Compute: return EShLangCompute;
+    default: 
+      break;
   }
+
+  return EShLangVertex;
 }
 
 ShaderSPIRV ShaderCompiler::CompileSource(const ShaderSource& shaderSource)
@@ -88,11 +92,12 @@ std::vector<ShaderSPIRV> ShaderCompiler::CompileFile(const std::string& filePath
   std::vector<ShaderSource> shaderSources = parser.ParseFile(filePath);
 
   std::vector<ShaderSPIRV> shaderSPIRVs;
-  shaderSPIRVs.reserve(shaderSources.size());
   for (auto& source : shaderSources)
   {
     shaderSPIRVs.push_back(CompileSource(source));
   }
+
+  return shaderSPIRVs;
 }
 
 }

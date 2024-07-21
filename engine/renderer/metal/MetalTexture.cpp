@@ -28,19 +28,18 @@ MetalTexture::MetalTexture(MTL::Device *device, float width, float height, Pixel
 MetalTexture::MetalTexture(MTL::Device *device, const char *filePath)
 	: samplerState(NewSamplerState(device))
 {
-  int w, h, comp, desired;
+  int w, h, comp;
   stbi_info(filePath, &w, &h, &comp);
   
   // desire four channels bc metal has no 24-bit type
-  desired = (comp != 3) ? desired : 4;
-  channels = desired;
+  channels = (comp != 3) ? comp : 4;
   pixelType = ChannelsToPixelType(channels);
 
   // allocate our image
   Resize(device, static_cast<float>(w), static_cast<float>(h));
 
   // load from disc
-  unsigned char *data = stbi_load(filePath, &w, &h, nullptr, 4);
+  unsigned char *data = stbi_load(filePath, &w, &h, nullptr, channels);
   if (!data)
   {
     std::cout << "Failed to load image:" << std::endl;
@@ -89,11 +88,10 @@ MetalCubemap::MetalCubemap(MTL::Device* device, const CubemapDesc& desc)
   SDL_assert(desc.Textures.size() == 6);
 
   // desire four channels bc metal has no 24-bit type
-  int w, h, comp, desired;
+  int w, h, comp;
   stbi_info(desc.Textures[0].c_str(), &w, &h, &comp);
 
-  desired = (comp != 3) ? desired : 4;
-  int channels = desired;
+  int channels = (comp != 3) ? comp : 4;
   pixelType = ChannelsToPixelType(channels);
 
   MTL::TextureDescriptor* descriptor;

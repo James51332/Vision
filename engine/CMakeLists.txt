@@ -32,7 +32,6 @@ set(SRC_FILES engine/core/App.cpp
               engine/renderer/RenderContext.cpp
               engine/renderer/Renderer.cpp
               engine/renderer/Renderer2D.cpp
-              engine/renderer/ShaderCompiler.cpp
               engine/renderer/opengl/GLBuffer.cpp
               engine/renderer/opengl/GLCompiler.cpp
               engine/renderer/opengl/GLContext.cpp
@@ -50,11 +49,11 @@ set(SRC_FILES engine/core/App.cpp
 set(APPLE_FILES engine/renderer/metal/MetalBuffer.cpp
                 engine/renderer/metal/MetalCompiler.cpp
                 engine/renderer/metal/MetalContext.cpp
+                engine/renderer/metal/MetalCompiler.cpp
                 engine/renderer/metal/MetalDevice.cpp
                 engine/renderer/metal/MetalFramebuffer.cpp
                 engine/renderer/metal/MetalPipeline.cpp
                 engine/renderer/metal/MetalRenderPass.cpp
-                engine/renderer/metal/MetalShader.cpp
                 engine/renderer/metal/MetalTexture.cpp)
 
 
@@ -85,6 +84,7 @@ target_link_libraries(Vision
                           glm::glm
                           ImGui
                           spirv-cross-core
+                          spirv-cross-reflect
                           spirv-cross-glsl
                           SPIRV
                           glslang-default-resource-limits)

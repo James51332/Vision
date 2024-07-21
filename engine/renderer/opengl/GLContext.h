@@ -17,7 +17,7 @@ public:
 
   RenderDevice* GetRenderDevice();
   float GetDisplayScale() const { return displayScale; }
-  PixelType GetPixelType() const { return PixelType::RGBA32; }
+  PixelType GetPixelType() const { return PixelType::RGBA8; }
 
 private:
   SDL_Window* window;

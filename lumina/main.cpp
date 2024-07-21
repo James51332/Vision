@@ -3,9 +3,8 @@
 #include <iostream>
 #include <glm/gtc/random.hpp>
 
-#include "renderer/primitive/Shader.h"
 #include "renderer/shader/Shader.h"
-#include "renderer/shader/ShaderParser.h"
+#include "renderer/shader/ShaderCompiler.h"
 
 namespace Lumina
 {
@@ -16,8 +15,10 @@ namespace Lumina
       : Vision::App("Lumina")
     {
       // Create our compute pipeline
+      Vision::ShaderCompiler compiler;
       Vision::ComputePipelineDesc desc;
-      desc.FilePath = "resources/computeShader.glsl";
+      desc.ComputeKernels = { compiler.CompileFile("resources/computeShader.glsl") };
+
       Vision::ID pipeline = renderDevice->CreateComputePipeline(desc);
 
       // Create some data
@@ -45,7 +46,8 @@ namespace Lumina
       renderDevice->BeginComputePass();
 
       renderDevice->SetComputeBuffer(computeBuffer);
-      renderDevice->DispatchCompute(pipeline, {elements, 1, 1});
+      renderDevice->DispatchCompute(pipeline, "sum", {elements, 1, 1});
+      renderDevice->DispatchCompute(pipeline, "triple", {elements, 1, 1});
 
       renderDevice->EndComputePass();
       renderDevice->SubmitCommandBuffer(true); // await completion
@@ -65,16 +67,6 @@ namespace Lumina
       }
 
       renderDevice->FreeBufferData(computeBuffer, (void**)&element);
-
-      Vision::ShaderParser parser;
-      std::vector<Vision::ShaderSource> sources = parser.ParseFile("resources/newShader.glsl");
-
-      for (auto source : sources)
-      {
-        std::cout << "Parsed Shader " << source.Name << " as a " << Vision::ShaderStageToString(source.Stage) << " shader\n";
-        std::cout << source.Source << std::endl << std::endl;
-      }
-
 
       // Prepare the renderer data
       Vision::RenderPassDesc rpDesc;

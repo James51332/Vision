@@ -3,9 +3,10 @@
 #include <glm/glm.hpp>
 
 #include "primitive/Buffer.h"
-#include "primitive/Shader.h"
 #include "primitive/Texture.h"
 #include "primitive/Pipeline.h"
+
+#include "shader/Shader.h"
 
 namespace Vision
 {
@@ -28,22 +29,17 @@ using ID = std::size_t;
 
 struct DrawCommand
 {
-  // Data
-  ID Pipeline;
+  PrimitiveType Type;
+
+  ID RenderPipeline;
+
   std::vector<ID> VertexBuffers;
   ID IndexBuffer = 0;
+  IndexType IndexType = IndexType::U32;
+
+  std::size_t NumVertices = 0;
   std::size_t IndexOffset = 0;
 
-  std::vector<ID> Textures;
-  glm::mat4 Transform;
-
-  // Settings
-  IndexType IndexType = IndexType::U32;
-  PrimitiveType Type;
-  std::size_t NumVertices = 0;
-
-  // Tesselation
-  std::size_t PatchSize = 4;
 };
 
 }

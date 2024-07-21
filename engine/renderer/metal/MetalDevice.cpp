@@ -4,7 +4,7 @@
 #include <iostream>
 #include <SDL.h>
 
-#include "renderer/ShaderCompiler.h"
+#include "renderer/shader/ShaderCompiler.h"
 
 #include "MetalType.h"
 
@@ -18,7 +18,7 @@ MetalDevice::MetalDevice(MTL::Device *device, CA::MetalLayer* l, float w, float 
   cmdBuffer = nullptr;
   encoder = nullptr;
 
-  depthTexture = new MetalTexture(gpuDevice, width, height, PixelType::Depth32);
+  depthTexture = new MetalTexture(gpuDevice, width, height, PixelType::Depth32Float);
 }
 
 MetalDevice::~MetalDevice()
@@ -31,95 +31,11 @@ MetalDevice::~MetalDevice()
   queue->release();
 }
 
-ID MetalDevice::CreatePipeline(const PipelineDesc &desc)
+ID MetalDevice::CreateRenderPipeline(const RenderPipelineDesc &desc)
 {
   ID id = currentID++;
-  MetalPipeline* ps = new MetalPipeline(gpuDevice, shaders, desc);
+  MetalPipeline* ps = new MetalPipeline(gpuDevice, desc);
   pipelines.Add(id, ps);
-  return id;
-}
-
-ID MetalDevice::CreateShader(const ShaderDesc &tmp)
-{
-  ID id = currentID++;
-  MetalShader* shader;
-  std::unordered_map<std::string, std::size_t> ubos;
-
-  // we'll have all steps to build a shader in order and only enter the pipeline where
-  // the user sets. the first stage is just to load the text and parse is into each
-  // individual shader program.
-  ShaderDesc desc = tmp;
-  if (desc.Source == ShaderInput::File)
-  {
-    ShaderCompiler compiler;
-    compiler.GenerateStageMap(desc);
-  }
-
-  if (desc.Source == ShaderInput::GLSL)
-  {
-    ShaderCompiler compiler;
-    compiler.GenerateSPIRVMap(desc);
-    desc.Source = ShaderInput::SPIRV;
-  }
-
-  // the second stage is to convert the raw shader source code into spirv, so we can perform
-  // reflection and convert it to msl via spirv cross.
-  if (desc.Source == ShaderInput::SPIRV)
-  {
-    // clear the stage map as we build the sources.
-    desc.StageMap.clear();
-
-    // iterate over each stage.
-    for (auto pair : desc.SPIRVMap)
-    {
-      ShaderStage stage = pair.first;
-      std::vector<uint32_t>& spirv = pair.second;
-
-      // create and configure the compiler
-      spirv_cross::CompilerMSL compiler(std::move(spirv));
-
-      auto mslOpts = compiler.get_msl_options();
-      mslOpts.enable_decoration_binding = true; // set the compiler to use glsl bindings for buffer indices.
-      mslOpts.set_msl_version(2,0);
-      compiler.set_msl_options(mslOpts);
-
-      // uniform buffers take up the same space as stage buffers,
-      // so we'll use the last buffer slots for our stage input.
-      if (stage == ShaderStage::Vertex)
-      {
-        auto res = compiler.get_shader_resources();
-        
-        for (auto& buffer : res.uniform_buffers)
-        {
-          auto slot = compiler.get_decoration(buffer.id, spv::DecorationBinding);
-          std::string name = buffer.name;
-          ubos[name] = slot;
-        }
-      }
-
-      // generate the source code.
-      std::string source = compiler.compile();
-      desc.StageMap[stage] = source;
-
-      // Log the generated shader code.
-      // std::cout << ShaderStageToString(stage) << std::endl;
-      // std::cout << source << std::endl << std::endl;
-    }
-
-    desc.Source = ShaderInput::MSL;
-  }
-
-  // final stage is to to prepare the msl. note that this pipeline may potentially
-  // want to incorporate the metal intermediate format for faster shader loading.
-  // we could manufacture some sort of shader cache that is automatically built by
-  // the engine. we'll need to make change for the shader descriptor to include the
-  // stage map language since internal renderers provide shader source in GLSL.
-  if (desc.Source == ShaderInput::MSL)
-  {
-    shader = new MetalShader(gpuDevice, desc.StageMap, ubos); 
-  }
-
-  shaders.Add(id, shader);
   return id;
 }
 
@@ -331,7 +247,7 @@ void MetalDevice::Submit(const DrawCommand &command)
   SDL_assert(encoder);
 
   // fetch the pipeline state
-  MetalPipeline* ps = pipelines.Get(command.Pipeline);
+  MetalPipeline* ps = pipelines.Get(command.RenderPipeline);
   encoder->setRenderPipelineState(ps->GetPipeline());
   
   // setup our depth information
@@ -359,8 +275,7 @@ void MetalDevice::Submit(const DrawCommand &command)
 ID MetalDevice::CreateComputePipeline(const ComputePipelineDesc &desc)
 {
   ID id = currentID++;
-  ComputePipelineDesc tmp = desc;
-  MetalComputePipeline* pipeline = new MetalComputePipeline(gpuDevice, tmp);
+  MetalComputePipeline* pipeline = new MetalComputePipeline(gpuDevice, desc);
   computePipelines.Add(id, pipeline);
   return id;
 }
@@ -403,20 +318,17 @@ void MetalDevice::SetComputeTexture(ID id, std::size_t binding)
   computeEncoder->setTexture(texture->GetTexture(), binding);
 }
 
-void MetalDevice::DispatchCompute(ID pipeline, const glm::vec3& threads)
+void MetalDevice::DispatchCompute(ID pipeline, const std::string& name, const glm::ivec3& groups)
 {
   SDL_assert(computeEncoder);
 
   MetalComputePipeline* ps = computePipelines.Get(pipeline); 
-  computeEncoder->setComputePipelineState(ps->GetPipeline());
+  MetalComputePipeline::Kernel kernel = ps->GetKernel(name);
 
-  // Metal asks for grid size and group size, not number of groups like GL.
-  MTL::Size groupSize = ps->GetWorkgroupSize();
-  MTL::Size gridSize = {static_cast<NS::UInteger>(threads.x) * groupSize.width,
-                        static_cast<NS::UInteger>(threads.y) * groupSize.height,
-                        static_cast<NS::UInteger>(threads.z) * groupSize.depth};
+  computeEncoder->setComputePipelineState(kernel.Pipeline);
 
-  computeEncoder->dispatchThreads(gridSize, groupSize);
+  MTL::Size numGroups = { NS::UInteger(groups.x), NS::UInteger(groups.y), NS::UInteger(groups.z) };
+  computeEncoder->dispatchThreadgroups(numGroups, kernel.WorkgroupSize);
 }
 
 void MetalDevice::UpdateSize(float w, float h)

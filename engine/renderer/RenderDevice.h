@@ -3,8 +3,9 @@
 #include "renderer/primitive/Pipeline.h"
 #include "renderer/primitive/Buffer.h"
 #include "renderer/primitive/Texture.h"
-#include "renderer/primitive/Shader.h"
 #include "renderer/primitive/RenderPass.h"
+
+#include "renderer/shader/Shader.h"
 
 #include "renderer/RenderAPI.h"
 #include "renderer/RenderCommand.h"
@@ -21,11 +22,8 @@ public:
   virtual ~RenderDevice() {}
 
   // render pipeline
-  virtual ID CreatePipeline(const PipelineDesc& desc) = 0;
+  virtual ID CreateRenderPipeline(const RenderPipelineDesc& desc) = 0;
   virtual void DestroyPipeline(ID id) = 0;
-
-  virtual ID CreateShader(const ShaderDesc& desc) = 0;
-  virtual void DestroyShader(ID id) = 0;
 
   virtual ID CreateBuffer(const BufferDesc &desc) = 0;
   virtual void SetBufferData(ID buffer, void *data, std::size_t size) = 0;
@@ -82,7 +80,7 @@ public:
   virtual void SetComputeBuffer(ID buffer, std::size_t binding = 0) = 0;
   virtual void SetComputeTexture(ID texture, std::size_t binding = 0) = 0;
 
-  virtual void DispatchCompute(ID pipeline, const glm::vec3 &threads) = 0;
+  virtual void DispatchCompute(ID pipeline, const std::string& kernel, const glm::ivec3 &threadgroups) = 0;
 
   virtual RenderAPI GetRenderAPI() const = 0; 
 };

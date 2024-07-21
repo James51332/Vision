@@ -2,10 +2,10 @@
 
 #include <iostream>
 #include <SDL.h>
-
 #include <spirv_msl.hpp>
 
-#include "renderer/ShaderCompiler.h"
+#include "MetalCompiler.h"
+#include "renderer/shader/ShaderReflector.h"
 
 #include "MetalType.h"
 
@@ -14,12 +14,12 @@ namespace Vision
 
 // ----- MetalPipeline -----
 
-MetalPipeline::MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shaders, const PipelineDesc& desc)
+MetalPipeline::MetalPipeline(MTL::Device* device, const RenderPipelineDesc& desc)
 {
   MTL::RenderPipelineDescriptor *attribs = MTL::RenderPipelineDescriptor::alloc()->init();
 
   // set the pixel format
-  attribs->colorAttachments()->object(0)->setPixelFormat(PixelTypeToMTLPixelFormat(desc.PixelFormat));
+  attribs->colorAttachments()->object(0)->setPixelFormat(PixelTypeToMTLPixelFormat(desc.PixelType));
   attribs->colorAttachments()->object(0)->setBlendingEnabled(desc.Blending);
   attribs->colorAttachments()->object(0)->setSourceAlphaBlendFactor(MTL::BlendFactorSourceAlpha);
   attribs->colorAttachments()->object(0)->setDestinationAlphaBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
@@ -28,29 +28,36 @@ MetalPipeline::MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shad
   attribs->colorAttachments()->object(0)->setDestinationRGBBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
   attribs->colorAttachments()->object(0)->setRgbBlendOperation(MTL::BlendOperationAdd);
 
-  // link the shader
-  MetalShader *shader = shaders.Get(desc.Shader);
-  SDL_assert(shader);
-  attribs->setVertexFunction(shader->GetFunction(ShaderStage::Vertex));
-  attribs->setFragmentFunction(shader->GetFunction(ShaderStage::Pixel));
+  // compile and attach our shader functions
+  MetalCompiler shaderCompiler;
+
+  MTL::Function* vertexFunc = shaderCompiler.Compile(device, desc.VertexShader);
+  attribs->setVertexFunction(vertexFunc);
+  vertexFunc->release();
+
+  MTL::Function* fragmentFunc = shaderCompiler.Compile(device, desc.PixelShader);
+  attribs->setFragmentFunction(fragmentFunc);
+  fragmentFunc->release();
 
   // set the pipeline layout
   MTL::VertexDescriptor* vtxDesc = MTL::VertexDescriptor::alloc()->init();
   
   // build the free buffer bindings
-  auto& usedSlots = shader->GetUniformBufferSlots();
+  ShaderReflector vtxReflector(desc.VertexShader);
+  std::vector<ShaderReflector::UniformBuffer> ubos = vtxReflector.GetUniformBuffers();
   constexpr std::size_t maxSlot = 30; // this is the last slot in the table
   stageBufferBindings.clear();
   
   for (std::size_t i = 0; i <= maxSlot; i++)
   {
-    std::size_t count = std::count(usedSlots.begin(), usedSlots.end(), i);
-    if (count == 1) 
+    bool found = false;
+    for (auto ubo : ubos) // nested loop isn't great
+      found |= (ubo.Binding == i);
+
+    if (found)
       continue;
-    else if (count == 0) 
-      stageBufferBindings.push_back(i);
-    else
-      SDL_assert(false);
+
+    stageBufferBindings.push_back(i);
 
     if (stageBufferBindings.size() == desc.Layouts.size()) // we have enough slots.
       break;
@@ -116,79 +123,51 @@ MetalPipeline::~MetalPipeline()
 
 // ----- MetalComputePipeline -----
 
-MetalComputePipeline::MetalComputePipeline(MTL::Device *device, ComputePipelineDesc &desc)
+MetalComputePipeline::MetalComputePipeline(MTL::Device* device, const ComputePipelineDesc& desc)
 {
-  std::string msl;
+  MetalCompiler compiler;
+  NS::Error* error;
 
-  // prepare our shader code
-  if (desc.Source == ShaderInput::File)
+  for (auto& computeKernel : desc.ComputeKernels)
   {
-    ShaderCompiler compiler;
-    compiler.LoadSource(desc);
-    compiler.GenerateSPIRV(desc);
+    MTL::Function* kernelFunc = compiler.Compile(device, computeKernel);
+    ShaderReflector reflector(computeKernel);
+
+    Kernel kernel;
+    kernel.Pipeline = device->newComputePipelineState(kernelFunc, &error);
+
+    if (error)
+    {
+      std::cout << "Failed to generate compute pipeline state for kernel: " << computeKernel.Name;
+      std::cout << error->description()->cString(NS::UTF8StringEncoding) << std::endl;
+    }
+
+    glm::ivec3 size = reflector.GetThreadgroupSize();
+    kernel.WorkgroupSize = { NS::UInteger(size.x), NS::UInteger(size.y), NS::UInteger(size.z) };
+
+    kernels[computeKernel.Name] = kernel;
   }
-
-  if (desc.Source == ShaderInput::GLSL)
-  {
-    ShaderCompiler compiler;
-    compiler.GenerateSPIRV(desc);
-  }
-
-  if (desc.Source == ShaderInput::SPIRV)
-  {
-    spirv_cross::CompilerMSL compiler(std::move(desc.SPIRV));
-    
-    auto mslOpts = compiler.get_msl_options();
-    mslOpts.enable_decoration_binding = true; // tell the compiler to use glsl bindings for buffer indices
-    compiler.set_msl_options(mslOpts);
-
-    msl = compiler.compile();
-    // std::cout << msl << std::endl;
-
-    // fetch the threadgroup info from GLSL (HACK: There may be a better way to do this)
-    auto entries = compiler.get_entry_points_and_stages();
-    auto workSize = compiler.get_entry_point(entries.front().name, entries.front().execution_model).workgroup_size;
-    workGroupSize = { workSize.x, workSize.y, workSize.z };
-  }
-
-  // allocate a compiler options object that we'll use for all of the shaders
-  MTL::CompileOptions *options = MTL::CompileOptions::alloc()->init();
-
-  // TODO: We may need other forms of encoding later (e.g. wide-chars)
-  NS::String *string = NS::String::alloc()->init(msl.c_str(), NS::UTF8StringEncoding);
-
-  // construct a library for the shader stage
-  NS::Error *error = nullptr;
-  MTL::Library *library = device->newLibrary(string, options, &error);
-
-  if (error)
-  {
-    std::cout << "Failed to compile compute shader" << std::endl;
-    std::cout << error->description()->cString(NS::UTF8StringEncoding) << std::endl;
-  }
-
-  // extract the main function from the library
-  NS::String *funcName = NS::String::alloc()->init("main0", NS::UTF8StringEncoding);
-  MTL::Function *func = library->newFunction(funcName);
-
-  // build the pipeline
-  pipeline = device->newComputePipelineState(func, &error);
-  if (error)
-  {
-    std::cout << "Failed to link compute pipeline" << std::endl;
-    std::cout << error->description()->cString(NS::UTF8StringEncoding) << std::endl;
-  }
-
-  // free all of our memory.
-  library->release();
-  string->release();
-  options->release();
-  func->release();
 }
 
 MetalComputePipeline::~MetalComputePipeline()
 {
-  pipeline->release();
+  for (auto& pair : kernels)
+    pair.second.Pipeline->release();
+}
+
+MetalComputePipeline::Kernel MetalComputePipeline::GetKernel(const std::string &name)
+{
+  if (kernels.find(name) == kernels.end())
+  {
+    std::cout << "Unknown Compute Kernel: " << std::endl;
+    
+    Kernel k;
+    k.Pipeline = nullptr;
+    k.WorkgroupSize = { 1, 1, 1 };
+    return k;
+  }
+
+  return kernels[name];
 }
 
 }

@@ -3,14 +3,12 @@
 #include <string>
 #include <vector>
 
-#include "renderer/primitive/Shader.h"
-
 namespace Vision
 {
 
 enum class ShaderStage
 {
-  Invalid
+  Invalid,
   Vertex,
   Pixel,
   Compute,

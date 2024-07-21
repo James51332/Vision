@@ -19,8 +19,7 @@ static GLenum IndexTypeToGLenum(IndexType type)
       break;
   }
 
-  SDL_assert(false);
-  return 0;
+  return GL_INVALID_ENUM;
 }
 
 static GLenum PrimitiveTypeToGLenum(PrimitiveType type)
@@ -34,8 +33,7 @@ static GLenum PrimitiveTypeToGLenum(PrimitiveType type)
       break;
   }
 
-  SDL_assert(false);
-  return 0;
+  return GL_INVALID_ENUM;
 }
 
 static GLenum ShaderStageToGLenum(ShaderStage stage)
@@ -52,8 +50,7 @@ static GLenum ShaderStageToGLenum(ShaderStage stage)
       break;
   }
 
-  SDL_assert(false);
-  return 0;
+  return GL_INVALID_ENUM;
 }
 
 static GLenum BufferTypeToGLenum(BufferType type)
@@ -66,8 +63,7 @@ static GLenum BufferTypeToGLenum(BufferType type)
     case BufferType::ShaderStorage: return GL_SHADER_STORAGE_BUFFER;
   }
 
-  SDL_assert(false);
-  return 0;
+  return GL_INVALID_ENUM;
 }
 
 static GLenum BufferUsageToGLenum(BufferUsage usage)
@@ -78,8 +74,7 @@ static GLenum BufferUsageToGLenum(BufferUsage usage)
     case BufferUsage::Dynamic: return GL_DYNAMIC_DRAW;
   }
 
-  SDL_assert(false);
-  return 0;
+  return GL_INVALID_ENUM;
 }
 
 static PixelType ChannelsToPixelType(int channels)
@@ -87,11 +82,11 @@ static PixelType ChannelsToPixelType(int channels)
   switch (channels)
   {
     case 1: return PixelType::R8;
-    case 2: return PixelType::RG16;
-    case 3: return PixelType::RGB24;
+    case 2: return PixelType::RG8;
+    case 3:
     case 4:
     default:
-      return PixelType::RGBA32;
+      return PixelType::RGBA8;
   }
 }
 
@@ -100,33 +95,56 @@ static GLenum PixelTypeToGLInternalFormat(PixelType type)
   switch (type)
   {
     case PixelType::R8: return GL_R8;
-    case PixelType::RG16: return GL_RG8;
-    case PixelType::RGB24: return GL_RGB8;
-    case PixelType::RGBA32: return GL_RGBA8;
-    case PixelType::BGRA32: return GL_BGRA;
-    case PixelType::Depth32: return GL_DEPTH_COMPONENT32;
+    case PixelType::RG8: return GL_RG8;
+    case PixelType::RGBA8: return GL_RGBA8;
+    case PixelType::BGRA8: return GL_RGBA8;
+    case PixelType::R16: return GL_R16;
+    case PixelType::RG16: return GL_RG16;
+    case PixelType::RGBA16: return GL_RGBA16;
+    case PixelType::R16Float: return GL_R16F;
+    case PixelType::RG16Float: return GL_RG16F;
+    case PixelType::RGBA16Float: return GL_RGBA16F;
+    case PixelType::R32Uint: return GL_R32UI;
+    case PixelType::RG32Uint: return GL_RG32UI;
+    case PixelType::RGBA32Uint: return GL_RGBA32UI;
+    case PixelType::R32Float: return GL_R32F;
+    case PixelType::RG32Float: return GL_RG32F;
+    case PixelType::RGBA32Float: return GL_RGBA32F;
+    case PixelType::Depth32Float: return GL_DEPTH_COMPONENT32F;
     case PixelType::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
+    default:
+      break;
   }
-  
-  SDL_assert(false);
-  return 0;
+
+  return GL_INVALID_ENUM;
 }
 
 static GLenum PixelTypeTOGLFormat(PixelType type)
 {
   switch (type)
   {
-    case PixelType::R8: return GL_RED;
-    case PixelType::RG16: return GL_RG;
-    case PixelType::RGB24: return GL_RGB;
-    case PixelType::RGBA32: return GL_RGBA;
-    case PixelType::BGRA32: return GL_BGRA;
-    case PixelType::Depth32: return GL_DEPTH_COMPONENT;
-    case PixelType::Depth24Stencil8: return GL_DEPTH_STENCIL;
+    case PixelType::R8: return GL_R8;
+    case PixelType::RG8: return GL_RG8;
+    case PixelType::RGBA8: return GL_RGBA8;
+    case PixelType::BGRA8: return GL_RGBA8;
+    case PixelType::R16: return GL_R16;
+    case PixelType::RG16: return GL_RG16;
+    case PixelType::RGBA16: return GL_RGBA16;
+    case PixelType::R16Float: return GL_R16F;
+    case PixelType::RG16Float: return GL_RG16F;
+    case PixelType::RGBA16Float: return GL_RGBA16F;
+    case PixelType::R32Uint: return GL_R32UI;
+    case PixelType::RG32Uint: return GL_RG32UI;
+    case PixelType::RGBA32Uint: return GL_RGBA32UI;
+    case PixelType::R32Float: return GL_R32F;
+    case PixelType::RG32Float: return GL_RG32F;
+    case PixelType::RGBA32Float: return GL_RGBA32F;
+    case PixelType::Depth32Float: return GL_DEPTH_COMPONENT32F;
+    case PixelType::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
+    default: break;
   }
 
-  SDL_assert(false);
-  return 0;
+  return GL_INVALID_ENUM;
 }
 
 static GLenum DepthFuncToGLenum(DepthFunc func)
@@ -142,8 +160,7 @@ static GLenum DepthFuncToGLenum(DepthFunc func)
       break;
   }
 
-  SDL_assert(false);
-  return 0;
+  return GL_INVALID_ENUM;
 }
 
 }

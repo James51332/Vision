@@ -7,7 +7,6 @@
 #include "renderer/primitive/ObjectCache.h"
 
 #include "MetalBuffer.h"
-#include "MetalShader.h"
 #include "MetalPipeline.h"
 #include "MetalTexture.h"
 #include "MetalRenderPass.h"
@@ -22,11 +21,8 @@ public:
   MetalDevice(MTL::Device* device, CA::MetalLayer* layer, float w, float h);
   ~MetalDevice();
 
-  ID CreatePipeline(const PipelineDesc& desc);
+  ID CreateRenderPipeline(const RenderPipelineDesc& desc);
   void DestroyPipeline(ID id) { pipelines.Destroy(id); }
-
-  ID CreateShader(const ShaderDesc& desc);
-  void DestroyShader(ID id) { shaders.Destroy(id); }
 
   ID CreateBuffer(const BufferDesc &desc);
   void SetBufferData(ID buffer, void *data, std::size_t size) { buffers.Get(buffer)->SetData(size, data); }
@@ -82,7 +78,7 @@ public:
   void SetComputeBuffer(ID buffer, std::size_t binding = 0);
   void SetComputeTexture(ID texture, std::size_t binding = 0);
 
-  void DispatchCompute(ID pipeline, const glm::vec3 &threads);
+  void DispatchCompute(ID pipeline, const std::string& kernel, const glm::ivec3 &threadgroups);
 
   RenderAPI GetRenderAPI() const { return RenderAPI::Metal; }
 
@@ -109,7 +105,6 @@ private:
   // gpu data
   ID currentID = 1;
   ObjectCache<MetalBuffer> buffers;
-  ObjectCache<MetalShader> shaders;
   ObjectCache<MetalPipeline> pipelines;
   ObjectCache<MetalTexture> textures;
   ObjectCache<MetalCubemap> cubemaps;

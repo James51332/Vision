@@ -20,7 +20,13 @@ GLTexture2D::GLTexture2D(float width, float height, PixelType pixelType, bool wr
 GLTexture2D::GLTexture2D(const char *filePath)
 {
   int w, h, channels;
-  unsigned char *data = stbi_load(filePath, &w, &h, &channels, 0);
+
+  // don't support 3 channel images
+  stbi_info(filePath, nullptr, nullptr, &channels);
+  if (channels == 3) 
+    channels = 4;
+
+  unsigned char *data = stbi_load(filePath, &w, &h, nullptr, channels);
 
   if (!data)
   {
@@ -144,12 +150,18 @@ GLCubemap::GLCubemap(const CubemapDesc &desc)
   for (auto file : desc.Textures)
   {
     int w, h, channels;
-    unsigned char *data = stbi_load(file.c_str(), &w, &h, &channels, 0);
+    stbi_info(file.c_str(), nullptr, nullptr, &channels);
+    if (channels == 3)
+      channels = 4;
+
+    unsigned char *data = stbi_load(file.c_str(), &w, &h, nullptr, channels);
     if (!data)
     {
-      std::cout << "Failed to load image:" << std::endl;
+      std::cout << "Failed to load image:" << file.c_str() << std::endl;
       std::cout << stbi_failure_reason() << std::endl;
+      return;
     }
+
     PixelType pixelType = ChannelsToPixelType(channels);
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + side,
                  0,

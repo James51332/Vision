@@ -6,7 +6,7 @@
 
 #include "GLTypes.h"
 
-#include "renderer/ShaderCompiler.h"
+#include "renderer/shader/ShaderCompiler.h"
 
 namespace Vision
 {
@@ -21,17 +21,11 @@ GLDevice::GLDevice(SDL_Window* wind, float w, float h)
   glGetIntegerv(GL_MINOR_VERSION, &versionMinor);
 }
 
-ID GLDevice::CreatePipeline(const PipelineDesc &desc)
+ID GLDevice::CreateRenderPipeline(const RenderPipelineDesc &desc)
 {
-  if (!shaders.Exists(desc.Shader) || desc.Shader == 0)
-  {
-    std::cout << "Failed to generate pipeline as shader is invalid" << std::endl;
-    return 0;
-  }
-
   GLPipeline* pipeline = new GLPipeline();
   pipeline->Layouts = desc.Layouts;
-  pipeline->Shader = shaders.Get(desc.Shader);
+  pipeline->Program = new GLProgram(desc.VertexShader, desc.PixelShader, versionMinor < 2 || versionMajor < 4);
 
   pipeline->DepthTest = desc.DepthTest;
   pipeline->DepthWrite = desc.DepthWrite;
@@ -43,128 +37,6 @@ ID GLDevice::CreatePipeline(const PipelineDesc &desc)
   
   ID id = currentID++;
   pipelines.Add(id, pipeline);
-  return id;
-}
-
-ID GLDevice::CreateShader(const ShaderDesc& tmp)
-{
-  ID id = currentID++;
-  GLProgram* shader;
-  
-  ShaderDesc desc = tmp; // we need to modify, but we'll just copy (don't mess w/ user stuff—offline anyways)
-  
-  // our naive approach to shader reflection.
-  struct Sampler
-  {
-    std::string name;
-    int binding;
-    int size;
-  };
-
-  std::vector<Sampler> samplers;
-  std::unordered_map<GLuint, std::string> uniformBindings;
-
-  // compiler our shader
-  if (desc.Source == ShaderInput::File)
-  {
-    ShaderCompiler compiler;
-    compiler.GenerateStageMap(desc);
-  }
-
-  if (desc.Source == ShaderInput::GLSL)
-  {
-    ShaderCompiler compiler;
-    compiler.GenerateSPIRVMap(desc);
-    desc.Source = ShaderInput::SPIRV;
-  }
-
-  if (desc.Source == ShaderInput::SPIRV)
-  {
-    // first we need to decompile
-    std::unordered_map<ShaderStage, std::string> stages;
-    for (auto pair : desc.SPIRVMap)
-    {
-      auto stage = pair.first;
-      auto& data = pair.second;
-      spirv_cross::CompilerGLSL decompiler(data);
-
-      // TODO: We'll consider options which are more suited for modern OpenGL
-      // once metal is implemented, and we want compute shaders on other platforms.
-      spirv_cross::CompilerGLSL::Options options;
-      options.emit_push_constant_as_uniform_buffer = true;
-      options.enable_420pack_extension = false;
-      options.version = 410;
-      decompiler.set_common_options(options);
-
-      std::string glsl = decompiler.compile();
-      stages[stage] = glsl;
-
-      // we're also going to handle automatically binding shader resources for now.
-      // in the future, we may want a more robust system, but this should get us going.
-      spirv_cross::ShaderResources res = decompiler.get_shader_resources();
-
-      for (auto &e : res.sampled_images)
-      {
-        const spirv_cross::SPIRType &type = decompiler.get_type(e.type_id);
-
-        Sampler s;
-        s.name = e.name;
-        s.binding = decompiler.get_decoration(e.id, spv::DecorationBinding);
-
-        // handle sampler2D[]
-        if (type.array.size())
-        {
-          s.size = type.array.front();
-        }
-        else
-        {
-          s.size = 1;
-        }
-
-        samplers.push_back(s);
-      }
-
-      for (auto uniform : res.uniform_buffers)
-      {
-        auto block = decompiler.get_decoration(uniform.id, spv::DecorationBinding);
-        std::string name = uniform.name;
-        uniformBindings.emplace(block, name);
-      }
-    }
-
-    // then we need to build
-    shader = new GLProgram(stages);
-    shader->Use();
-
-    // finally we can do the reflection stuff
-    for (auto sampler : samplers)
-    {
-      if (sampler.size == 1)
-        shader->UploadUniformInt(sampler.binding, sampler.name.c_str());
-      else
-      {
-        // ensure that our binding array is {binding, binding + 1, binding + 2, ...}
-        std::vector bindings(sampler.size, sampler.binding);
-        for (std::size_t i = 0; i < sampler.size; i++) 
-          bindings[i] += i;
-
-        shader->UploadUniformIntArray(bindings.data(), sampler.size, sampler.name.c_str());
-      }
-    }
-
-    for (auto pair : uniformBindings)
-    {
-      shader->SetUniformBlock(pair.second.c_str(), pair.first);
-    }
-  }
-  else
-  {
-    SDL_Log("Unsupported Shader Source in OpenGL!"); // atp, all valid source have been handled.
-    SDL_assert(false);
-    return 0;
-  }
-
-  shaders.Add(id, shader);
   return id;
 }
 
@@ -287,9 +159,9 @@ void GLDevice::Submit(const DrawCommand& command)
   SDL_assert(activePass);
 
   // bind the shader and upload uniforms
-  GLPipeline* pipeline = pipelines.Get(command.Pipeline);
-  GLProgram* shader = pipeline->Shader;
-  shader->Use();
+  GLPipeline* pipeline = pipelines.Get(command.RenderPipeline);
+  GLProgram* program = pipeline->Program;
+  program->Use();
 
   // setup our GL state
   glDepthMask(pipeline->DepthWrite ? GL_TRUE : GL_FALSE);
@@ -305,25 +177,12 @@ void GLDevice::Submit(const DrawCommand& command)
     glDisable(GL_BLEND);
   glBlendFunc(pipeline->BlendSource, pipeline->BlendDst);
 
-  // bind the textures
-  int index = 0;
-  for (auto texture : command.Textures)
-  {
-    textures.Get(texture)->Bind(index);
-    index++;
-  }
-
   // choose the primitive type and index type
   GLenum primitive = PrimitiveTypeToGLenum(command.Type);
-  if (shader->UsesTesselation()) primitive = GL_PATCHES;
 
   // generate the vertex array using the vertex array cache
-  GLVertexArray* vao = vaoCache.Fetch(this, command.Pipeline, command.VertexBuffers);
+  GLVertexArray* vao = vaoCache.Fetch(this, command.RenderPipeline, command.VertexBuffers);
   vao->Bind();
-
-  // set the patch size
-  if (shader->UsesTesselation())
-    glPatchParameteri(GL_PATCH_VERTICES, command.PatchSize);
 
   // draw
   if (command.IndexBuffer)
@@ -406,7 +265,7 @@ ID GLDevice::CreateComputePipeline(const ComputePipelineDesc& desc)
   SDL_assert(versionMajor >= 4 && versionMinor >= 3);
 
   ID id = currentID++;
-  GLComputeProgram* program = new GLComputeProgram(desc);
+  GLComputeProgram* program = new GLComputeProgram(desc.ComputeKernels);
   computePrograms.Add(id, program);
   return id;
 }
@@ -443,12 +302,12 @@ void GLDevice::SetComputeTexture(ID texture, std::size_t binding)
   glBindImageTexture(binding, tex->GetGLID(), 0, GL_FALSE, 0, GL_READ_WRITE, PixelTypeToGLInternalFormat(tex->GetPixelType()));
 }
 
-void GLDevice::DispatchCompute(ID pipeline, const glm::vec3& threads) 
+void GLDevice::DispatchCompute(ID pipeline, const std::string& kernel, const glm::ivec3& threads) 
 {
   SDL_assert(computePass);
 
   GLComputeProgram* program = computePrograms.Get(pipeline);
-  program->Use();
+  program->Use(kernel);
   glDispatchCompute(threads.x, threads.y, threads.z);
 }
 

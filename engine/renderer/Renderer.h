@@ -4,8 +4,6 @@
 #include <glad/glad.h>
 
 #include "Camera.h"
-#include "opengl/GLVertexArray.h"
-#include "primitive/Shader.h"
 #include "Mesh.h"
 #include "RenderCommand.h"
 #include "RenderDevice.h"

@@ -5,15 +5,13 @@
 #include "renderer/primitive/Pipeline.h"
 #include "renderer/primitive/ObjectCache.h"
 
-#include "MetalShader.h"
-
 namespace Vision
 {
 
 class MetalPipeline
 {
 public:
-  MetalPipeline(MTL::Device* device, ObjectCache<MetalShader>& shaders, const PipelineDesc& desc);
+  MetalPipeline(MTL::Device* device, const RenderPipelineDesc& desc);
   ~MetalPipeline();
 
   MTL::RenderPipelineState* GetPipeline() const { return pipeline; }
@@ -30,15 +28,20 @@ private:
 class MetalComputePipeline
 {
 public:
-  MetalComputePipeline(MTL::Device *device, ComputePipelineDesc &desc);
+  struct Kernel
+  {
+    MTL::ComputePipelineState* Pipeline;
+    MTL::Size WorkgroupSize;
+  };
+
+public:
+  MetalComputePipeline(MTL::Device *device, const ComputePipelineDesc &desc);
   ~MetalComputePipeline();
 
-  MTL::ComputePipelineState* GetPipeline() const { return pipeline; }
-  MTL::Size GetWorkgroupSize() const { return workGroupSize; }
+  Kernel GetKernel(const std::string& name);
 
 private:
-  MTL::ComputePipelineState* pipeline;
-  MTL::Size workGroupSize;
+  std::unordered_map<std::string, Kernel> kernels;
 };
 
 }

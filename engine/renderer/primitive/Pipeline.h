@@ -4,17 +4,12 @@
 
 #include "renderer/primitive/BufferLayout.h"
 #include "renderer/primitive/Texture.h"
-#include "renderer/primitive/Shader.h"
+#include "renderer/shader/Shader.h"
 
 namespace Vision
 {
 
 using ID = std::size_t;
-
-enum class PipelineType
-{
-  Render
-};
 
 enum class DepthFunc
 {
@@ -25,33 +20,29 @@ enum class DepthFunc
   Equal
 };
 
-struct PipelineDesc
+struct RenderPipelineDesc
 {
-  PipelineType Type;
-  ID Shader = 0;
+  // VBO Layouts
   std::vector<BufferLayout> Layouts;
 
+  // Shaders
+  ShaderSPIRV VertexShader;
+  ShaderSPIRV PixelShader;
+
+  // Depth, Blending and PixelFormats
+  PixelType PixelType;
   bool DepthTest = true;
   DepthFunc DepthFunc = DepthFunc::Less;
   bool DepthWrite = true;
+  bool Blending = true; // TODO: Blend Modes
 
-  bool Blending = true;
-  // TODO: Blend Modes
-
-  PixelType PixelFormat;
-  // TODO: Other pipeline features, and dynamic states?
-
-  PipelineDesc() // default ctor to automatically set pixel format
-    : PixelFormat(PixelType::BGRA32) {}
+  RenderPipelineDesc() // default ctor to automatically set pixel format
+    : PixelType(PixelType::BGRA8) {}
 };
 
 struct ComputePipelineDesc
 {
-  ShaderInput Source = ShaderInput::File;
-
-  std::string FilePath;
-  std::string GLSL;
-  std::vector<uint32_t> SPIRV;
+  std::vector<ShaderSPIRV> ComputeKernels;
 };
 
 }

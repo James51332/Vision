@@ -20,13 +20,9 @@ class GLDevice : public RenderDevice
 public:
   GLDevice(SDL_Window* wind, float w, float h);
 
-  ID CreatePipeline(const PipelineDesc& desc);
+  ID CreateRenderPipeline(const RenderPipelineDesc& desc);
   GLPipeline* GetPipeline(ID pipeline) { return pipelines.Get(pipeline); }
   void DestroyPipeline(ID pipeline) { pipelines.Destroy(pipeline); }
-
-  ID CreateShader(const ShaderDesc &desc);
-  GLProgram* GetShader(ID shader) { return shaders.Get(shader); }
-  void DestroyShader(ID shader) { shaders.Destroy(shader); }
 
   ID CreateBuffer(const BufferDesc& desc);
   void SetBufferData(ID buffer, void* data, std::size_t size) { buffers.Get(buffer)->SetData(data, size); }
@@ -78,7 +74,7 @@ public:
   void EndComputePass();
   void SetComputeBuffer(ID buffer, std::size_t binding = 0);
   void SetComputeTexture(ID texture, std::size_t binding = 0);
-  void DispatchCompute(ID pipeline, const glm::vec3 &threads);
+  void DispatchCompute(ID pipeline, const std::string &kernel, const glm::ivec3 &threadgroups);
 
   RenderAPI GetRenderAPI() const { return RenderAPI::OpenGL; }
 
@@ -100,7 +96,6 @@ private:
   // GPU data
   std::size_t currentID = 1;
   ObjectCache<GLPipeline> pipelines;
-  ObjectCache<GLProgram> shaders;
   ObjectCache<GLBuffer> buffers;
   ObjectCache<GLTexture2D> textures;
   ObjectCache<GLCubemap> cubemaps;

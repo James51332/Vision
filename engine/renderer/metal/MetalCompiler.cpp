@@ -13,6 +13,7 @@ MTL::Function* MetalCompiler::Compile(MTL::Device* device, const ShaderSPIRV& sh
 
   spirv_cross::CompilerMSL::Options options;
   options.enable_decoration_binding = true;
+  options.set_msl_version(3, 0);
   decompiler.set_msl_options(options);
 
   std::string msl = decompiler.compile();
@@ -28,12 +29,14 @@ MTL::Function* MetalCompiler::Compile(MTL::Device* device, const ShaderSPIRV& sh
     std::cout << error->description()->cString(NS::UTF8StringEncoding) << std::endl;
   }
 
-  NS::String* funcName = NS::String::alloc()->init(shader.Name.c_str(), NS::UTF8StringEncoding);
+  NS::String* funcName = NS::String::alloc()->init("main0", NS::UTF8StringEncoding);
   MTL::Function* function = library->newFunction(funcName);
 
   funcName->release();
   library->release();
   code->release();
+
+  return function;
 }
 
 }

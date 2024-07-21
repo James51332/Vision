@@ -20,17 +20,27 @@ static MTL::PixelFormat PixelTypeToMTLPixelFormat(PixelType type)
   switch (type)
   {
     case PixelType::R8: return MTL::PixelFormatR8Unorm;
+    case PixelType::RG8: return MTL::PixelFormatRG8Unorm;
+    case PixelType::RGBA8: return MTL::PixelFormatRGBA8Unorm;
+    case PixelType::BGRA8: return MTL::PixelFormatBGRA8Unorm;
+    case PixelType::R16: return MTL::PixelFormatR16Unorm;
     case PixelType::RG16: return MTL::PixelFormatRG16Unorm;
-    //case PixelType::RGB24: return MTL::PixelFormatRGB24Snorm;
-    case PixelType::RGBA32: return MTL::PixelFormatRGBA8Unorm;
-    case PixelType::BGRA32: return MTL::PixelFormatBGRA8Unorm;
-    case PixelType::Depth32: return MTL::PixelFormatDepth32Float;
+    case PixelType::RGBA16: return MTL::PixelFormatRGBA16Unorm;
+    case PixelType::R16Float: return MTL::PixelFormatR16Float;
+    case PixelType::RG16Float: return MTL::PixelFormatRG16Float;
+    case PixelType::RGBA16Float: return MTL::PixelFormatRGBA16Float;
+    case PixelType::R32Uint: return MTL::PixelFormatR32Uint;
+    case PixelType::RG32Uint: return MTL::PixelFormatRG32Uint;
+    case PixelType::RGBA32Uint: return MTL::PixelFormatRGBA32Uint;
+    case PixelType::R32Float: return MTL::PixelFormatR32Float;
+    case PixelType::RG32Float: return MTL::PixelFormatRG32Float;
+    case PixelType::RGBA32Float: return MTL::PixelFormatRGBA32Float;
+    case PixelType::Depth32Float: return MTL::PixelFormatDepth32Float;
     case PixelType::Depth24Stencil8: return MTL::PixelFormatDepth24Unorm_Stencil8;
-    default:
+    default: 
       break;
   }
 
-  std::cout << "PixelType Unsupported in Metal!" << std::endl;
   return MTL::PixelFormatInvalid;
 }
 
@@ -39,17 +49,28 @@ static PixelType MTLPixelFormatToPixelType(MTL::PixelFormat type)
   switch (type)
   {
     case MTL::PixelFormatR8Unorm: return PixelType::R8;
+    case MTL::PixelFormatRG8Unorm: return PixelType::RG8;
+    case MTL::PixelFormatRGBA8Unorm: return PixelType::RGBA8;
+    case MTL::PixelFormatBGRA8Unorm: return PixelType::BGRA8;
+    case MTL::PixelFormatR16Unorm: return PixelType::R16;
     case MTL::PixelFormatRG16Unorm: return PixelType::RG16;
-    case MTL::PixelFormatRGBA8Unorm: return PixelType::RGBA32;
-    case MTL::PixelFormatBGRA8Unorm: return PixelType::BGRA32;
-    case MTL::PixelFormatDepth32Float: return PixelType::Depth32;
+    case MTL::PixelFormatRGBA16Unorm: return PixelType::RGBA16;
+    case MTL::PixelFormatR16Float: return PixelType::R16Float;
+    case MTL::PixelFormatRG16Float: return PixelType::RG16Float;
+    case MTL::PixelFormatRGBA16Float: return PixelType::RGBA16Float;
+    case MTL::PixelFormatR32Uint: return PixelType::R32Uint;
+    case MTL::PixelFormatRG32Uint: return PixelType::RG32Uint;
+    case MTL::PixelFormatRGBA32Uint: return PixelType::RGBA32Uint;
+    case MTL::PixelFormatR32Float: return PixelType::R32Float;
+    case MTL::PixelFormatRG32Float: return PixelType::RG32Float;
+    case MTL::PixelFormatRGBA32Float: return PixelType::RGBA32Float;
+    case MTL::PixelFormatDepth32Float: return PixelType::Depth32Float;
     case MTL::PixelFormatDepth24Unorm_Stencil8: return PixelType::Depth24Stencil8;
     default:
       break;
   }
 
-  std::cout << "Unknown MTLPixelType!" << std::endl;
-  return PixelType::R8;
+  return PixelType::Invalid;
 }
 
 static MTL::VertexFormat ShaderDataTypeToMTLVertexFormat(ShaderDataType type, bool normalized = false)
@@ -91,11 +112,11 @@ static PixelType ChannelsToPixelType(int channels)
   switch (channels)
   {
     case 1: return PixelType::R8;
-    case 2: return PixelType::RG16;
-    case 3: return PixelType::RGB24;
+    case 2: return PixelType::RG8;
+    case 3:
     case 4:
     default:
-      return PixelType::RGBA32;
+      return PixelType::RGBA8;
   }
 }
 
@@ -156,11 +177,24 @@ static int PixelTypeToChannels(PixelType type)
   switch (type)
   {
     case PixelType::R8: return 1;
+    case PixelType::RG8: return 2;
+    case PixelType::RGBA8: return 4;
+    case PixelType::BGRA8: return 4;
+    case PixelType::R16: return 1;
     case PixelType::RG16: return 2;
-    case PixelType::RGBA32: return 4;
-    case PixelType::BGRA32: return 4;
-    case PixelType::Depth32: return 4;
-    case PixelType::Depth24Stencil8: return 4;
+    case PixelType::RGBA16: return 4;
+    case PixelType::R16Float: return 1;
+    case PixelType::RG16Float: return 2;
+    case PixelType::RGBA16Float: return 4;
+    case PixelType::R32Uint: return 1;
+    case PixelType::RG32Uint: return 2;
+    case PixelType::RGBA32Uint: return 4;
+    case PixelType::R32Float: return 1;
+    case PixelType::RG32Float: return 2;
+    case PixelType::RGBA32Float: return 4;
+    case PixelType::Depth32Float: return 1;
+    case PixelType::Depth24Stencil8: return 2;
+
     default: break;
   }
   

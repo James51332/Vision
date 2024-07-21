@@ -7,6 +7,8 @@
 
 #include "core/App.h"
 
+#include "renderer/shader/ShaderCompiler.h"
+
 namespace Vision
 {
 
@@ -98,7 +100,7 @@ void ImGuiRenderer::End()
     drawCmd.VertexBuffers = { vbo };
     drawCmd.IndexBuffer = ibo;
     drawCmd.IndexType = sizeof(ImDrawIdx) == 2 ? IndexType::U16 : IndexType::U32;
-    drawCmd.Pipeline = pipeline;
+    drawCmd.RenderPipeline = pipeline;
     drawCmd.Type = PrimitiveType::Triangle;
 
     // Iterate over each command in the list
@@ -217,7 +219,7 @@ void main()
 
 void ImGuiRenderer::GeneratePipeline()
 {
-  PipelineDesc pipelineDesc;
+  RenderPipelineDesc pipelineDesc;
 
   // set the layout
   BufferLayout imVertLayout = { // ImDrawVert layout
@@ -228,11 +230,11 @@ void ImGuiRenderer::GeneratePipeline()
   pipelineDesc.Layouts = { imVertLayout };
   
   // create and set the shader
-  ShaderDesc shaderDesc;
-  shaderDesc.Source = ShaderInput::GLSL;
-  shaderDesc.StageMap[ShaderStage::Vertex] = vertexShader;
-  shaderDesc.StageMap[ShaderStage::Pixel] = pixelShader;
-  pipelineDesc.Shader = device->CreateShader(shaderDesc);
+  ShaderCompiler compiler;
+  ShaderSource vertexSource = { ShaderStage::Vertex, "imguiVertex", vertexShader };
+  ShaderSource pixelSource = { ShaderStage::Pixel, "imguiPixel", pixelShader };
+  pipelineDesc.VertexShader = compiler.CompileSource(vertexSource);
+  pipelineDesc.PixelShader = compiler.CompileSource(pixelSource);
 
   // set the imgui rendering state info
   pipelineDesc.Blending = true;
@@ -240,7 +242,7 @@ void ImGuiRenderer::GeneratePipeline()
   pipelineDesc.DepthWrite = false;
 
   // finally create the pipeline
-  pipeline = device->CreatePipeline(pipelineDesc);
+  pipeline = device->CreateRenderPipeline(pipelineDesc);
 }
 
 void ImGuiRenderer::GenerateTexture()
@@ -255,7 +257,7 @@ void ImGuiRenderer::GenerateTexture()
   textureDesc.LoadFromFile = false;
   textureDesc.Width = width;
   textureDesc.Height = height;
-  textureDesc.PixelType = PixelType::RGBA32;
+  textureDesc.PixelType = PixelType::RGBA8;
   textureDesc.Data = pixels;
   fontTexture = device->CreateTexture2D(textureDesc);
 }

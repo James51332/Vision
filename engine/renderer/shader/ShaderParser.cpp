@@ -1,5 +1,6 @@
 #include "ShaderParser.h"
 
+#include <iostream>
 #include <SDL.h>
 
 namespace Vision
@@ -31,7 +32,7 @@ std::vector<ShaderSource> ShaderParser::ParseFile(const std::string& filePath)
   SDL_RWops *file = SDL_RWFromFile(filePath.c_str(), "r+");
   if (!file)
   {
-    SDL_Log("Failed to open shader file: %s", SDL_GetError());
+    std::cout << "Failed to open shader file: " << SDL_GetError() << std::endl;
     return {};
   }
 
@@ -82,8 +83,10 @@ std::vector<ShaderSource> ShaderParser::ParseFile(const std::string& filePath)
 
         if (paramChar != ')')
         {
-          SDL_Log("Decoration parameters may only contain letters and must end with ')'!");
-          return {};
+          std::cout << "ShaderParser Error: " << filePath << std::endl;
+          std::cout << "Decoration parameters may only contain letters and must end with ')'!" << std::endl;
+          startIndex = decorations.find_first_not_of(' ', endIndex);
+          continue;
         }
       }
 
@@ -96,7 +99,7 @@ std::vector<ShaderSource> ShaderParser::ParseFile(const std::string& filePath)
         stage = ShaderStageFromString(paramValue);
       else
       {
-        SDL_Log("Unknown Shader Decoration: %s", decorType.c_str());
+        std::cout << "Unknown Shader Decoration: " << decorType << std::endl;
         return {};
       }
 

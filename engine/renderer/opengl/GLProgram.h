@@ -1,12 +1,12 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <unordered_map>
 
-#include "renderer/primitive/Shader.h"
 #include "renderer/primitive/Buffer.h"
-
-// Compute pipelines in OpenGL map to GLComputeProgram
 #include "renderer/primitive/Pipeline.h"
+
+#include "renderer/shader/Shader.h"
 
 namespace Vision
 {
@@ -16,14 +16,14 @@ namespace Vision
 class GLProgram
 {
 public:
-  GLProgram();
-  GLProgram(const std::unordered_map<ShaderStage, std::string> &shaders);
+  GLProgram() = default;
+  GLProgram(const ShaderSPIRV& vertexShader, const ShaderSPIRV& fragmentShader, bool manualBinding);
   ~GLProgram();
 
   void Use();
-
   GLuint GetProgram() const { return program; }
-  bool UsesTesselation() const { return usesTesselation; }
+
+  void SetUniformBlock(const char *name, std::size_t binding);
 
   void UploadUniformInt(const int, const char *name);
   void UploadUniformIntArray(const int *, std::size_t numElements, const char *name);
@@ -33,14 +33,11 @@ public:
   void UploadUniformFloat4(const float *, const char *name);
   void UploadUniformMat4(const float *, const char *name);
 
-  void SetUniformBlock(const char *name, std::size_t binding);
-
-protected:
-  void CreateProgramFromMap(const std::unordered_map<ShaderStage, std::string>& shaders);
+private:
+  void Reflect(const ShaderSPIRV& shader);
 
 private:
-  GLuint program;
-  bool usesTesselation = false;
+  GLuint program = 0;
 };
 
 // ----- GLComputeProgram -----
@@ -50,10 +47,16 @@ private:
 // However, for compute pipelines, we can simply use a GLProgram, since compute dispatches
 // only require the program in OpenGL, whereas other APIs only require the pipeline state.
 
-class GLComputeProgram : public GLProgram
+class GLComputeProgram
 {
 public:
-  GLComputeProgram(const ComputePipelineDesc& desc);
+  GLComputeProgram(const std::vector<ShaderSPIRV>& kernels);
+  ~GLComputeProgram();
+
+  void Use(const std::string& kernel);
+
+private:
+  std::unordered_map<std::string, GLuint> programs;
 };
 
 }

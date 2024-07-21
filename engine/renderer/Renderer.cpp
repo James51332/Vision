@@ -67,14 +67,12 @@ void Renderer::DrawMesh(Mesh* mesh, ID pipeline, const glm::mat4& transform)
   assert(m_InFrame);
 
   DrawCommand command;
-  command.Pipeline = pipeline;
+  command.RenderPipeline = pipeline;
   command.VertexBuffers = { mesh->m_VertexBuffer };
   command.IndexBuffer = mesh->m_IndexBuffer;
   command.NumVertices = mesh->GetNumIndices() == 0 ? mesh->GetNumVertices() : mesh->GetNumIndices();
   command.IndexType = IndexType::U32;
   command.Type = PrimitiveType::Triangle;
-  command.Transform = transform;
-  command.PatchSize = 4; // TODO: Other patch sizes
 
   Renderer::Submit(command);
 }

@@ -1,13 +1,6 @@
 #pragma once
 
-#include <imgui.h>
-
-#include <glad/glad.h>
-
 #include "renderer/RenderDevice.h"
-#include "renderer/primitive/Buffer.h"
-#include "renderer/primitive/Shader.h"
-#include "renderer/opengl/GLVertexArray.h"
 
 namespace Vision
 {
