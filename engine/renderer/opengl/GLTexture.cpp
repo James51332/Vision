@@ -80,12 +80,12 @@ void GLTexture2D::Resize(float width, float height)
                  static_cast<GLsizei>(m_Width),
                  static_cast<GLsizei>(m_Height),
                  0,
-                 GL_RGBA,
+                 PixelTypeToGLFormat(m_PixelType),
                  GL_UNSIGNED_BYTE,
                  nullptr);
     // TODO: Expose these parameters to the API
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
   }
   else
@@ -111,7 +111,7 @@ void GLTexture2D::SetData(uint8_t *data)
                     0,
                     static_cast<GLsizei>(m_Width),
                     static_cast<GLsizei>(m_Height),
-                    GL_RGBA,
+                    PixelTypeToGLFormat(m_PixelType),
                     GL_UNSIGNED_BYTE,
                     static_cast<void *>(data));
 
@@ -166,10 +166,10 @@ GLCubemap::GLCubemap(const CubemapDesc &desc)
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + side,
                  0,
                  PixelTypeToGLInternalFormat(pixelType),
-                 w,
-                 h,
+                 static_cast<GLsizei>(w),
+                 static_cast<GLsizei>(h),
                  0,
-                 GL_RGBA, // all textures passed as uint8_t*
+                 PixelTypeToGLFormat(pixelType),
                  GL_UNSIGNED_BYTE,
                  data);
     side++;

@@ -83,7 +83,6 @@ static PixelType ChannelsToPixelType(int channels)
   {
     case 1: return PixelType::R8;
     case 2: return PixelType::RG8;
-    case 3:
     case 4:
     default:
       return PixelType::RGBA8;
@@ -119,28 +118,28 @@ static GLenum PixelTypeToGLInternalFormat(PixelType type)
   return GL_INVALID_ENUM;
 }
 
-static GLenum PixelTypeTOGLFormat(PixelType type)
+static GLenum PixelTypeToGLFormat(PixelType type)
 {
   switch (type)
   {
-    case PixelType::R8: return GL_R8;
-    case PixelType::RG8: return GL_RG8;
-    case PixelType::RGBA8: return GL_RGBA8;
-    case PixelType::BGRA8: return GL_RGBA8;
-    case PixelType::R16: return GL_R16;
-    case PixelType::RG16: return GL_RG16;
-    case PixelType::RGBA16: return GL_RGBA16;
-    case PixelType::R16Float: return GL_R16F;
-    case PixelType::RG16Float: return GL_RG16F;
-    case PixelType::RGBA16Float: return GL_RGBA16F;
-    case PixelType::R32Uint: return GL_R32UI;
-    case PixelType::RG32Uint: return GL_RG32UI;
-    case PixelType::RGBA32Uint: return GL_RGBA32UI;
-    case PixelType::R32Float: return GL_R32F;
-    case PixelType::RG32Float: return GL_RG32F;
-    case PixelType::RGBA32Float: return GL_RGBA32F;
-    case PixelType::Depth32Float: return GL_DEPTH_COMPONENT32F;
-    case PixelType::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
+    case PixelType::R8: return GL_RED;
+    case PixelType::RG8: return GL_RG;
+    case PixelType::RGBA8: return GL_RGBA;
+    case PixelType::BGRA8: return GL_BGRA;
+    case PixelType::R16: return GL_RED;
+    case PixelType::RG16: return GL_RG;
+    case PixelType::RGBA16: return GL_RGBA;
+    case PixelType::R16Float: return GL_RED;
+    case PixelType::RG16Float: return GL_RG;
+    case PixelType::RGBA16Float: return GL_RGBA;
+    case PixelType::R32Uint: return GL_RED;
+    case PixelType::RG32Uint: return GL_RG;
+    case PixelType::RGBA32Uint: return GL_RGBA;
+    case PixelType::R32Float: return GL_RED;
+    case PixelType::RG32Float: return GL_RG;
+    case PixelType::RGBA32Float: return GL_RGBA;
+    case PixelType::Depth32Float: return GL_DEPTH_COMPONENT;
+    case PixelType::Depth24Stencil8: return GL_DEPTH_COMPONENT;
     default: break;
   }
 
