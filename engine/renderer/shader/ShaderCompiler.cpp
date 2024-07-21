@@ -57,7 +57,7 @@ ShaderSPIRV ShaderCompiler::CompileSource(const ShaderSource& shaderSource)
   // Parse the shader
   if (!shader.parse(GetDefaultResources(), 100, false, static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgSpvRules)))
   {
-    std::cout << "Failed to compile shader:" << std::endl;
+    std::cout << "Failed to compile shader:" << shaderSource.Name << std::endl;
     std::cout << shader.getInfoLog() << std::endl;
     return {};
   }
