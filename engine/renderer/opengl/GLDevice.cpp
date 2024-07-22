@@ -122,6 +122,7 @@ void GLDevice::BeginRenderPass(ID pass)
   {
     glm::vec4& col = rp->ClearColor;
     glClearColor(col.r, col.g, col.b, col.a);
+    glDepthMask(GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // TODO: These may want to be controlled separately
   }
 }
