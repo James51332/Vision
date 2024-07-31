@@ -142,6 +142,16 @@ void App::ProcessEvents()
         Input::SetScrollDelta(event.wheel.x, event.wheel.y);
         break;
       }
+      case SDL_EVENT_WINDOW_OCCLUDED:
+      {
+        displayOccluded = true;
+        break;
+      }
+      case SDL_EVENT_WINDOW_EXPOSED:
+      {
+        displayOccluded = false;
+        break;
+      }
       default:
         break;
     }

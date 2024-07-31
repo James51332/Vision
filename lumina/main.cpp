@@ -76,7 +76,7 @@ namespace Lumina
       rpDesc.StoreOp = Vision::StoreOp::Store;
       renderPass = renderDevice->CreateRenderPass(rpDesc);
 
-      camera = Vision::PerspectiveCamera(displayWidth, displayHeight, 0.1f, 50.0f);
+      camera = Vision::PerspectiveCamera(GetDisplayWidth(), GetDisplayHeight(), 0.1f, 50.0f);
       camera.SetPosition({0.0f,0.0f,2.0f});
     }
 
@@ -84,9 +84,12 @@ namespace Lumina
     {
       camera.Update(timestep);
 
+      if (!ShouldRender())
+        return;
+
       renderDevice->BeginCommandBuffer();
       renderDevice->BeginRenderPass(renderPass);
-      renderDevice->SetViewport(0, 0, displayWidth * displayScale, displayHeight * displayScale);
+      renderDevice->SetViewport(0, 0, GetDisplayWidth() * GetDisplayScale(), GetDisplayHeight() * GetDisplayScale());
 
       renderer2D->Begin(&camera);
       renderer2D->DrawBox(glm::vec3(0.0f));
