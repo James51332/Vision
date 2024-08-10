@@ -146,6 +146,33 @@ static GLenum PixelTypeToGLFormat(PixelType type)
   return GL_INVALID_ENUM;
 }
 
+static GLenum PixelTypeToGLType(PixelType type)
+{
+  switch (type)
+  {
+    case PixelType::R8:
+    case PixelType::RG8: 
+    case PixelType::RGBA8:
+    case PixelType::BGRA8: return GL_UNSIGNED_BYTE;
+    case PixelType::R16: 
+    case PixelType::RG16: 
+    case PixelType::RGBA16: return GL_UNSIGNED_SHORT;
+    case PixelType::R16Float:
+    case PixelType::RG16Float:
+    case PixelType::RGBA16Float: return GL_FLOAT;
+    case PixelType::R32Uint: 
+    case PixelType::RG32Uint:
+    case PixelType::RGBA32Uint: return GL_UNSIGNED_INT;
+    case PixelType::R32Float: 
+    case PixelType::RG32Float: 
+    case PixelType::RGBA32Float: 
+    case PixelType::Depth32Float: return GL_FLOAT;
+    default: break;
+  }
+
+  return GL_INVALID_ENUM;
+}
+
 static GLenum DepthFuncToGLenum(DepthFunc func)
 {
   switch (func)

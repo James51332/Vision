@@ -124,6 +124,30 @@ void GLTexture2D::SetData(uint8_t *data)
   }
 }
 
+void GLTexture2D::SetDataRaw(void* data)
+{
+  if (!m_Renderbuffer)
+  {
+    glBindTexture(GL_TEXTURE_2D, m_TextureID);
+    glTexSubImage2D(GL_TEXTURE_2D,
+                    0,
+                    0,
+                    0,
+                    static_cast<GLsizei>(m_Width),
+                    static_cast<GLsizei>(m_Height),
+                    PixelTypeToGLFormat(m_PixelType),
+                    PixelTypeToGLType(m_PixelType),
+                    data);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+  }
+  else
+  {
+    // Cannot write to a renderbuffer
+    SDL_assert(false);
+  }
+}
+
 void GLTexture2D::Bind(uint32_t index)
 {
   glActiveTexture(GL_TEXTURE0 + index);

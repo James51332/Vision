@@ -36,6 +36,7 @@ public:
   ID CreateTexture2D(const Texture2DDesc &desc);
   void ResizeTexture2D(ID id, float width, float height) { textures.Get(id)->Resize(width, height); } 
   void SetTexture2DData(ID id, uint8_t *data) { textures.Get(id)->SetData(data); }
+  void SetTexture2DDataRaw(ID id, void *data) { textures.Get(id)->SetDataRaw(data); }
   void BindTexture2D(ID id, std::size_t binding = 0) { textures.Get(id)->Bind(binding); }
   GLTexture2D* GetTexture2D(ID id) { return textures.Get(id); }
   void DestroyTexture2D(ID id) { textures.Destroy(id); }

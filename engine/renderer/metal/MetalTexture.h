@@ -16,6 +16,7 @@ public:
 
   void Resize(MTL::Device* device, float width, float height);
   void SetData(uint8_t *data);
+  void SetDataRaw(void *data);
 
   float GetWidth() const { return width; }
   float GetHeight() const { return height; }

@@ -22,6 +22,7 @@ public:
 
   void Resize(float width, float height);
   void SetData(uint8_t *data);
+  void SetDataRaw(void *data);
 
   float GetWidth() const { return m_Width; }
   float GetHeight() const { return m_Height; }

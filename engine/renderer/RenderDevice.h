@@ -36,6 +36,7 @@ public:
   virtual ID CreateTexture2D(const Texture2DDesc& desc) = 0;
   virtual void ResizeTexture2D(ID id, float width, float height) = 0;
   virtual void SetTexture2DData(ID id, uint8_t* data) = 0;
+  virtual void SetTexture2DDataRaw(ID id, void* data) = 0; // uses pixel format to parse bytes
   virtual void BindTexture2D(ID id, std::size_t binding = 0) = 0;
   virtual void DestroyTexture2D(ID id) = 0;
 

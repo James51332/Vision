@@ -83,6 +83,12 @@ void MetalTexture::SetData(uint8_t *data)
   texture->replaceRegion(region, 0, data, width * channels);
 }
 
+void MetalTexture::SetDataRaw(void *data)
+{
+  MTL::Region region(0, 0, width, height);
+  texture->replaceRegion(region, 0, data, width * PixelTypeBytesPerPixel(pixelType));
+}
+
 MetalCubemap::MetalCubemap(MTL::Device* device, const CubemapDesc& desc)
 {
   SDL_assert(desc.Textures.size() == 6);
