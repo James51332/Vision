@@ -71,7 +71,7 @@ ID GLDevice::CreateTexture2D(const Texture2DDesc &desc)
     texture = new GLTexture2D(desc.FilePath.c_str());
   else
   {
-    texture = new GLTexture2D(desc.Width, desc.Height, desc.PixelType, desc.WriteOnly);
+    texture = new GLTexture2D(desc.Width, desc.Height, desc.PixelType, desc.MinFilter, desc.MagFilter, desc.WriteOnly);
     if (desc.Data)
       texture->SetData(desc.Data);
   }

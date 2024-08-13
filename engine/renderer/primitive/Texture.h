@@ -40,6 +40,12 @@ enum class PixelType
   Depth24Stencil8
 };
 
+enum class MinMagFilter
+{
+  Nearest,
+  Linear
+};
+
 struct Texture2DDesc
 {
   bool LoadFromFile = false;
@@ -48,6 +54,8 @@ struct Texture2DDesc
   float Width;
   float Height;
   PixelType PixelType;
+  MinMagFilter MinFilter = MinMagFilter::Linear;
+  MinMagFilter MagFilter = MinMagFilter::Linear;
   bool WriteOnly = false;
   uint8_t* Data = nullptr;
 };

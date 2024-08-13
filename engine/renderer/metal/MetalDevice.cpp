@@ -18,7 +18,7 @@ MetalDevice::MetalDevice(MTL::Device *device, CA::MetalLayer* l, float w, float 
   cmdBuffer = nullptr;
   encoder = nullptr;
 
-  depthTexture = new MetalTexture(gpuDevice, width, height, PixelType::Depth32Float);
+  depthTexture = new MetalTexture(gpuDevice, width, height, PixelType::Depth32Float, MinMagFilter::Linear, MinMagFilter::Linear);
 }
 
 MetalDevice::~MetalDevice()
@@ -71,10 +71,10 @@ ID MetalDevice::CreateTexture2D(const Texture2DDesc &desc)
   MetalTexture* texture;
 
   if (desc.LoadFromFile)
-    texture = new MetalTexture(gpuDevice, desc.FilePath.c_str());
+    texture = new MetalTexture(gpuDevice, desc.FilePath.c_str(), desc.MinFilter, desc.MagFilter);
   else
   {
-    texture = new MetalTexture(gpuDevice, desc.Width, desc.Height, desc.PixelType);
+    texture = new MetalTexture(gpuDevice, desc.Width, desc.Height, desc.PixelType, desc.MinFilter, desc.MagFilter);
     if (desc.Data)
     	texture->SetData(desc.Data);
   }

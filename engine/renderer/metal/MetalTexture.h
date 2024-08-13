@@ -10,8 +10,8 @@ namespace Vision
 class MetalTexture
 {
 public:
-  MetalTexture(MTL::Device* device, float width, float height, PixelType pixelType);
-  MetalTexture(MTL::Device *device, const char *filePath);
+  MetalTexture(MTL::Device* device, float width, float height, PixelType pixelType, MinMagFilter minFilter, MinMagFilter magFilter);
+  MetalTexture(MTL::Device *device, const char *filePath, MinMagFilter minFilter, MinMagFilter magFilter);
   ~MetalTexture();
 
   void Resize(MTL::Device* device, float width, float height);

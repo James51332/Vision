@@ -202,4 +202,13 @@ static int PixelTypeToChannels(PixelType type)
   return -1;
 }
 
+static MTL::SamplerMinMagFilter MinMagFilterToMTLSamplerMinMagFilter (MinMagFilter filter)
+{
+  switch (filter)
+  {
+    case MinMagFilter::Nearest: return MTL::SamplerMinMagFilterNearest;
+    case MinMagFilter::Linear: return MTL::SamplerMinMagFilterLinear;
+  }
+}
+
 }

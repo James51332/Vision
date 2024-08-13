@@ -16,7 +16,7 @@ class GLTexture2D
   friend class Renderer2D;
 
 public:
-  GLTexture2D(float width, float height, PixelType pixelType, bool renderbuffer = false);
+  GLTexture2D(float width, float height, PixelType pixelType, MinMagFilter minFilter, MinMagFilter magFilter, bool renderbuffer = false);
   GLTexture2D(const char *filePath);
   ~GLTexture2D();
 
@@ -37,6 +37,7 @@ private:
 
   float m_Width, m_Height;
   PixelType m_PixelType;
+  MinMagFilter m_MinFilter, m_MagFilter;
   bool m_Renderbuffer = false;
 };
 

@@ -11,8 +11,8 @@ namespace Vision
 
 // ----- GLTexture2D -----
 
-GLTexture2D::GLTexture2D(float width, float height, PixelType pixelType, bool writeOnly)
-  : m_PixelType(pixelType), m_TextureID(0), m_Renderbuffer(writeOnly)
+GLTexture2D::GLTexture2D(float width, float height, PixelType pixelType, MinMagFilter minFilter, MinMagFilter magFilter, bool writeOnly)
+  : m_PixelType(pixelType), m_TextureID(0), m_MinFilter(minFilter), m_MagFilter(magFilter), m_Renderbuffer(writeOnly)
 {
   Resize(width, height);
 }
@@ -84,8 +84,8 @@ void GLTexture2D::Resize(float width, float height)
                  GL_UNSIGNED_BYTE,
                  nullptr);
     // TODO: Expose these parameters to the API
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, MinMagFilterToGLenum(m_MinFilter));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, MinMagFilterToGLenum(m_MagFilter));
     glBindTexture(GL_TEXTURE_2D, 0);
   }
   else

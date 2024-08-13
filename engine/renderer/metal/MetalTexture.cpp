@@ -9,24 +9,24 @@
 namespace Vision
 {
 
-static MTL::SamplerState* NewSamplerState(MTL::Device* device)
+static MTL::SamplerState* NewSamplerState(MTL::Device* device, MinMagFilter minFilter, MinMagFilter magFilter)
 {
   MTL::SamplerDescriptor* samplerDesc = MTL::SamplerDescriptor::alloc()->init();
-  samplerDesc->setMinFilter(MTL::SamplerMinMagFilterLinear);
-  samplerDesc->setMagFilter(MTL::SamplerMinMagFilterNearest);
+  samplerDesc->setMinFilter(MinMagFilterToMTLSamplerMinMagFilter(minFilter));
+  samplerDesc->setMagFilter(MinMagFilterToMTLSamplerMinMagFilter(magFilter));
   MTL::SamplerState* samplerState = device->newSamplerState(samplerDesc);
   samplerDesc->release();
   return samplerState;
 }
 
-MetalTexture::MetalTexture(MTL::Device *device, float width, float height, PixelType pixel)
-	: samplerState(NewSamplerState(device)), pixelType(pixel), channels(PixelTypeToChannels(pixel))
+MetalTexture::MetalTexture(MTL::Device *device, float width, float height, PixelType pixel, MinMagFilter minFilter, MinMagFilter magFilter)
+	: samplerState(NewSamplerState(device, minFilter, magFilter)), pixelType(pixel), channels(PixelTypeToChannels(pixel))
 {
   Resize(device, width, height);
 }
 
-MetalTexture::MetalTexture(MTL::Device *device, const char *filePath)
-	: samplerState(NewSamplerState(device))
+MetalTexture::MetalTexture(MTL::Device *device, const char *filePath, MinMagFilter minFilter, MinMagFilter magFilter)
+  : samplerState(NewSamplerState(device, minFilter, magFilter))
 {
   int w, h, comp;
   stbi_info(filePath, &w, &h, &comp);

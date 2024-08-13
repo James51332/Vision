@@ -189,4 +189,13 @@ static GLenum DepthFuncToGLenum(DepthFunc func)
   return GL_INVALID_ENUM;
 }
 
+static GLenum MinMagFilterToGLenum(MinMagFilter filter)
+{
+  switch (filter)
+  {
+    case MinMagFilter::Nearest: return GL_NEAREST;
+    case MinMagFilter::Linear: return GL_LINEAR;
+  }
+}
+
 }
