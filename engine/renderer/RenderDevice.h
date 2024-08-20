@@ -78,7 +78,7 @@ public:
   virtual void EndComputePass() = 0;
 
   virtual void SetComputeBuffer(ID buffer, std::size_t binding = 0) = 0;
-  virtual void SetComputeTexture(ID texture, std::size_t binding = 0) = 0;
+  virtual void SetComputeImage(ID texture, std::size_t binding = 0, ComputeImageAccess access = ComputeImageAccess::ReadWrite) = 0;
 
   virtual void DispatchCompute(ID pipeline, const std::string& kernel, const glm::ivec3 &threadgroups) = 0;
 

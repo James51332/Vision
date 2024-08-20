@@ -295,11 +295,20 @@ void GLDevice::SetComputeBuffer(ID buffer, std::size_t binding)
   AttachUniformBuffer(buffer, binding);
 }
 
-void GLDevice::SetComputeTexture(ID texture, std::size_t binding) 
+void GLDevice::SetComputeImage(ID texture, std::size_t binding, ComputeImageAccess access) 
 {
   SDL_assert(computePass);
   GLTexture2D* tex = textures.Get(texture);
-  glBindImageTexture(binding, tex->GetGLID(), 0, GL_FALSE, 0, GL_READ_WRITE, PixelTypeToGLInternalFormat(tex->GetPixelType()));
+
+  GLenum imageAccess;
+  switch (access)
+  {
+    case ComputeImageAccess::ReadOnly: imageAccess = GL_READ_ONLY; break;
+    case ComputeImageAccess::WriteOnly: imageAccess = GL_WRITE_ONLY; break;
+    case ComputeImageAccess::ReadWrite: imageAccess = GL_READ_WRITE; break;
+  }
+
+  glBindImageTexture(binding, tex->GetGLID(), 0, GL_FALSE, 0, imageAccess, PixelTypeToGLInternalFormat(tex->GetPixelType()));
 }
 
 void GLDevice::DispatchCompute(ID pipeline, const std::string& kernel, const glm::ivec3& threads) 

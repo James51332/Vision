@@ -49,6 +49,13 @@ struct Texture2DDesc
   uint8_t* Data = nullptr;
 };
 
+enum class ComputeImageAccess
+{
+  ReadOnly,
+  WriteOnly,
+  ReadWrite
+};
+
 // ----- Cubemaps -----
 
 // right, left, top, bottom, front, back

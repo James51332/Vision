@@ -310,7 +310,7 @@ void MetalDevice::SetComputeBuffer(ID id, std::size_t binding)
   computeEncoder->setBuffer(buffer->buffer, 0, binding);
 }
 
-void MetalDevice::SetComputeTexture(ID id, std::size_t binding)
+void MetalDevice::SetComputeImage(ID id, std::size_t binding, ComputeImageAccess access)
 {
   SDL_assert(computeEncoder);
 
