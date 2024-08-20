@@ -57,7 +57,7 @@ ShaderSPIRV ShaderCompiler::CompileSource(const ShaderSource& shaderSource)
   // Parse the shader
   if (!shader.parse(GetDefaultResources(), 100, false, static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgSpvRules)))
   {
-    std::cout << "Failed to compile shader:" << std::endl;
+    std::cout << "Failed to compile shader:" << shaderSource.Name << std::endl;
     std::cout << shader.getInfoLog() << std::endl;
     return {};
   }
@@ -88,16 +88,18 @@ ShaderSPIRV ShaderCompiler::CompileSource(const ShaderSource& shaderSource)
 
 std::vector<ShaderSPIRV> ShaderCompiler::CompileFile(const std::string& filePath)
 {
+  std::vector<ShaderSPIRV> shaderSPIRVs;
+  CompileFile(filePath, shaderSPIRVs);
+  return shaderSPIRVs;
+}
+
+void ShaderCompiler::CompileFile(const std::string &filePath, std::vector<ShaderSPIRV>& destination)
+{
   ShaderParser parser;
   std::vector<ShaderSource> shaderSources = parser.ParseFile(filePath);
 
-  std::vector<ShaderSPIRV> shaderSPIRVs;
-  for (auto& source : shaderSources)
-  {
-    shaderSPIRVs.push_back(CompileSource(source));
-  }
-
-  return shaderSPIRVs;
+  for (auto &source : shaderSources)
+    destination.push_back(CompileSource(source));
 }
 
 }

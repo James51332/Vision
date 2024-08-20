@@ -35,8 +35,8 @@ void GLFramebuffer::Resize(float width, float height)
   glGenFramebuffers(1, &framebufferID);
 
   // TODO: Incorporate the formats from the desc
-  colorAttachment = new GLTexture2D(desc.Width, desc.Height, PixelType::RGBA8, false);
-  depthStencilAttachment = new GLTexture2D(desc.Width, desc.Height, PixelType::Depth32Float, false);
+  colorAttachment = new GLTexture2D(desc.Width, desc.Height, PixelType::RGBA8, MinMagFilter::Linear, MinMagFilter::Linear);
+  depthStencilAttachment = new GLTexture2D(desc.Width, desc.Height, PixelType::Depth32Float, MinMagFilter::Linear, MinMagFilter::Linear);
 
   glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
   

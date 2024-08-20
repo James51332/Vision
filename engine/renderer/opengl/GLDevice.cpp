@@ -71,7 +71,7 @@ ID GLDevice::CreateTexture2D(const Texture2DDesc &desc)
     texture = new GLTexture2D(desc.FilePath.c_str());
   else
   {
-    texture = new GLTexture2D(desc.Width, desc.Height, desc.PixelType, desc.WriteOnly);
+    texture = new GLTexture2D(desc.Width, desc.Height, desc.PixelType, desc.MinFilter, desc.MagFilter, desc.WriteOnly);
     if (desc.Data)
       texture->SetData(desc.Data);
   }
@@ -122,6 +122,7 @@ void GLDevice::BeginRenderPass(ID pass)
   {
     glm::vec4& col = rp->ClearColor;
     glClearColor(col.r, col.g, col.b, col.a);
+    glDepthMask(GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // TODO: These may want to be controlled separately
   }
 }

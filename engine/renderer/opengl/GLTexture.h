@@ -16,12 +16,13 @@ class GLTexture2D
   friend class Renderer2D;
 
 public:
-  GLTexture2D(float width, float height, PixelType pixelType, bool renderbuffer = false);
+  GLTexture2D(float width, float height, PixelType pixelType, MinMagFilter minFilter, MinMagFilter magFilter, bool renderbuffer = false);
   GLTexture2D(const char *filePath);
   ~GLTexture2D();
 
   void Resize(float width, float height);
   void SetData(uint8_t *data);
+  void SetDataRaw(void *data);
 
   float GetWidth() const { return m_Width; }
   float GetHeight() const { return m_Height; }
@@ -36,6 +37,7 @@ private:
 
   float m_Width, m_Height;
   PixelType m_PixelType;
+  MinMagFilter m_MinFilter, m_MagFilter;
   bool m_Renderbuffer = false;
 };
 

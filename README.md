@@ -1,32 +1,31 @@
 # Vision
 
-Vision is a rendering engine built in C++ with OpenGL. The engine powers manyother projects that I've built which need support for out of the box 2D rendering, as well as custom 3D rendering. I have many ambitions for the project, but here's where I'm at, and where my next big landmarks are:
+Vision is a powerful rendering engine that supports Metal and OpenGL out of the box. The API lends a large amount of
+control to the programmer, and does all of the heavy lifting to interop between the two APIs. Vision's exposed API sits somewhere between modern rendering APIs and OpenGL, using a pipeline based approach to keep state changes to a minimum, but still making efficient decisions to perform with its OpenGL renderer. The engine includes a powerful GLSL shader parser to allow for many shader programs to be written in a single file, sharing common code.
 
 ### Features
 
-* Mesh Generation for Cubes and Planes (Spheres are coming)
-* Batched 2D Render
-* User Input System
-* ImGui Renderer
+* OpenGL/Metal Render Pipeline
+* Shader Cross Compilation
+* Powerful Compute Pipeline and GLSL Shader Parser
+* Mesh Generation for Cubes and Planes
+* Shader-Antialiased Performant 2D Renderer
+* Immediate Mode GUI Rendering (via ImGui)
 
 ### Goals
 
-* OpenGL, Metal, and WebGPU Renderer
-* Versatile Compute Pipeline
-* 2D Animation System
-* Video Encoding System (Generate Videos for Demos)
+* WebGPU Renderer
+* 2D Animation Engine
+* Video Encoding
+* Sphere Mesh Generation
+* Shader Materials
+* Lua Scripting
 
 ### Why Vision?
 
 With so many different tools to build projects in, it's a fair question to ask. I'm building vision for a few different reasons. I don't mind reinventing the wheel. The best way to learn is to rediscover, and Vision is a tool for me to do exactly that. I'm not following a specific roadmap or working with a team to build a specific product, I just want to learn.
 
-### What's Broken?
-
-This project is under heavy development. While I'd like to think that most of the project is stable, I know for a fact that some features are not implemented, and it is unclear.
-
-* OpenGL Compute Shaders
-* Sphere Mesh Generation
-
 # Screenshots
 
 ![Waves and such](screenshots/waves.png)
+![specks of life](screenshots/specks.png)
