@@ -30,7 +30,7 @@ public:
   virtual void MapBufferData(ID buffer, void **data, std::size_t size) = 0;
   virtual void FreeBufferData(ID id, void **data) = 0;
   virtual void ResizeBuffer(ID buffer, std::size_t size) = 0;
-  virtual void AttachUniformBuffer(ID buffer, std::size_t block = 0) = 0; 
+  virtual void BindBuffer(ID buffer, std::size_t binding = 0, std::size_t offset = 0, std::size_t range = 0) = 0; 
   virtual void DestroyBuffer(ID id) = 0;
 
   virtual ID CreateTexture2D(const Texture2DDesc& desc) = 0;
@@ -78,8 +78,7 @@ public:
   virtual void BeginComputePass() = 0;
   virtual void EndComputePass() = 0;
 
-  virtual void SetComputeBuffer(ID buffer, std::size_t binding = 0) = 0;
-  virtual void SetComputeImage(ID texture, std::size_t binding = 0, ComputeImageAccess access = ComputeImageAccess::ReadWrite) = 0;
+  virtual void BindImage2D(ID texture, std::size_t binding = 0, ImageAccess access = ImageAccess::ReadWrite) = 0;
 
   virtual void DispatchCompute(ID pipeline, const std::string& kernel, const glm::ivec3 &threadgroups) = 0;
 

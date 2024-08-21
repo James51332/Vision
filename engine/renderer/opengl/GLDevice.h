@@ -29,7 +29,7 @@ public:
   void MapBufferData(ID buffer, void **data, std::size_t size);
   void FreeBufferData(ID id, void** data);
   void ResizeBuffer(ID buffer, std::size_t size) { buffers.Get(buffer)->Resize(size); }
-  void AttachUniformBuffer(ID buffer, std::size_t block = 0) { buffers.Get(buffer)->Attach(block); }
+  void BindBuffer(ID buffer, std::size_t block = 0, std::size_t offset = 0, std::size_t size = 0) { buffers.Get(buffer)->Attach(block, offset, size); }
   GLBuffer* GetBuffer(ID buffer) { return buffers.Get(buffer); }
   void DestroyBuffer(ID id) { buffers.Destroy(id); }
 
@@ -71,10 +71,12 @@ public:
   // compute pipeline
   ID CreateComputePipeline(const ComputePipelineDesc &desc);
   void DestroyComputePipeline(ID id) { computePrograms.Destroy(id); }
+
   void BeginComputePass();
   void EndComputePass();
-  void SetComputeBuffer(ID buffer, std::size_t binding = 0);
-  void SetComputeImage(ID texture, std::size_t binding = 0, ComputeImageAccess access = ComputeImageAccess::ReadWrite);
+
+  void BindImage2D(ID texture, std::size_t binding = 0, ImageAccess access = ImageAccess::ReadWrite);
+
   void DispatchCompute(ID pipeline, const std::string &kernel, const glm::ivec3 &threadgroups);
 
   RenderAPI GetRenderAPI() const { return RenderAPI::OpenGL; }

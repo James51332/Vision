@@ -97,7 +97,7 @@ void Renderer::Submit(const DrawCommand& command)
   data.viewSize = { m_Width, m_Height};
   data.time = time;
   App::GetDevice()->SetBufferData(pushConstants, &data, sizeof(PushConstant));
-  App::GetDevice()->AttachUniformBuffer(pushConstants, 0);
+  App::GetDevice()->BindBuffer(pushConstants, 0);
   
   // device submit
   App::GetDevice()->Submit(command);

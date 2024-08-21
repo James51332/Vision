@@ -68,7 +68,7 @@ void ImGuiRenderer::End()
   float B = drawData->DisplayPos.y + drawData->DisplaySize.y;
   glm::mat4 projection = glm::ortho(L, R, B, T);
   device->SetBufferData(ubo, &projection, sizeof(glm::mat4));
-  device->AttachUniformBuffer(ubo);
+  device->BindBuffer(ubo);
 
   // Calculate our clip rect offset and scale
   glm::vec2 clipOff = { drawData->DisplayPos.x, drawData->DisplayPos.y };

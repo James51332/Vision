@@ -212,7 +212,7 @@ namespace Vision
       mvp = camera->GetViewProjectionMatrix();
 
     device->SetBufferData(matrixUBO, &mvp[0][0], sizeof(glm::mat4));
-    device->AttachUniformBuffer(matrixUBO);
+    device->BindBuffer(matrixUBO);
 
     // Quads
     if (numQuads != 0)

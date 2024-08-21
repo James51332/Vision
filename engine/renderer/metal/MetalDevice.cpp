@@ -58,11 +58,17 @@ void MetalDevice::FreeBufferData(ID id, void** data)
   (*data) = nullptr;
 }
 
-void MetalDevice::AttachUniformBuffer(ID buffer, std::size_t block) 
+void MetalDevice::BindBuffer(ID buffer, std::size_t block, std::size_t offset, std::size_t range) 
 {
-  // We don't know which we're setting so we have to set both.
-  encoder->setVertexBuffer(buffers.Get(buffer)->buffer, 0, block);
-  encoder->setFragmentBuffer(buffers.Get(buffer)->buffer, 0, block);
+  if (encoder)
+  {
+    encoder->setVertexBuffer(buffers.Get(buffer)->buffer, offset, block);
+    encoder->setFragmentBuffer(buffers.Get(buffer)->buffer, offset, block);
+  }
+  else if (computeEncoder)
+  {
+    computeEncoder->setBuffer(buffers.Get(buffer)->buffer, offset, block);
+  }
 }
 
 ID MetalDevice::CreateTexture2D(const Texture2DDesc &desc)
@@ -302,18 +308,15 @@ void MetalDevice::EndComputePass()
   pool->release();
 }
 
-void MetalDevice::SetComputeBuffer(ID id, std::size_t binding)
+void MetalDevice::BindImage2D(ID id, std::size_t binding, ImageAccess access)
 {
-  SDL_assert(computeEncoder);
+  if (encoder)
+  {
+    BindTexture2D(id, binding);
+    return;
+  }
 
-  MetalBuffer* buffer = buffers.Get(id);
-  computeEncoder->setBuffer(buffer->buffer, 0, binding);
-}
-
-void MetalDevice::SetComputeImage(ID id, std::size_t binding, ComputeImageAccess access)
-{
-  SDL_assert(computeEncoder);
-
+  SDL_assert(computeEncoder || encoder);
   MetalTexture* texture = textures.Get(id);
   computeEncoder->setTexture(texture->GetTexture(), binding);
 }

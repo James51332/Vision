@@ -37,9 +37,9 @@ void GLBuffer::Resize(std::size_t size)
   glBufferData(type, m_Size, nullptr, m_Usage);
 }
 
-void GLBuffer::Attach(std::size_t block)
+void GLBuffer::Attach(std::size_t block, std::size_t offset, std::size_t size)
 {
-  glBindBufferBase(type, block, m_Object);
+  glBindBufferRange(type, block, m_Object, offset, size == 0 ? m_Size : size);
 }
 
 void GLBuffer::Bind()

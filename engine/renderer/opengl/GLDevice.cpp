@@ -290,13 +290,7 @@ void GLDevice::EndComputePass()
   computePass = false;
 }
 
-void GLDevice::SetComputeBuffer(ID buffer, std::size_t binding) 
-{
-  SDL_assert(computePass);
-  AttachUniformBuffer(buffer, binding);
-}
-
-void GLDevice::SetComputeImage(ID texture, std::size_t binding, ComputeImageAccess access) 
+void GLDevice::BindImage2D(ID texture, std::size_t binding, ImageAccess access) 
 {
   SDL_assert(computePass);
   GLTexture2D* tex = textures.Get(texture);
@@ -304,9 +298,9 @@ void GLDevice::SetComputeImage(ID texture, std::size_t binding, ComputeImageAcce
   GLenum imageAccess;
   switch (access)
   {
-    case ComputeImageAccess::ReadOnly: imageAccess = GL_READ_ONLY; break;
-    case ComputeImageAccess::WriteOnly: imageAccess = GL_WRITE_ONLY; break;
-    case ComputeImageAccess::ReadWrite: imageAccess = GL_READ_WRITE; break;
+    case ImageAccess::ReadOnly: imageAccess = GL_READ_ONLY; break;
+    case ImageAccess::WriteOnly: imageAccess = GL_WRITE_ONLY; break;
+    case ImageAccess::ReadWrite: imageAccess = GL_READ_WRITE; break;
   }
 
   glBindImageTexture(binding, tex->GetGLID(), 0, GL_FALSE, 0, imageAccess, PixelTypeToGLInternalFormat(tex->GetPixelType()));

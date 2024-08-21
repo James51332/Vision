@@ -45,7 +45,7 @@ namespace Lumina
       renderDevice->BeginCommandBuffer();
       renderDevice->BeginComputePass();
 
-      renderDevice->SetComputeBuffer(computeBuffer);
+      renderDevice->BindBuffer(computeBuffer);
       renderDevice->DispatchCompute(pipeline, "sum", {elements, 1, 1});
       renderDevice->DispatchCompute(pipeline, "triple", {elements, 1, 1});
 

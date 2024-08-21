@@ -90,7 +90,7 @@ static uint32_t PixelTypeBytesPerPixel(PixelType type)
   return 0;
 }
 
-enum class ComputeImageAccess
+enum class ImageAccess
 {
   ReadOnly,
   WriteOnly,

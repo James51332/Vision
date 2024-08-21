@@ -29,7 +29,7 @@ public:
   void MapBufferData(ID buffer, void** data, std::size_t size);
   void FreeBufferData(ID id, void **data);
   void ResizeBuffer(ID buffer, std::size_t size) { buffers.Get(buffer)->Reset(gpuDevice, size); }
-  void AttachUniformBuffer(ID buffer, std::size_t block = 0);  
+  void BindBuffer(ID buffer, std::size_t binding = 0, std::size_t offset = 0, std::size_t range = 0);  
   void DestroyBuffer(ID id) { buffers.Destroy(id); }
 
   ID CreateTexture2D(const Texture2DDesc& desc);
@@ -76,8 +76,7 @@ public:
   void BeginComputePass();
   void EndComputePass();
 
-  void SetComputeBuffer(ID buffer, std::size_t binding = 0);
-  void SetComputeImage(ID texture, std::size_t binding = 0, ComputeImageAccess access = ComputeImageAccess::ReadWrite);
+  void BindImage2D(ID texture, std::size_t binding = 0, ImageAccess access = ImageAccess::ReadWrite);
 
   void DispatchCompute(ID pipeline, const std::string& kernel, const glm::ivec3 &threadgroups);
 
