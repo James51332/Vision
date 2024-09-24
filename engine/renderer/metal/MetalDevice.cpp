@@ -1,8 +1,8 @@
 #include "MetalDevice.h"
 
-#include <spirv_msl.hpp>
-#include <iostream>
 #include <SDL.h>
+#include <iostream>
+#include <spirv_msl.hpp>
 
 #include "renderer/shader/ShaderCompiler.h"
 
@@ -11,27 +11,29 @@
 namespace Vision
 {
 
-MetalDevice::MetalDevice(MTL::Device *device, CA::MetalLayer* l, float w, float h)
-  : gpuDevice(device->retain()), layer(l->retain()), width(w), height(h)
+MetalDevice::MetalDevice(MTL::Device* device, CA::MetalLayer* l, float w, float h)
+    : gpuDevice(device->retain()), layer(l->retain()), width(w), height(h)
 {
   queue = gpuDevice->newCommandQueue();
   cmdBuffer = nullptr;
   encoder = nullptr;
 
-  depthTexture = new MetalTexture(gpuDevice, width, height, PixelType::Depth32Float, MinMagFilter::Linear, MinMagFilter::Linear);
+  depthTexture = new MetalTexture(gpuDevice, width, height, PixelType::Depth32Float,
+                                  MinMagFilter::Linear, MinMagFilter::Linear,
+                                  EdgeAddressMode::ClampToEdge, EdgeAddressMode::ClampToEdge);
 }
 
 MetalDevice::~MetalDevice()
 {
   delete depthTexture;
-  
+
   // These are all retain so they don't get delete before this class.
   layer->release();
   gpuDevice->release();
   queue->release();
 }
 
-ID MetalDevice::CreateRenderPipeline(const RenderPipelineDesc &desc)
+ID MetalDevice::CreateRenderPipeline(const RenderPipelineDesc& desc)
 {
   ID id = currentID++;
   MetalPipeline* ps = new MetalPipeline(gpuDevice, desc);
@@ -39,7 +41,7 @@ ID MetalDevice::CreateRenderPipeline(const RenderPipelineDesc &desc)
   return id;
 }
 
-ID MetalDevice::CreateBuffer(const BufferDesc &desc)
+ID MetalDevice::CreateBuffer(const BufferDesc& desc)
 {
   ID id = currentID++;
   MetalBuffer* buffer = new MetalBuffer(gpuDevice, desc);
@@ -47,7 +49,7 @@ ID MetalDevice::CreateBuffer(const BufferDesc &desc)
   return id;
 }
 
-void MetalDevice::MapBufferData(ID id, void **data, std::size_t size)
+void MetalDevice::MapBufferData(ID id, void** data, std::size_t size)
 {
   MetalBuffer* buffer = buffers.Get(id);
   (*data) = buffer->buffer->contents();
@@ -58,7 +60,7 @@ void MetalDevice::FreeBufferData(ID id, void** data)
   (*data) = nullptr;
 }
 
-void MetalDevice::BindBuffer(ID buffer, std::size_t block, std::size_t offset, std::size_t range) 
+void MetalDevice::BindBuffer(ID buffer, std::size_t block, std::size_t offset, std::size_t range)
 {
   if (encoder)
   {
@@ -71,18 +73,20 @@ void MetalDevice::BindBuffer(ID buffer, std::size_t block, std::size_t offset, s
   }
 }
 
-ID MetalDevice::CreateTexture2D(const Texture2DDesc &desc)
+ID MetalDevice::CreateTexture2D(const Texture2DDesc& desc)
 {
   ID id = currentID++;
   MetalTexture* texture;
 
   if (desc.LoadFromFile)
-    texture = new MetalTexture(gpuDevice, desc.FilePath.c_str(), desc.MinFilter, desc.MagFilter);
+    texture = new MetalTexture(gpuDevice, desc.FilePath.c_str(), desc.MinFilter, desc.MagFilter,
+                               desc.AddressModeS, desc.AddressModeT);
   else
   {
-    texture = new MetalTexture(gpuDevice, desc.Width, desc.Height, desc.PixelType, desc.MinFilter, desc.MagFilter);
+    texture = new MetalTexture(gpuDevice, desc.Width, desc.Height, desc.PixelType, desc.MinFilter,
+                               desc.MagFilter, desc.AddressModeS, desc.AddressModeT);
     if (desc.Data)
-    	texture->SetData(desc.Data);
+      texture->SetData(desc.Data);
   }
 
   textures.Add(id, texture);
@@ -101,19 +105,19 @@ void MetalDevice::BindTexture2D(ID id, std::size_t binding)
   encoder->setFragmentSamplerState(texture->GetSampler(), binding);
 }
 
-ID MetalDevice::CreateCubemap(const CubemapDesc &desc)
+ID MetalDevice::CreateCubemap(const CubemapDesc& desc)
 {
   ID id = currentID++;
   MetalCubemap* cubemap = new MetalCubemap(gpuDevice, desc);
   cubemaps.Add(id, cubemap);
-  
+
   return id;
 }
 
 void MetalDevice::BindCubemap(ID id, std::size_t binding)
 {
   // TODO: For now, we have no way to know which state, so we must do both.
-  MetalCubemap *texture = cubemaps.Get(id);
+  MetalCubemap* texture = cubemaps.Get(id);
 
   encoder->setVertexTexture(texture->GetTexture(), binding);
   encoder->setFragmentTexture(texture->GetTexture(), binding);
@@ -122,7 +126,7 @@ void MetalDevice::BindCubemap(ID id, std::size_t binding)
   encoder->setFragmentSamplerState(texture->GetSampler(), binding);
 }
 
-ID MetalDevice::CreateFramebuffer(const FramebufferDesc &desc)
+ID MetalDevice::CreateFramebuffer(const FramebufferDesc& desc)
 {
   ID id = currentID++;
   MetalFramebuffer* fb = new MetalFramebuffer(gpuDevice, desc);
@@ -135,7 +139,7 @@ void MetalDevice::ResizeFramebuffer(ID id, float width, float height)
   framebuffers.Get(id)->Resize(gpuDevice, width, height);
 }
 
-ID MetalDevice::CreateRenderPass(const RenderPassDesc &desc)
+ID MetalDevice::CreateRenderPass(const RenderPassDesc& desc)
 {
   ID id = currentID++;
   MetalRenderPass* rp = new MetalRenderPass(desc);
@@ -171,7 +175,7 @@ void MetalDevice::BeginRenderPass(ID pass)
       MetalFramebuffer* fb = framebuffers.Get(renderpass->GetTarget());
       rpDesc->colorAttachments()->object(0)->setTexture(fb->GetTexture());
     }
-    
+
     rpDesc->depthAttachment()->setTexture(depthTexture->GetTexture());
     rpDesc->depthAttachment()->setLoadAction(MTL::LoadActionClear);
     rpDesc->depthAttachment()->setStoreAction(MTL::StoreActionStore);
@@ -185,7 +189,7 @@ void MetalDevice::EndRenderPass()
 {
   SDL_assert(cmdBuffer);
   SDL_assert(encoder);
-  
+
   NS::AutoreleasePool* pool = NS::AutoreleasePool::alloc()->init();
   {
     encoder->endEncoding();
@@ -205,10 +209,11 @@ void MetalDevice::BeginCommandBuffer()
 void MetalDevice::SubmitCommandBuffer(bool await)
 {
   SDL_assert(cmdBuffer);
-  NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
+  NS::AutoreleasePool* pool = NS::AutoreleasePool::alloc()->init();
   {
     cmdBuffer->commit();
-    if (await) cmdBuffer->waitUntilCompleted();
+    if (await)
+      cmdBuffer->waitUntilCompleted();
     cmdBuffer = nullptr;
 
     if (drawablePresented)
@@ -232,30 +237,27 @@ void MetalDevice::SchedulePresentation()
 void MetalDevice::SetViewport(float x, float y, float width, float height)
 {
   SDL_assert(encoder);
-  MTL::Viewport viewport{ x, y, width, height, 0.0f, 1.0f };
+  MTL::Viewport viewport{x, y, width, height, 0.0f, 1.0f};
   encoder->setViewport(viewport);
 }
 
 void MetalDevice::SetScissorRect(float x, float y, float width, float height)
 {
   SDL_assert(encoder);
-  MTL::ScissorRect rect {
-    NS::UInteger(x), 
-    NS::UInteger(y), 
-    NS::UInteger(width), 
-    NS::UInteger(height)
-  };
+  MTL::ScissorRect rect{NS::UInteger(x), NS::UInteger(y), NS::UInteger(width),
+                        NS::UInteger(height)};
   encoder->setScissorRect(rect);
 }
 
-void MetalDevice::Submit(const DrawCommand &command)
+void MetalDevice::Submit(const DrawCommand& command)
 {
   SDL_assert(encoder);
 
   // fetch the pipeline state
   MetalPipeline* ps = pipelines.Get(command.RenderPipeline);
   encoder->setRenderPipelineState(ps->GetPipeline());
-  
+  encoder->setTriangleFillMode(ps->GetFillMode());
+
   // setup our depth information
   encoder->setDepthStencilState(ps->GetDepthStencil());
 
@@ -274,11 +276,12 @@ void MetalDevice::Submit(const DrawCommand &command)
   // submit the draw call.
   MetalBuffer* indexBuffer = buffers.Get(command.IndexBuffer);
   MTL::IndexType indexType = IndexTypeToMTLIndexType(command.IndexType);
-  encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, command.NumVertices, indexType, indexBuffer->buffer, command.IndexOffset);
+  encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, command.NumVertices, indexType,
+                                 indexBuffer->buffer, command.IndexOffset);
 }
 
 // compute API
-ID MetalDevice::CreateComputePipeline(const ComputePipelineDesc &desc)
+ID MetalDevice::CreateComputePipeline(const ComputePipelineDesc& desc)
 {
   ID id = currentID++;
   MetalComputePipeline* pipeline = new MetalComputePipeline(gpuDevice, desc);
@@ -299,7 +302,7 @@ void MetalDevice::EndComputePass()
 {
   SDL_assert(computeEncoder);
 
-  NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
+  NS::AutoreleasePool* pool = NS::AutoreleasePool::alloc()->init();
   {
     computeEncoder->endEncoding();
     computeEncoder->release();
@@ -325,12 +328,12 @@ void MetalDevice::DispatchCompute(ID pipeline, const std::string& name, const gl
 {
   SDL_assert(computeEncoder);
 
-  MetalComputePipeline* ps = computePipelines.Get(pipeline); 
+  MetalComputePipeline* ps = computePipelines.Get(pipeline);
   MetalComputePipeline::Kernel kernel = ps->GetKernel(name);
 
   computeEncoder->setComputePipelineState(kernel.Pipeline);
 
-  MTL::Size numGroups = { NS::UInteger(groups.x), NS::UInteger(groups.y), NS::UInteger(groups.z) };
+  MTL::Size numGroups = {NS::UInteger(groups.x), NS::UInteger(groups.y), NS::UInteger(groups.z)};
   computeEncoder->dispatchThreadgroups(numGroups, kernel.WorkgroupSize);
 }
 
@@ -342,4 +345,4 @@ void MetalDevice::UpdateSize(float w, float h)
   depthTexture->Resize(gpuDevice, width, height);
 }
 
-}
+} // namespace Vision

@@ -1,7 +1,7 @@
 #include "MetalPipeline.h"
 
-#include <iostream>
 #include <SDL.h>
+#include <iostream>
 #include <spirv_msl.hpp>
 
 #include "MetalCompiler.h"
@@ -15,17 +15,20 @@ namespace Vision
 // ----- MetalPipeline -----
 
 MetalPipeline::MetalPipeline(MTL::Device* device, const RenderPipelineDesc& desc)
+    : fillMode(GeometryFillModeToMTLTriangleFillMode(desc.FillMode))
 {
-  MTL::RenderPipelineDescriptor *attribs = MTL::RenderPipelineDescriptor::alloc()->init();
+  MTL::RenderPipelineDescriptor* attribs = MTL::RenderPipelineDescriptor::alloc()->init();
 
   // set the pixel format
   attribs->colorAttachments()->object(0)->setPixelFormat(PixelTypeToMTLPixelFormat(desc.PixelType));
   attribs->colorAttachments()->object(0)->setBlendingEnabled(desc.Blending);
   attribs->colorAttachments()->object(0)->setSourceAlphaBlendFactor(MTL::BlendFactorSourceAlpha);
-  attribs->colorAttachments()->object(0)->setDestinationAlphaBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
+  attribs->colorAttachments()->object(0)->setDestinationAlphaBlendFactor(
+      MTL::BlendFactorOneMinusSourceAlpha);
   attribs->colorAttachments()->object(0)->setAlphaBlendOperation(MTL::BlendOperationAdd);
   attribs->colorAttachments()->object(0)->setSourceRGBBlendFactor(MTL::BlendFactorSourceAlpha);
-  attribs->colorAttachments()->object(0)->setDestinationRGBBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
+  attribs->colorAttachments()->object(0)->setDestinationRGBBlendFactor(
+      MTL::BlendFactorOneMinusSourceAlpha);
   attribs->colorAttachments()->object(0)->setRgbBlendOperation(MTL::BlendOperationAdd);
 
   // compile and attach our shader functions
@@ -41,13 +44,13 @@ MetalPipeline::MetalPipeline(MTL::Device* device, const RenderPipelineDesc& desc
 
   // set the pipeline layout
   MTL::VertexDescriptor* vtxDesc = MTL::VertexDescriptor::alloc()->init();
-  
+
   // build the free buffer bindings
   ShaderReflector vtxReflector(desc.VertexShader);
   std::vector<ShaderReflector::UniformBuffer> ubos = vtxReflector.GetUniformBuffers();
   constexpr std::size_t maxSlot = 30; // this is the last slot in the table
   stageBufferBindings.clear();
-  
+
   for (std::size_t i = 0; i <= maxSlot; i++)
   {
     bool found = false;
@@ -67,7 +70,8 @@ MetalPipeline::MetalPipeline(MTL::Device* device, const RenderPipelineDesc& desc
   int attrib = 0;
   for (auto layout : desc.Layouts)
   {
-    SDL_assert(stageBuffer < stageBufferBindings.size()); // We can't have more stage slots than free slots
+    SDL_assert(stageBuffer <
+               stageBufferBindings.size()); // We can't have more stage slots than free slots
     std::size_t layoutIndex = stageBufferBindings[stageBuffer];
 
     if (layout.Stride == 0)
@@ -75,11 +79,12 @@ MetalPipeline::MetalPipeline(MTL::Device* device, const RenderPipelineDesc& desc
       stageBuffer++;
       continue;
     }
-    
+
     for (auto elem : layout.Elements)
     {
       vtxDesc->attributes()->object(attrib)->setBufferIndex(layoutIndex);
-      vtxDesc->attributes()->object(attrib)->setFormat(ShaderDataTypeToMTLVertexFormat(elem.Type, elem.Normalized));
+      vtxDesc->attributes()->object(attrib)->setFormat(
+          ShaderDataTypeToMTLVertexFormat(elem.Type, elem.Normalized));
       vtxDesc->attributes()->object(attrib)->setOffset(elem.Offset);
 
       attrib++;
@@ -90,11 +95,11 @@ MetalPipeline::MetalPipeline(MTL::Device* device, const RenderPipelineDesc& desc
   }
 
   attribs->setVertexDescriptor(vtxDesc);
-  
+
   attribs->setDepthAttachmentPixelFormat(MTL::PixelFormatDepth32Float);
 
   // build the pipeline
-  NS::Error *error = nullptr;
+  NS::Error* error = nullptr;
   pipeline = device->newRenderPipelineState(attribs, &error);
 
   if (error)
@@ -107,8 +112,10 @@ MetalPipeline::MetalPipeline(MTL::Device* device, const RenderPipelineDesc& desc
   attribs->release();
 
   // create the depth state
-  MTL::DepthStencilDescriptor* depthDesc = MTL::DepthStencilDescriptor::alloc()->init();  
-  depthDesc->setDepthCompareFunction(desc.DepthTest ? DepthFunctionToMTLCompareFunction(desc.DepthFunc) : MTL::CompareFunctionAlways);
+  MTL::DepthStencilDescriptor* depthDesc = MTL::DepthStencilDescriptor::alloc()->init();
+  depthDesc->setDepthCompareFunction(desc.DepthTest
+                                         ? DepthFunctionToMTLCompareFunction(desc.DepthFunc)
+                                         : MTL::CompareFunctionAlways);
   depthDesc->setDepthWriteEnabled(desc.DepthWrite);
 
   depthState = device->newDepthStencilState(depthDesc);
@@ -143,7 +150,7 @@ MetalComputePipeline::MetalComputePipeline(MTL::Device* device, const ComputePip
     }
 
     glm::ivec3 size = reflector.GetThreadgroupSize();
-    kernel.WorkgroupSize = { NS::UInteger(size.x), NS::UInteger(size.y), NS::UInteger(size.z) };
+    kernel.WorkgroupSize = {NS::UInteger(size.x), NS::UInteger(size.y), NS::UInteger(size.z)};
 
     kernels[computeKernel.Name] = kernel;
   }
@@ -155,19 +162,19 @@ MetalComputePipeline::~MetalComputePipeline()
     pair.second.Pipeline->release();
 }
 
-MetalComputePipeline::Kernel MetalComputePipeline::GetKernel(const std::string &name)
+MetalComputePipeline::Kernel MetalComputePipeline::GetKernel(const std::string& name)
 {
   if (kernels.find(name) == kernels.end())
   {
     std::cout << "Unknown Compute Kernel: " << std::endl;
-    
+
     Kernel k;
     k.Pipeline = nullptr;
-    k.WorkgroupSize = { 1, 1, 1 };
+    k.WorkgroupSize = {1, 1, 1};
     return k;
   }
 
   return kernels[name];
 }
 
-}
+} // namespace Vision

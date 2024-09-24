@@ -1,8 +1,8 @@
 #pragma once
 
-#include <vector>
-#include <string>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include <SDL.h>
 
@@ -12,7 +12,7 @@ namespace Vision
 enum class PixelType
 {
   Invalid,
-  
+
   // 8-bit per channel formats
   R8,
   RG8,
@@ -46,6 +46,13 @@ enum class MinMagFilter
   Linear
 };
 
+enum class EdgeAddressMode
+{
+  ClampToEdge,
+  Repeat,
+  RepeatMirrored
+};
+
 struct Texture2DDesc
 {
   bool LoadFromFile = false;
@@ -54,8 +61,14 @@ struct Texture2DDesc
   float Width;
   float Height;
   PixelType PixelType;
+
   MinMagFilter MinFilter = MinMagFilter::Linear;
   MinMagFilter MagFilter = MinMagFilter::Linear;
+
+  // Edge Behavior
+  EdgeAddressMode AddressModeS = EdgeAddressMode::ClampToEdge;
+  EdgeAddressMode AddressModeT = EdgeAddressMode::ClampToEdge;
+
   bool WriteOnly = false;
   uint8_t* Data = nullptr;
 };
@@ -105,4 +118,4 @@ struct CubemapDesc
   std::vector<std::string> Textures;
 };
 
-}
+} // namespace Vision

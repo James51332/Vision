@@ -1,7 +1,7 @@
 #pragma once
 
-#include <glad/glad.h>
 #include <SDL.h>
+#include <glad/glad.h>
 
 #include "renderer/RenderCommand.h"
 
@@ -15,8 +15,7 @@ static GLenum IndexTypeToGLenum(IndexType type)
     case IndexType::U8: return GL_UNSIGNED_BYTE;
     case IndexType::U16: return GL_UNSIGNED_SHORT;
     case IndexType::U32: return GL_UNSIGNED_INT;
-    default:
-      break;
+    default: break;
   }
 
   return GL_INVALID_ENUM;
@@ -29,8 +28,7 @@ static GLenum PrimitiveTypeToGLenum(PrimitiveType type)
     case PrimitiveType::Triangle: return GL_TRIANGLES;
     case PrimitiveType::TriangleStrip: return GL_TRIANGLE_STRIP;
     case PrimitiveType::Patch: return GL_PATCHES;
-    default:
-      break;
+    default: break;
   }
 
   return GL_INVALID_ENUM;
@@ -46,8 +44,7 @@ static GLenum ShaderStageToGLenum(ShaderStage stage)
     case ShaderStage::Domain: return GL_TESS_EVALUATION_SHADER;
     case ShaderStage::Geometry: return GL_GEOMETRY_SHADER;
     case ShaderStage::Compute: return GL_COMPUTE_SHADER;
-    default:
-      break;
+    default: break;
   }
 
   return GL_INVALID_ENUM;
@@ -84,8 +81,7 @@ static PixelType ChannelsToPixelType(int channels)
     case 1: return PixelType::R8;
     case 2: return PixelType::RG8;
     case 4:
-    default:
-      return PixelType::RGBA8;
+    default: return PixelType::RGBA8;
   }
 }
 
@@ -111,8 +107,7 @@ static GLenum PixelTypeToGLInternalFormat(PixelType type)
     case PixelType::RGBA32Float: return GL_RGBA32F;
     case PixelType::Depth32Float: return GL_DEPTH_COMPONENT32F;
     case PixelType::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
-    default:
-      break;
+    default: break;
   }
 
   return GL_INVALID_ENUM;
@@ -151,21 +146,21 @@ static GLenum PixelTypeToGLType(PixelType type)
   switch (type)
   {
     case PixelType::R8:
-    case PixelType::RG8: 
+    case PixelType::RG8:
     case PixelType::RGBA8:
     case PixelType::BGRA8: return GL_UNSIGNED_BYTE;
-    case PixelType::R16: 
-    case PixelType::RG16: 
+    case PixelType::R16:
+    case PixelType::RG16:
     case PixelType::RGBA16: return GL_UNSIGNED_SHORT;
     case PixelType::R16Float:
     case PixelType::RG16Float:
     case PixelType::RGBA16Float: return GL_FLOAT;
-    case PixelType::R32Uint: 
+    case PixelType::R32Uint:
     case PixelType::RG32Uint:
     case PixelType::RGBA32Uint: return GL_UNSIGNED_INT;
-    case PixelType::R32Float: 
-    case PixelType::RG32Float: 
-    case PixelType::RGBA32Float: 
+    case PixelType::R32Float:
+    case PixelType::RG32Float:
+    case PixelType::RGBA32Float:
     case PixelType::Depth32Float: return GL_FLOAT;
     default: break;
   }
@@ -182,8 +177,7 @@ static GLenum DepthFuncToGLenum(DepthFunc func)
     case DepthFunc::Greater: return GL_GREATER;
     case DepthFunc::GreaterEqual: return GL_GEQUAL;
     case DepthFunc::Equal: return GL_EQUAL;
-    default:
-      break;
+    default: break;
   }
 
   return GL_INVALID_ENUM;
@@ -198,4 +192,23 @@ static GLenum MinMagFilterToGLenum(MinMagFilter filter)
   }
 }
 
+static GLenum EdgeAddressModeToGLenum(EdgeAddressMode mode)
+{
+  switch (mode)
+  {
+    case EdgeAddressMode::ClampToEdge: return GL_CLAMP_TO_EDGE;
+    case EdgeAddressMode::Repeat: return GL_REPEAT;
+    case EdgeAddressMode::RepeatMirrored: return GL_MIRRORED_REPEAT;
+  }
 }
+
+static GLenum GeometryFillModeToGLenum(GeometryFillMode mode)
+{
+  switch (mode)
+  {
+    case GeometryFillMode::Line: return GL_LINE;
+    case GeometryFillMode::Fill: return GL_FILL;
+  }
+}
+
+} // namespace Vision

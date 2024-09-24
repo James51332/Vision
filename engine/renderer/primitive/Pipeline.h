@@ -20,6 +20,12 @@ enum class DepthFunc
   Equal
 };
 
+enum class GeometryFillMode
+{
+  Line,
+  Fill
+};
+
 struct RenderPipelineDesc
 {
   // VBO Layouts
@@ -29,6 +35,9 @@ struct RenderPipelineDesc
   ShaderSPIRV VertexShader;
   ShaderSPIRV PixelShader;
 
+  // Geometry Fill Mode
+  GeometryFillMode FillMode = GeometryFillMode::Fill;
+
   // Depth, Blending and PixelFormats
   PixelType PixelType;
   bool DepthTest = true;
@@ -36,8 +45,15 @@ struct RenderPipelineDesc
   bool DepthWrite = true;
   bool Blending = true; // TODO: Blend Modes
 
+  // Tesselation
+  bool UseTesselation = false;
+  ShaderSPIRV HullShader;
+  ShaderSPIRV DomainShader;
+
   RenderPipelineDesc() // default ctor to automatically set pixel format
-    : PixelType(PixelType::BGRA8) {}
+      : PixelType(PixelType::BGRA8)
+  {
+  }
 };
 
 struct ComputePipelineDesc
@@ -45,4 +61,4 @@ struct ComputePipelineDesc
   std::vector<ShaderSPIRV> ComputeKernels;
 };
 
-}
+} // namespace Vision

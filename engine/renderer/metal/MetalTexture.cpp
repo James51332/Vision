@@ -9,30 +9,33 @@
 namespace Vision
 {
 
-static MTL::SamplerState *NewSamplerState(MTL::Device *device, MinMagFilter minFilter,
-                                          MinMagFilter magFilter)
+static MTL::SamplerState* NewSamplerState(MTL::Device* device, MinMagFilter minFilter,
+                                          MinMagFilter magFilter, EdgeAddressMode sMode,
+                                          EdgeAddressMode tMode)
 {
-  MTL::SamplerDescriptor *samplerDesc = MTL::SamplerDescriptor::alloc()->init();
+  MTL::SamplerDescriptor* samplerDesc = MTL::SamplerDescriptor::alloc()->init();
   samplerDesc->setMinFilter(MinMagFilterToMTLSamplerMinMagFilter(minFilter));
   samplerDesc->setMagFilter(MinMagFilterToMTLSamplerMinMagFilter(magFilter));
-  samplerDesc->setSAddressMode(MTL::SamplerAddressModeRepeat);
-  samplerDesc->setTAddressMode(MTL::SamplerAddressModeRepeat);
-  MTL::SamplerState *samplerState = device->newSamplerState(samplerDesc);
+  samplerDesc->setSAddressMode(EdgeAddressModeToMTLSamplerAddressMode(sMode));
+  samplerDesc->setTAddressMode(EdgeAddressModeToMTLSamplerAddressMode(tMode));
+
+  MTL::SamplerState* samplerState = device->newSamplerState(samplerDesc);
   samplerDesc->release();
   return samplerState;
 }
 
-MetalTexture::MetalTexture(MTL::Device *device, float width, float height, PixelType pixel,
-                           MinMagFilter minFilter, MinMagFilter magFilter)
-    : samplerState(NewSamplerState(device, minFilter, magFilter)), pixelType(pixel),
+MetalTexture::MetalTexture(MTL::Device* device, float width, float height, PixelType pixel,
+                           MinMagFilter minFilter, MinMagFilter magFilter, EdgeAddressMode sMode,
+                           EdgeAddressMode tMode)
+    : samplerState(NewSamplerState(device, minFilter, magFilter, sMode, tMode)), pixelType(pixel),
       channels(PixelTypeToChannels(pixel))
 {
   Resize(device, width, height);
 }
 
-MetalTexture::MetalTexture(MTL::Device *device, const char *filePath, MinMagFilter minFilter,
-                           MinMagFilter magFilter)
-    : samplerState(NewSamplerState(device, minFilter, magFilter))
+MetalTexture::MetalTexture(MTL::Device* device, const char* filePath, MinMagFilter minFilter,
+                           MinMagFilter magFilter, EdgeAddressMode sMode, EdgeAddressMode tMode)
+    : samplerState(NewSamplerState(device, minFilter, magFilter, sMode, tMode))
 {
   int w, h, comp;
   stbi_info(filePath, &w, &h, &comp);
@@ -45,7 +48,7 @@ MetalTexture::MetalTexture(MTL::Device *device, const char *filePath, MinMagFilt
   Resize(device, static_cast<float>(w), static_cast<float>(h));
 
   // load from disc
-  unsigned char *data = stbi_load(filePath, &w, &h, nullptr, channels);
+  unsigned char* data = stbi_load(filePath, &w, &h, nullptr, channels);
   if (!data)
   {
     std::cout << "Failed to load image:" << std::endl;
@@ -63,7 +66,7 @@ MetalTexture::~MetalTexture()
   samplerState->release();
 }
 
-void MetalTexture::Resize(MTL::Device *device, float w, float h)
+void MetalTexture::Resize(MTL::Device* device, float w, float h)
 {
   if (texture)
   {
@@ -74,7 +77,7 @@ void MetalTexture::Resize(MTL::Device *device, float w, float h)
   width = w;
   height = h;
 
-  MTL::TextureDescriptor *texDesc = MTL::TextureDescriptor::alloc()->init();
+  MTL::TextureDescriptor* texDesc = MTL::TextureDescriptor::alloc()->init();
   texDesc->setWidth(width);
   texDesc->setHeight(height);
   texDesc->setPixelFormat(PixelTypeToMTLPixelFormat(pixelType));
@@ -83,19 +86,19 @@ void MetalTexture::Resize(MTL::Device *device, float w, float h)
   texture = device->newTexture(texDesc);
 }
 
-void MetalTexture::SetData(uint8_t *data)
+void MetalTexture::SetData(uint8_t* data)
 {
   MTL::Region region(0, 0, width, height);
   texture->replaceRegion(region, 0, data, width * channels);
 }
 
-void MetalTexture::SetDataRaw(void *data)
+void MetalTexture::SetDataRaw(void* data)
 {
   MTL::Region region(0, 0, width, height);
   texture->replaceRegion(region, 0, data, width * PixelTypeBytesPerPixel(pixelType));
 }
 
-MetalCubemap::MetalCubemap(MTL::Device *device, const CubemapDesc &desc)
+MetalCubemap::MetalCubemap(MTL::Device* device, const CubemapDesc& desc)
 {
   SDL_assert(desc.Textures.size() == 6);
 
@@ -106,7 +109,11 @@ MetalCubemap::MetalCubemap(MTL::Device *device, const CubemapDesc &desc)
   int channels = (comp != 3) ? comp : 4;
   pixelType = ChannelsToPixelType(channels);
 
-  MTL::TextureDescriptor *descriptor;
+<<<<<<< HEAD
+  MTL::TextureDescriptor* descriptor;
+=======
+  MTL::TextureDescriptor* descriptor;
+>>>>>>> 36afd74 (clang-format, texture address modes, polygon outline)
   descriptor = MTL::TextureDescriptor::alloc()->textureCubeDescriptor(
       PixelTypeToMTLPixelFormat(pixelType), w, false);
 
@@ -116,7 +123,7 @@ MetalCubemap::MetalCubemap(MTL::Device *device, const CubemapDesc &desc)
   int side = 0;
   for (auto file : desc.Textures)
   {
-    unsigned char *data = stbi_load(file.c_str(), &w, &h, nullptr, channels);
+    unsigned char* data = stbi_load(file.c_str(), &w, &h, nullptr, channels);
     if (!data)
     {
       std::cout << "Failed to load image:" << file << std::endl;
@@ -130,7 +137,7 @@ MetalCubemap::MetalCubemap(MTL::Device *device, const CubemapDesc &desc)
     stbi_image_free(data);
   }
 
-  MTL::SamplerDescriptor *samplerDesc = MTL::SamplerDescriptor::alloc()->init();
+  MTL::SamplerDescriptor* samplerDesc = MTL::SamplerDescriptor::alloc()->init();
   samplerDesc->setMinFilter(MTL::SamplerMinMagFilterLinear);
   samplerDesc->setMagFilter(MTL::SamplerMinMagFilterLinear);
   samplerState = device->newSamplerState(samplerDesc);
