@@ -440,7 +440,6 @@ void Renderer2D::GeneratePipelines()
   };
   quadDesc.DepthTest = false;
   quadDesc.DepthWrite = false;
-  quadDesc.FillMode = GeometryFillMode::Line;
   quadDesc.Blending = true;
   quadPipeline = device->CreateRenderPipeline(quadDesc);
 
