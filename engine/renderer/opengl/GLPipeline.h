@@ -16,9 +16,11 @@ struct GLPipeline
   bool DepthWrite;
   GLenum DepthFunc;
 
+  GLenum FillMode;
+
   bool EnableBlend;
   GLenum BlendSource;
   GLenum BlendDst;
 };
 
-}
+} // namespace Vision

@@ -1,7 +1,7 @@
 #include "GLDevice.h"
 
-#include <iostream>
 #include <SDL.h>
+#include <iostream>
 #include <spirv_glsl.hpp>
 
 #include "GLTypes.h"
@@ -11,8 +11,7 @@
 namespace Vision
 {
 
-GLDevice::GLDevice(SDL_Window* wind, float w, float h)
-  : window(wind), width(w), height(h)
+GLDevice::GLDevice(SDL_Window* wind, float w, float h): window(wind), width(w), height(h)
 {
   gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
 
@@ -21,26 +20,29 @@ GLDevice::GLDevice(SDL_Window* wind, float w, float h)
   glGetIntegerv(GL_MINOR_VERSION, &versionMinor);
 }
 
-ID GLDevice::CreateRenderPipeline(const RenderPipelineDesc &desc)
+ID GLDevice::CreateRenderPipeline(const RenderPipelineDesc& desc)
 {
   GLPipeline* pipeline = new GLPipeline();
   pipeline->Layouts = desc.Layouts;
-  pipeline->Program = new GLProgram(desc.VertexShader, desc.PixelShader, versionMinor < 2 || versionMajor < 4);
+  pipeline->Program =
+      new GLProgram(desc.VertexShader, desc.PixelShader, versionMinor < 2 || versionMajor < 4);
 
   pipeline->DepthTest = desc.DepthTest;
   pipeline->DepthWrite = desc.DepthWrite;
   pipeline->DepthFunc = DepthFuncToGLenum(desc.DepthFunc);
 
+  pipeline->FillMode = GeometryFillModeToGLenum(desc.FillMode);
+
   pipeline->EnableBlend = desc.Blending;
   pipeline->BlendSource = GL_SRC_ALPHA;
   pipeline->BlendDst = GL_ONE_MINUS_SRC_ALPHA;
-  
+
   ID id = currentID++;
   pipelines.Add(id, pipeline);
   return id;
 }
 
-ID GLDevice::CreateBuffer(const BufferDesc &desc)
+ID GLDevice::CreateBuffer(const BufferDesc& desc)
 {
   ID id = currentID++;
   GLBuffer* buffer = new GLBuffer(desc);
@@ -48,7 +50,7 @@ ID GLDevice::CreateBuffer(const BufferDesc &desc)
   return id;
 }
 
-void GLDevice::MapBufferData(ID id, void **data, std::size_t size)
+void GLDevice::MapBufferData(ID id, void** data, std::size_t size)
 {
   GLBuffer* buffer = buffers.Get(id);
   buffer->Bind();
@@ -63,7 +65,7 @@ void GLDevice::FreeBufferData(ID id, void** data)
   (*data) = nullptr;
 }
 
-ID GLDevice::CreateTexture2D(const Texture2DDesc &desc)
+ID GLDevice::CreateTexture2D(const Texture2DDesc& desc)
 {
   ID id = currentID++;
   GLTexture2D* texture;
@@ -71,16 +73,17 @@ ID GLDevice::CreateTexture2D(const Texture2DDesc &desc)
     texture = new GLTexture2D(desc.FilePath.c_str());
   else
   {
-    texture = new GLTexture2D(desc.Width, desc.Height, desc.PixelType, desc.MinFilter, desc.MagFilter, desc.WriteOnly);
+    texture = new GLTexture2D(desc.Width, desc.Height, desc.PixelType, desc.MinFilter,
+                              desc.MagFilter, desc.AddressModeS, desc.AddressModeT, desc.WriteOnly);
     if (desc.Data)
       texture->SetData(desc.Data);
   }
-  
+
   textures.Add(id, texture);
   return id;
 }
 
-ID GLDevice::CreateCubemap(const CubemapDesc &desc)
+ID GLDevice::CreateCubemap(const CubemapDesc& desc)
 {
   ID id = currentID++;
   GLCubemap* cubemap = new GLCubemap(desc);
@@ -88,7 +91,7 @@ ID GLDevice::CreateCubemap(const CubemapDesc &desc)
   return id;
 }
 
-ID GLDevice::CreateFramebuffer(const FramebufferDesc &desc)
+ID GLDevice::CreateFramebuffer(const FramebufferDesc& desc)
 {
   ID id = currentID++;
   GLFramebuffer* fb = new GLFramebuffer(desc);
@@ -96,7 +99,7 @@ ID GLDevice::CreateFramebuffer(const FramebufferDesc &desc)
   return id;
 }
 
-ID GLDevice::CreateRenderPass(const RenderPassDesc &desc)
+ID GLDevice::CreateRenderPass(const RenderPassDesc& desc)
 {
   ID id = currentID++;
   RenderPassDesc* obj = new RenderPassDesc(desc);
@@ -117,13 +120,15 @@ void GLDevice::BeginRenderPass(ID pass)
   if (fbID != 0) // don't bind a the default framebuffer.
     framebuffers.Get(fbID)->Bind();
 
-  if (rp->LoadOp == LoadOp::DontCare) return;
+  if (rp->LoadOp == LoadOp::DontCare)
+    return;
   if (rp->LoadOp == LoadOp::Clear)
   {
     glm::vec4& col = rp->ClearColor;
     glClearColor(col.r, col.g, col.b, col.a);
     glDepthMask(GL_TRUE);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // TODO: These may want to be controlled separately
+    glClear(GL_COLOR_BUFFER_BIT |
+            GL_DEPTH_BUFFER_BIT); // TODO: These may want to be controlled separately
   }
 }
 
@@ -171,12 +176,14 @@ void GLDevice::Submit(const DrawCommand& command)
     glEnable(GL_DEPTH_TEST);
   else
     glDisable(GL_DEPTH_TEST);
-  
+
   if (pipeline->EnableBlend)
     glEnable(GL_BLEND);
   else
     glDisable(GL_BLEND);
   glBlendFunc(pipeline->BlendSource, pipeline->BlendDst);
+
+  glPolygonMode(GL_FRONT_AND_BACK, pipeline->FillMode);
 
   // choose the primitive type and index type
   GLenum primitive = PrimitiveTypeToGLenum(command.Type);
@@ -193,7 +200,8 @@ void GLDevice::Submit(const DrawCommand& command)
     indexBuffer->Bind();
 
     // TODO: Vtx Offsets
-    glDrawElements(primitive, command.NumVertices, indexType, reinterpret_cast<void *>(command.IndexOffset));
+    glDrawElements(primitive, command.NumVertices, indexType,
+                   reinterpret_cast<void*>(command.IndexOffset));
   }
   else
   {
@@ -228,7 +236,7 @@ void GLDevice::SchedulePresentation()
 {
   SDL_assert(commandBufferActive);
   SDL_assert(activePass == 0);
-  
+
   schedulePresent = true;
 }
 
@@ -236,15 +244,12 @@ void GLDevice::BufferBarrier()
 {
   SDL_assert(versionMajor >= 4 && versionMinor >= 3);
 
-  // Until we have a more verbose API, or an intelligent dependency 
+  // Until we have a more verbose API, or an intelligent dependency
   // system, we must block all accesses to buffers in the GPU until
   // the memory becomes visible and accessible.
-  glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT 
-                 | GL_ELEMENT_ARRAY_BARRIER_BIT
-                 | GL_UNIFORM_BARRIER_BIT
-                 | GL_BUFFER_UPDATE_BARRIER_BIT
-                 | GL_SHADER_STORAGE_BARRIER_BIT
-                 | GL_QUERY_BUFFER_BARRIER_BIT);
+  glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_ELEMENT_ARRAY_BARRIER_BIT |
+                  GL_UNIFORM_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT |
+                  GL_SHADER_STORAGE_BARRIER_BIT | GL_QUERY_BUFFER_BARRIER_BIT);
 }
 
 void GLDevice::ImageBarrier()
@@ -252,13 +257,10 @@ void GLDevice::ImageBarrier()
   // Memory barriers don't exist in old GL. only use
   SDL_assert(versionMajor >= 4 && versionMinor >= 2);
 
-  glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT
-                | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
-                | GL_PIXEL_BUFFER_BARRIER_BIT
-                | GL_TEXTURE_UPDATE_BARRIER_BIT
-                | GL_FRAMEBUFFER_BARRIER_BIT);
+  glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT |
+                  GL_PIXEL_BUFFER_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT |
+                  GL_FRAMEBUFFER_BARRIER_BIT);
 }
-
 
 ID GLDevice::CreateComputePipeline(const ComputePipelineDesc& desc)
 {
@@ -271,7 +273,7 @@ ID GLDevice::CreateComputePipeline(const ComputePipelineDesc& desc)
   return id;
 }
 
-void GLDevice::BeginComputePass() 
+void GLDevice::BeginComputePass()
 {
   SDL_assert(commandBufferActive);
   SDL_assert(!activePass);
@@ -283,14 +285,14 @@ void GLDevice::BeginComputePass()
   computePass = true;
 }
 
-void GLDevice::EndComputePass() 
+void GLDevice::EndComputePass()
 {
   SDL_assert(computePass);
 
   computePass = false;
 }
 
-void GLDevice::BindImage2D(ID texture, std::size_t binding, ImageAccess access) 
+void GLDevice::BindImage2D(ID texture, std::size_t binding, ImageAccess access)
 {
   SDL_assert(computePass);
   GLTexture2D* tex = textures.Get(texture);
@@ -303,10 +305,11 @@ void GLDevice::BindImage2D(ID texture, std::size_t binding, ImageAccess access)
     case ImageAccess::ReadWrite: imageAccess = GL_READ_WRITE; break;
   }
 
-  glBindImageTexture(binding, tex->GetGLID(), 0, GL_FALSE, 0, imageAccess, PixelTypeToGLInternalFormat(tex->GetPixelType()));
+  glBindImageTexture(binding, tex->GetGLID(), 0, GL_FALSE, 0, imageAccess,
+                     PixelTypeToGLInternalFormat(tex->GetPixelType()));
 }
 
-void GLDevice::DispatchCompute(ID pipeline, const std::string& kernel, const glm::ivec3& threads) 
+void GLDevice::DispatchCompute(ID pipeline, const std::string& kernel, const glm::ivec3& threads)
 {
   SDL_assert(computePass);
 
@@ -315,5 +318,4 @@ void GLDevice::DispatchCompute(ID pipeline, const std::string& kernel, const glm
   glDispatchCompute(threads.x, threads.y, threads.z);
 }
 
-
-}
+} // namespace Vision

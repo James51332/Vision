@@ -1,8 +1,8 @@
 #include "GLTexture.h"
 
 #include <SDL.h>
-#include <stb_image.h>
 #include <iostream>
+#include <stb_image.h>
 
 #include "GLTypes.h"
 
@@ -11,22 +11,25 @@ namespace Vision
 
 // ----- GLTexture2D -----
 
-GLTexture2D::GLTexture2D(float width, float height, PixelType pixelType, MinMagFilter minFilter, MinMagFilter magFilter, bool writeOnly)
-  : m_PixelType(pixelType), m_TextureID(0), m_MinFilter(minFilter), m_MagFilter(magFilter), m_Renderbuffer(writeOnly)
+GLTexture2D::GLTexture2D(float width, float height, PixelType pixelType, MinMagFilter minFilter,
+                         MinMagFilter magFilter, EdgeAddressMode sMode, EdgeAddressMode tMode,
+                         bool renderbuffer)
+    : m_PixelType(pixelType), m_TextureID(0), m_MinFilter(minFilter), m_MagFilter(magFilter),
+      m_AddressModeS(sMode), m_AddressModeT(tMode), m_Renderbuffer(renderbuffer)
 {
   Resize(width, height);
 }
 
-GLTexture2D::GLTexture2D(const char *filePath)
+GLTexture2D::GLTexture2D(const char* filePath)
 {
   int w, h, channels;
 
   // don't support 3 channel images
   stbi_info(filePath, nullptr, nullptr, &channels);
-  if (channels == 3) 
+  if (channels == 3)
     channels = 4;
 
-  unsigned char *data = stbi_load(filePath, &w, &h, nullptr, channels);
+  unsigned char* data = stbi_load(filePath, &w, &h, nullptr, channels);
 
   if (!data)
   {
@@ -68,52 +71,41 @@ void GLTexture2D::Resize(float width, float height)
 
   m_Width = width;
   m_Height = height;
-  
+
   if (!m_Renderbuffer)
   {
     glGenTextures(1, &m_TextureID);
     glBindTexture(GL_TEXTURE_2D, m_TextureID);
-    
-    glTexImage2D(GL_TEXTURE_2D,
-                 0,
-                 PixelTypeToGLInternalFormat(m_PixelType),
-                 static_cast<GLsizei>(m_Width),
-                 static_cast<GLsizei>(m_Height),
-                 0,
-                 PixelTypeToGLFormat(m_PixelType),
-                 GL_UNSIGNED_BYTE,
-                 nullptr);
-    // TODO: Expose these parameters to the API
+
+    glTexImage2D(GL_TEXTURE_2D, 0, PixelTypeToGLInternalFormat(m_PixelType),
+                 static_cast<GLsizei>(m_Width), static_cast<GLsizei>(m_Height), 0,
+                 PixelTypeToGLFormat(m_PixelType), GL_UNSIGNED_BYTE, nullptr);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, MinMagFilterToGLenum(m_MinFilter));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, MinMagFilterToGLenum(m_MagFilter));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, EdgeAddressModeToGLenum(m_AddressModeS));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, EdgeAddressModeToGLenum(m_AddressModeT));
+
     glBindTexture(GL_TEXTURE_2D, 0);
   }
   else
   {
     glGenRenderbuffers(1, &m_TextureID);
     glBindRenderbuffer(GL_RENDERBUFFER, m_TextureID);
-    glRenderbufferStorage(GL_RENDERBUFFER,
-                          PixelTypeToGLInternalFormat(m_PixelType),
-                          static_cast<GLsizei>(m_Width),
-                          static_cast<GLsizei>(m_Height));
+    glRenderbufferStorage(GL_RENDERBUFFER, PixelTypeToGLInternalFormat(m_PixelType),
+                          static_cast<GLsizei>(m_Width), static_cast<GLsizei>(m_Height));
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
   }
 }
 
-void GLTexture2D::SetData(uint8_t *data)
+void GLTexture2D::SetData(uint8_t* data)
 {
   if (!m_Renderbuffer)
   {
     glBindTexture(GL_TEXTURE_2D, m_TextureID);
-    glTexSubImage2D(GL_TEXTURE_2D,
-                    0,
-                    0,
-                    0,
-                    static_cast<GLsizei>(m_Width),
-                    static_cast<GLsizei>(m_Height),
-                    PixelTypeToGLFormat(m_PixelType),
-                    GL_UNSIGNED_BYTE,
-                    static_cast<void *>(data));
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, static_cast<GLsizei>(m_Width),
+                    static_cast<GLsizei>(m_Height), PixelTypeToGLFormat(m_PixelType),
+                    GL_UNSIGNED_BYTE, static_cast<void*>(data));
 
     glBindTexture(GL_TEXTURE_2D, 0);
   }
@@ -129,15 +121,9 @@ void GLTexture2D::SetDataRaw(void* data)
   if (!m_Renderbuffer)
   {
     glBindTexture(GL_TEXTURE_2D, m_TextureID);
-    glTexSubImage2D(GL_TEXTURE_2D,
-                    0,
-                    0,
-                    0,
-                    static_cast<GLsizei>(m_Width),
-                    static_cast<GLsizei>(m_Height),
-                    PixelTypeToGLFormat(m_PixelType),
-                    PixelTypeToGLType(m_PixelType),
-                    data);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, static_cast<GLsizei>(m_Width),
+                    static_cast<GLsizei>(m_Height), PixelTypeToGLFormat(m_PixelType),
+                    PixelTypeToGLType(m_PixelType), data);
 
     glBindTexture(GL_TEXTURE_2D, 0);
   }
@@ -161,7 +147,7 @@ void GLTexture2D::Unbind()
 
 // ----- GLCubemap -----
 
-GLCubemap::GLCubemap(const CubemapDesc &desc)
+GLCubemap::GLCubemap(const CubemapDesc& desc)
 {
   SDL_assert(desc.Textures.size() == 6);
 
@@ -178,7 +164,7 @@ GLCubemap::GLCubemap(const CubemapDesc &desc)
     if (channels == 3)
       channels = 4;
 
-    unsigned char *data = stbi_load(file.c_str(), &w, &h, nullptr, channels);
+    unsigned char* data = stbi_load(file.c_str(), &w, &h, nullptr, channels);
     if (!data)
     {
       std::cout << "Failed to load image:" << file.c_str() << std::endl;
@@ -187,15 +173,9 @@ GLCubemap::GLCubemap(const CubemapDesc &desc)
     }
 
     PixelType pixelType = ChannelsToPixelType(channels);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + side,
-                 0,
-                 PixelTypeToGLInternalFormat(pixelType),
-                 static_cast<GLsizei>(w),
-                 static_cast<GLsizei>(h),
-                 0,
-                 PixelTypeToGLFormat(pixelType),
-                 GL_UNSIGNED_BYTE,
-                 data);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + side, 0, PixelTypeToGLInternalFormat(pixelType),
+                 static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0,
+                 PixelTypeToGLFormat(pixelType), GL_UNSIGNED_BYTE, data);
     side++;
     stbi_image_free(data);
   }
@@ -227,4 +207,4 @@ void GLCubemap::Unbind()
   glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
 
-}
+} // namespace Vision

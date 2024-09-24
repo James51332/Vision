@@ -1,14 +1,14 @@
 #pragma once
 
-#include <Metal/Metal.hpp>
 #include <Metal/MTLPixelFormat.hpp>
+#include <Metal/Metal.hpp>
 
 #include <iostream>
 
-#include "renderer/primitive/Texture.h"
 #include "renderer/primitive/Buffer.h"
 #include "renderer/primitive/Pipeline.h"
 #include "renderer/primitive/RenderPass.h"
+#include "renderer/primitive/Texture.h"
 
 #include "renderer/RenderCommand.h"
 
@@ -37,8 +37,7 @@ static MTL::PixelFormat PixelTypeToMTLPixelFormat(PixelType type)
     case PixelType::RGBA32Float: return MTL::PixelFormatRGBA32Float;
     case PixelType::Depth32Float: return MTL::PixelFormatDepth32Float;
     case PixelType::Depth24Stencil8: return MTL::PixelFormatDepth24Unorm_Stencil8;
-    default: 
-      break;
+    default: break;
   }
 
   return MTL::PixelFormatInvalid;
@@ -66,14 +65,14 @@ static PixelType MTLPixelFormatToPixelType(MTL::PixelFormat type)
     case MTL::PixelFormatRGBA32Float: return PixelType::RGBA32Float;
     case MTL::PixelFormatDepth32Float: return PixelType::Depth32Float;
     case MTL::PixelFormatDepth24Unorm_Stencil8: return PixelType::Depth24Stencil8;
-    default:
-      break;
+    default: break;
   }
 
   return PixelType::Invalid;
 }
 
-static MTL::VertexFormat ShaderDataTypeToMTLVertexFormat(ShaderDataType type, bool normalized = false)
+static MTL::VertexFormat ShaderDataTypeToMTLVertexFormat(ShaderDataType type,
+                                                         bool normalized = false)
 {
   if (!normalized)
   {
@@ -85,26 +84,23 @@ static MTL::VertexFormat ShaderDataTypeToMTLVertexFormat(ShaderDataType type, bo
       case ShaderDataType::Float3: return MTL::VertexFormatFloat3;
       case ShaderDataType::Float4: return MTL::VertexFormatFloat4;
       case ShaderDataType::UByte4: return MTL::VertexFormatUChar4;
-      default:
-        break;
-    }
-
-    std::cout << "Unknown Shader Data Type!" << std::endl;
-    return MTL::VertexFormatInvalid;
-  } 
-  else
-  {
-    switch (type)
-    {
-      case ShaderDataType::UByte4: return MTL::VertexFormatUChar4Normalized;
-      default:
-        break;
+      default: break;
     }
 
     std::cout << "Unknown Shader Data Type!" << std::endl;
     return MTL::VertexFormatInvalid;
   }
+  else
+  {
+    switch (type)
+    {
+      case ShaderDataType::UByte4: return MTL::VertexFormatUChar4Normalized;
+      default: break;
+    }
 
+    std::cout << "Unknown Shader Data Type!" << std::endl;
+    return MTL::VertexFormatInvalid;
+  }
 }
 
 static PixelType ChannelsToPixelType(int channels)
@@ -115,8 +111,7 @@ static PixelType ChannelsToPixelType(int channels)
     case 2: return PixelType::RG8;
     case 3:
     case 4:
-    default:
-      return PixelType::RGBA8;
+    default: return PixelType::RGBA8;
   }
 }
 
@@ -129,8 +124,7 @@ static MTL::CompareFunction DepthFunctionToMTLCompareFunction(DepthFunc func)
     case DepthFunc::Greater: return MTL::CompareFunctionGreater;
     case DepthFunc::GreaterEqual: return MTL::CompareFunctionGreaterEqual;
     case DepthFunc::Equal: return MTL::CompareFunctionEqual;
-    default:
-      return MTL::CompareFunctionAlways;
+    default: return MTL::CompareFunctionAlways;
   }
 }
 
@@ -141,8 +135,7 @@ static MTL::LoadAction LoadOpToMTLLoadAction(LoadOp op)
     case LoadOp::Load: return MTL::LoadActionLoad;
     case LoadOp::Clear: return MTL::LoadActionClear;
     case LoadOp::DontCare: return MTL::LoadActionDontCare;
-    default:
-      return MTL::LoadActionDontCare;
+    default: return MTL::LoadActionDontCare;
   }
 }
 
@@ -152,8 +145,7 @@ static MTL::StoreAction StoreOpToMTLStoreAction(StoreOp op)
   {
     case StoreOp::DontCare: return MTL::StoreActionDontCare;
     case StoreOp::Store: return MTL::StoreActionStore;
-    default:
-      return MTL::StoreActionDontCare;
+    default: return MTL::StoreActionDontCare;
   }
 }
 
@@ -164,8 +156,7 @@ static MTL::IndexType IndexTypeToMTLIndexType(IndexType type)
     case IndexType::U16: return MTL::IndexTypeUInt16;
     case IndexType::U32: return MTL::IndexTypeUInt32;
     case IndexType::U8: break;
-    default:
-      break;
+    default: break;
   }
 
   std::cout << "Unsupported Index Type in Metal: Use U16 or U32" << std::endl;
@@ -197,12 +188,12 @@ static int PixelTypeToChannels(PixelType type)
 
     default: break;
   }
-  
+
   std::cout << "Unknown PixelType" << std::endl;
   return -1;
 }
 
-static MTL::SamplerMinMagFilter MinMagFilterToMTLSamplerMinMagFilter (MinMagFilter filter)
+static MTL::SamplerMinMagFilter MinMagFilterToMTLSamplerMinMagFilter(MinMagFilter filter)
 {
   switch (filter)
   {
@@ -211,4 +202,23 @@ static MTL::SamplerMinMagFilter MinMagFilterToMTLSamplerMinMagFilter (MinMagFilt
   }
 }
 
+static MTL::SamplerAddressMode EdgeAddressModeToMTLSamplerAddressMode(EdgeAddressMode mode)
+{
+  switch (mode)
+  {
+    case EdgeAddressMode::ClampToEdge: return MTL::SamplerAddressModeClampToEdge;
+    case EdgeAddressMode::Repeat: return MTL::SamplerAddressModeRepeat;
+    case EdgeAddressMode::RepeatMirrored: return MTL::SamplerAddressModeMirrorRepeat;
+  }
 }
+
+static MTL::TriangleFillMode GeometryFillModeToMTLTriangleFillMode(GeometryFillMode mode)
+{
+  switch (mode)
+  {
+    case GeometryFillMode::Line: return MTL::TriangleFillModeLines;
+    case GeometryFillMode::Fill: return MTL::TriangleFillModeFill;
+  }
+}
+
+} // namespace Vision

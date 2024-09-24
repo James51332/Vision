@@ -10,13 +10,16 @@ namespace Vision
 class MetalTexture
 {
 public:
-  MetalTexture(MTL::Device* device, float width, float height, PixelType pixelType, MinMagFilter minFilter, MinMagFilter magFilter);
-  MetalTexture(MTL::Device *device, const char *filePath, MinMagFilter minFilter, MinMagFilter magFilter);
+  MetalTexture(MTL::Device* device, float width, float height, PixelType pixelType,
+               MinMagFilter minFilter, MinMagFilter magFilter, EdgeAddressMode sMode,
+               EdgeAddressMode tMode);
+  MetalTexture(MTL::Device* device, const char* filePath, MinMagFilter minFilter,
+               MinMagFilter magFilter, EdgeAddressMode sMode, EdgeAddressMode tMode);
   ~MetalTexture();
 
   void Resize(MTL::Device* device, float width, float height);
-  void SetData(uint8_t *data);
-  void SetDataRaw(void *data);
+  void SetData(uint8_t* data);
+  void SetDataRaw(void* data);
 
   float GetWidth() const { return width; }
   float GetHeight() const { return height; }
@@ -36,7 +39,7 @@ private:
 class MetalCubemap
 {
 public:
-  MetalCubemap(MTL::Device* device, const CubemapDesc &desc);
+  MetalCubemap(MTL::Device* device, const CubemapDesc& desc);
   ~MetalCubemap();
 
   MTL::Texture* GetTexture() const { return cubemap; }
@@ -44,8 +47,8 @@ public:
 
 private:
   MTL::Texture* cubemap;
-  MTL::SamplerState *samplerState = nullptr;
+  MTL::SamplerState* samplerState = nullptr;
 
   PixelType pixelType;
 };
-}
+} // namespace Vision
