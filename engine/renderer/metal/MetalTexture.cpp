@@ -109,11 +109,7 @@ MetalCubemap::MetalCubemap(MTL::Device* device, const CubemapDesc& desc)
   int channels = (comp != 3) ? comp : 4;
   pixelType = ChannelsToPixelType(channels);
 
-<<<<<<< HEAD
   MTL::TextureDescriptor* descriptor;
-=======
-  MTL::TextureDescriptor* descriptor;
->>>>>>> 36afd74 (clang-format, texture address modes, polygon outline)
   descriptor = MTL::TextureDescriptor::alloc()->textureCubeDescriptor(
       PixelTypeToMTLPixelFormat(pixelType), w, false);
 
