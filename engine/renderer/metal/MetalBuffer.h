@@ -14,7 +14,7 @@ public:
   MetalBuffer(MTL::Device* device, const BufferDesc& desc);
   ~MetalBuffer();
 
-  void SetData(std::size_t size, void* data);
+  void SetData(std::size_t size, void* data, std::size_t offset);
   void Reset(MTL::Device* device, std::size_t size);
 
 public:
@@ -25,4 +25,4 @@ public:
   std::string name;
 };
 
-}
+} // namespace Vision

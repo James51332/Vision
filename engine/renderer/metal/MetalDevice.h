@@ -25,7 +25,7 @@ public:
   void DestroyPipeline(ID id) { pipelines.Destroy(id); }
 
   ID CreateBuffer(const BufferDesc &desc);
-  void SetBufferData(ID buffer, void *data, std::size_t size) { buffers.Get(buffer)->SetData(size, data); }
+  void SetBufferData(ID buffer, void *data, std::size_t size, std::size_t offset) { buffers.Get(buffer)->SetData(size, data, offset); }
   void MapBufferData(ID buffer, void** data, std::size_t size);
   void FreeBufferData(ID id, void **data);
   void ResizeBuffer(ID buffer, std::size_t size) { buffers.Get(buffer)->Reset(gpuDevice, size); }

@@ -25,7 +25,7 @@ public:
   void DestroyPipeline(ID pipeline) { pipelines.Destroy(pipeline); }
 
   ID CreateBuffer(const BufferDesc& desc);
-  void SetBufferData(ID buffer, void* data, std::size_t size) { buffers.Get(buffer)->SetData(data, size); }
+  void SetBufferData(ID buffer, void* data, std::size_t size, std::size_t offset) { buffers.Get(buffer)->SetData(data, size, offset); }
   void MapBufferData(ID buffer, void **data, std::size_t size);
   void FreeBufferData(ID id, void** data);
   void ResizeBuffer(ID buffer, std::size_t size) { buffers.Get(buffer)->Resize(size); }

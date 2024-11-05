@@ -28,15 +28,20 @@ private:
 private:
   RenderDevice* device;
 
-  ID vbo, ibo, ubo;
+  // We cannot update these until the draw calls have finished.
+  std::size_t maxVertices = 100000; // 500 kilobyte GPU buffer
+  std::size_t maxIndices = 100000;
+  std::size_t maxBuffers = 4;
+  std::size_t vboOffset = 0, iboOffset = 0;
+  ID vbo, ibo;
+
+  // Other Renderer Data.
+  ID ubo;
   ID pipeline;
   ID fontTexture;
-
-  std::size_t maxVertices = 1000000; // 5MB GPU buffer
-  std::size_t maxIndices = 1000000;
 
   float pixelDensity = 1.0f;
   float width, height;
 };
 
-}
+} // namespace Vision

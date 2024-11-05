@@ -3,15 +3,15 @@
 #include <glm/glm.hpp>
 
 #include "primitive/Buffer.h"
-#include "primitive/Texture.h"
 #include "primitive/Pipeline.h"
+#include "primitive/Texture.h"
 
 #include "shader/Shader.h"
 
 namespace Vision
 {
 
-enum class IndexType 
+enum class IndexType
 {
   U8,
   U16,
@@ -38,8 +38,8 @@ struct DrawCommand
   IndexType IndexType = IndexType::U32;
 
   std::size_t NumVertices = 0;
+  std::vector<std::size_t> VertexOffsets;
   std::size_t IndexOffset = 0;
-
 };
 
-}
+} // namespace Vision

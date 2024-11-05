@@ -8,7 +8,8 @@ namespace Vision
 {
 
 GLBuffer::GLBuffer(const BufferDesc& desc)
-  : type(BufferTypeToGLenum(desc.Type)), m_Usage(BufferUsageToGLenum(desc.Usage)), m_Size(desc.Size), debugName(desc.DebugName)
+    : type(BufferTypeToGLenum(desc.Type)), m_Usage(BufferUsageToGLenum(desc.Usage)),
+      m_Size(desc.Size), debugName(desc.DebugName)
 {
   glGenBuffers(1, &m_Object);
   glBindBuffer(type, m_Object);
@@ -20,17 +21,18 @@ GLBuffer::~GLBuffer()
   glDeleteBuffers(1, &m_Object);
 }
 
-void GLBuffer::SetData(void* data, std::size_t size)
+void GLBuffer::SetData(void* data, std::size_t size, std::size_t offset)
 {
-  SDL_assert(size <= m_Size);
+  SDL_assert(size + offset <= m_Size);
 
   glBindBuffer(type, m_Object);
-  glBufferSubData(type, 0, size, data);
+  glBufferSubData(type, offset, size, data);
 }
 
 void GLBuffer::Resize(std::size_t size)
 {
-  if (size < m_Size) return; // Don't worry about shrinking
+  if (size < m_Size)
+    return; // Don't worry about shrinking
 
   m_Size = size;
   glBindBuffer(type, m_Object);
@@ -47,4 +49,4 @@ void GLBuffer::Bind()
   glBindBuffer(type, m_Object);
 }
 
-}
+} // namespace Vision

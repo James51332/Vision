@@ -1,9 +1,9 @@
-#pragma once 
+#pragma once
 
-#include "renderer/primitive/Pipeline.h"
 #include "renderer/primitive/Buffer.h"
-#include "renderer/primitive/Texture.h"
+#include "renderer/primitive/Pipeline.h"
 #include "renderer/primitive/RenderPass.h"
+#include "renderer/primitive/Texture.h"
 
 #include "renderer/shader/Shader.h"
 
@@ -25,12 +25,13 @@ public:
   virtual ID CreateRenderPipeline(const RenderPipelineDesc& desc) = 0;
   virtual void DestroyPipeline(ID id) = 0;
 
-  virtual ID CreateBuffer(const BufferDesc &desc) = 0;
-  virtual void SetBufferData(ID buffer, void *data, std::size_t size) = 0;
-  virtual void MapBufferData(ID buffer, void **data, std::size_t size) = 0;
-  virtual void FreeBufferData(ID id, void **data) = 0;
+  virtual ID CreateBuffer(const BufferDesc& desc) = 0;
+  virtual void SetBufferData(ID buffer, void* data, std::size_t size, std::size_t offset = 0) = 0;
+  virtual void MapBufferData(ID buffer, void** data, std::size_t size) = 0;
+  virtual void FreeBufferData(ID id, void** data) = 0;
   virtual void ResizeBuffer(ID buffer, std::size_t size) = 0;
-  virtual void BindBuffer(ID buffer, std::size_t binding = 0, std::size_t offset = 0, std::size_t range = 0) = 0; 
+  virtual void BindBuffer(ID buffer, std::size_t binding = 0, std::size_t offset = 0,
+                          std::size_t range = 0) = 0;
   virtual void DestroyBuffer(ID id) = 0;
 
   virtual ID CreateTexture2D(const Texture2DDesc& desc) = 0;
@@ -47,11 +48,11 @@ public:
   virtual ID CreateFramebuffer(const FramebufferDesc& desc) = 0;
   virtual void ResizeFramebuffer(ID id, float width, float height) = 0;
   virtual void DestroyFramebuffer(ID id) = 0;
-  
+
   virtual ID CreateRenderPass(const RenderPassDesc& desc) = 0;
   virtual void BeginRenderPass(ID pass) = 0;
   virtual void EndRenderPass() = 0;
-  virtual void DestroyRenderPass(ID pass) = 0; 
+  virtual void DestroyRenderPass(ID pass) = 0;
 
   virtual void BeginCommandBuffer() = 0;
   virtual void SubmitCommandBuffer(bool await = false) = 0;
@@ -66,23 +67,25 @@ public:
 
   // used to present the next swapchain image to the screen.
   virtual void SchedulePresentation() = 0;
- 
+
   virtual void SetViewport(float x, float y, float width, float height) = 0;
   virtual void SetScissorRect(float x, float y, float width, float height) = 0;
   virtual void Submit(const DrawCommand& command) = 0;
 
   // compute pipeline
-  virtual ID CreateComputePipeline(const ComputePipelineDesc &desc) = 0;
+  virtual ID CreateComputePipeline(const ComputePipelineDesc& desc) = 0;
   virtual void DestroyComputePipeline(ID id) = 0;
 
   virtual void BeginComputePass() = 0;
   virtual void EndComputePass() = 0;
 
-  virtual void BindImage2D(ID texture, std::size_t binding = 0, ImageAccess access = ImageAccess::ReadWrite) = 0;
+  virtual void BindImage2D(ID texture, std::size_t binding = 0,
+                           ImageAccess access = ImageAccess::ReadWrite) = 0;
 
-  virtual void DispatchCompute(ID pipeline, const std::string& kernel, const glm::ivec3 &threadgroups) = 0;
+  virtual void DispatchCompute(ID pipeline, const std::string& kernel,
+                               const glm::ivec3& threadgroups) = 0;
 
-  virtual RenderAPI GetRenderAPI() const = 0; 
+  virtual RenderAPI GetRenderAPI() const = 0;
 };
 
-}
+} // namespace Vision

@@ -1,9 +1,9 @@
 #include "ImGuiRenderer.h"
 
-#include <imgui.h>
-#include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <imgui.h>
+#include <iostream>
 
 #include "core/App.h"
 
@@ -13,7 +13,7 @@ namespace Vision
 {
 
 ImGuiRenderer::ImGuiRenderer(RenderDevice* renderDevice, float w, float h, float displayScale)
-  : device(renderDevice), width(w), height(h), pixelDensity(displayScale)
+    : device(renderDevice), width(w), height(h), pixelDensity(displayScale)
 {
   // Initialize ImGui
   ImGui::CreateContext();
@@ -22,8 +22,8 @@ ImGuiRenderer::ImGuiRenderer(RenderDevice* renderDevice, float w, float h, float
   io.BackendRendererName = "Vision Renderer";
   io.BackendPlatformName = "Vision Engine";
 
-  io.DisplaySize = { width, height };
-  io.DisplayFramebufferScale = { displayScale, displayScale };
+  io.DisplaySize = {width, height};
+  io.DisplayFramebufferScale = {displayScale, displayScale};
 
   // Create our rendering resources
   GenerateBuffers();
@@ -36,7 +36,7 @@ ImGuiRenderer::~ImGuiRenderer()
   // Shutdown ImGui
   ImGui::DestroyContext();
 
-  // Destroy our rendering resources 
+  // Destroy our rendering resources
   DestroyBuffers();
   DestroyPipeline();
   DestroyTexture();
@@ -50,7 +50,7 @@ void ImGuiRenderer::Begin()
 void ImGuiRenderer::End()
 {
   ImGui::Render();
-  ImDrawData *drawData = ImGui::GetDrawData();
+  ImDrawData* drawData = ImGui::GetDrawData();
 
   // Don't render if the window is minimized
   int32_t fbWidth = static_cast<int32_t>(drawData->DisplaySize.x * drawData->FramebufferScale.x);
@@ -71,33 +71,39 @@ void ImGuiRenderer::End()
   device->BindBuffer(ubo);
 
   // Calculate our clip rect offset and scale
-  glm::vec2 clipOff = { drawData->DisplayPos.x, drawData->DisplayPos.y };
-  glm::vec2 clipScale = { drawData->FramebufferScale.x, drawData->FramebufferScale.y };
+  glm::vec2 clipOff = {drawData->DisplayPos.x, drawData->DisplayPos.y};
+  glm::vec2 clipScale = {drawData->FramebufferScale.x, drawData->FramebufferScale.y};
+
+  // Reset our VBO and IBO Offsets
+  vboOffset = 0;
+  iboOffset = 0;
 
   for (std::size_t i = 0; i < drawData->CmdListsCount; i++)
   {
     const ImDrawList* cmdList = drawData->CmdLists[i];
 
     // Ensure our buffers are big enough for the draw data
-    if (cmdList->VtxBuffer.Size > maxVertices)
+    while (vboOffset + cmdList->VtxBuffer.Size > maxVertices)
     {
       maxVertices *= 2;
       device->ResizeBuffer(vbo, maxVertices * sizeof(ImDrawVert));
     }
 
-    if (cmdList->IdxBuffer.Size > maxIndices)
+    while (iboOffset + cmdList->IdxBuffer.Size > maxIndices)
     {
       maxIndices *= 2;
       device->ResizeBuffer(ibo, maxIndices * sizeof(ImDrawIdx));
     }
 
-    // Copy the draw data into our buffers
-    device->SetBufferData(vbo, cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
-    device->SetBufferData(ibo, cmdList->IdxBuffer.Data, cmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
+    // Copy the draw data into our buffers at the offsets.
+    device->SetBufferData(vbo, cmdList->VtxBuffer.Data,
+                          cmdList->VtxBuffer.Size * sizeof(ImDrawVert), vboOffset);
+    device->SetBufferData(ibo, cmdList->IdxBuffer.Data, cmdList->IdxBuffer.Size * sizeof(ImDrawIdx),
+                          iboOffset);
 
     // Prepare a draw command that we can reuse
     DrawCommand drawCmd;
-    drawCmd.VertexBuffers = { vbo };
+    drawCmd.VertexBuffers = {vbo};
     drawCmd.IndexBuffer = ibo;
     drawCmd.IndexType = sizeof(ImDrawIdx) == 2 ? IndexType::U16 : IndexType::U32;
     drawCmd.RenderPipeline = pipeline;
@@ -109,35 +115,54 @@ void ImGuiRenderer::End()
       const ImDrawCmd* command = &cmdList->CmdBuffer[j];
 
       // Calculate our scissor rect
-      ImVec2 clipMin((command->ClipRect.x - clipOff.x) * clipScale.x, (command->ClipRect.y - clipOff.y) * clipScale.y);
-      ImVec2 clipMax((command->ClipRect.z - clipOff.x) * clipScale.x, (command->ClipRect.w - clipOff.y) * clipScale.y);
+      ImVec2 clipMin((command->ClipRect.x - clipOff.x) * clipScale.x,
+                     (command->ClipRect.y - clipOff.y) * clipScale.y);
+      ImVec2 clipMax((command->ClipRect.z - clipOff.x) * clipScale.x,
+                     (command->ClipRect.w - clipOff.y) * clipScale.y);
 
       // Clamp to viewport as setScissorRect() won't accept values that are off bounds
-      if (clipMin.x < 0.0f) { clipMin.x = 0.0f; }
-      if (clipMin.y < 0.0f) { clipMin.y = 0.0f; }
-      if (clipMax.x > fbWidth) { clipMax.x = (float)fbWidth; }
-      if (clipMax.y > fbHeight) { clipMax.y = (float)fbHeight; }
-      if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y) continue;
-      if (command->ElemCount == 0) continue;
+      if (clipMin.x < 0.0f)
+        clipMin.x = 0.0f;
+      if (clipMin.y < 0.0f)
+        clipMin.y = 0.0f;
+      if (clipMax.x > fbWidth)
+        clipMax.x = (float)fbWidth;
+      if (clipMax.y > fbHeight)
+        clipMax.y = (float)fbHeight;
+      if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y)
+        continue;
+      if (command->ElemCount == 0)
+        continue;
 
-     	device->SetScissorRect(clipMin.x, clipMin.y, (clipMax.x - clipMin.x), (clipMax.y - clipMin.y));
+      device->SetScissorRect(clipMin.x, clipMin.y, (clipMax.x - clipMin.x),
+                             (clipMax.y - clipMin.y));
 
       if (command->UserCallback)
       {
         command->UserCallback(cmdList, command);
-      } 
+      }
       else
       {
-      	if (command->TextureId == 0)
-        	device->BindTexture2D(fontTexture, 0);
+        if (command->TextureId == 0)
+          device->BindTexture2D(fontTexture, 0);
         else
-        	device->BindTexture2D(static_cast<ID>((intptr_t)command->TextureId));
+          device->BindTexture2D(static_cast<ID>((intptr_t)command->TextureId));
 
-        drawCmd.IndexOffset = command->IdxOffset * sizeof(ImDrawIdx);
+        // Handle our offset into vbo and ibos.
+        if (drawCmd.VertexOffsets.empty())
+          drawCmd.VertexOffsets.push_back(0);
+
+        drawCmd.VertexOffsets[0] = vboOffset;
+        drawCmd.IndexOffset = command->IdxOffset * sizeof(ImDrawIdx) + iboOffset;
+
         drawCmd.NumVertices = command->ElemCount;
         device->Submit(drawCmd);
       }
     }
+
+    // Add this call to the offset, so the data isn't overwritten until draw call finishes.
+    vboOffset += cmdList->VtxBuffer.Size * sizeof(ImDrawVert);
+    iboOffset += cmdList->IdxBuffer.Size * sizeof(ImDrawIdx);
   }
 
   // Disable the scissor rect when we are done rendering
@@ -147,7 +172,7 @@ void ImGuiRenderer::End()
 void ImGuiRenderer::Resize(float w, float h)
 {
   ImGuiIO& io = ImGui::GetIO();
-  io.DisplaySize = { w, h };
+  io.DisplaySize = {w, h};
 
   width = w * pixelDensity;
   height = h * pixelDensity;
@@ -180,7 +205,7 @@ void ImGuiRenderer::GenerateBuffers()
   ubo = device->CreateBuffer(uboDesc);
 }
 
-static const char *vertexShader = R"(
+static const char* vertexShader = R"(
 #version 450 core
 
 layout (location = 0) in vec2 a_Position;
@@ -202,7 +227,7 @@ void main()
   gl_Position = u_ViewProjection * vec4(a_Position, 0.0, 1.0);
 })";
 
-static const char *pixelShader = R"(
+static const char* pixelShader = R"(
 #version 450 core
 
 in vec4 v_FragColor;
@@ -222,17 +247,18 @@ void ImGuiRenderer::GeneratePipeline()
   RenderPipelineDesc pipelineDesc;
 
   // set the layout
-  BufferLayout imVertLayout = { // ImDrawVert layout
-    { ShaderDataType::Float2, "a_Position" },
-    { ShaderDataType::Float2, "a_UV" },
-    { ShaderDataType::UByte4, "a_Color", true }
+  BufferLayout imVertLayout = {
+      // ImDrawVert layout
+      {ShaderDataType::Float2, "a_Position"},
+      {ShaderDataType::Float2, "a_UV"},
+      {ShaderDataType::UByte4, "a_Color", true}
   };
-  pipelineDesc.Layouts = { imVertLayout };
-  
+  pipelineDesc.Layouts = {imVertLayout};
+
   // create and set the shader
   ShaderCompiler compiler;
-  ShaderSource vertexSource = { ShaderStage::Vertex, "imguiVertex", vertexShader };
-  ShaderSource pixelSource = { ShaderStage::Pixel, "imguiPixel", pixelShader };
+  ShaderSource vertexSource = {ShaderStage::Vertex, "imguiVertex", vertexShader};
+  ShaderSource pixelSource = {ShaderStage::Pixel, "imguiPixel", pixelShader};
   pipelineDesc.VertexShader = compiler.CompileSource(vertexSource);
   pipelineDesc.PixelShader = compiler.CompileSource(pixelSource);
 
@@ -279,4 +305,4 @@ void ImGuiRenderer::DestroyTexture()
   device->DestroyTexture2D(fontTexture);
 }
 
-}
+} // namespace Vision

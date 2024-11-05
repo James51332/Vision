@@ -266,18 +266,31 @@ void MetalDevice::Submit(const DrawCommand& command)
   auto& shaderStageBindings = ps->GetStageBufferBindings();
 
   SDL_assert(numBuffers <= shaderStageBindings.size());
+  SDL_assert(command.VertexOffsets.empty() || command.VertexOffsets.size() == numBuffers);
+
   for (std::size_t i = 0; i < numBuffers; i++)
   {
     MetalBuffer* buffer = buffers.Get(command.VertexBuffers.at(i));
     std::size_t slot = shaderStageBindings.at(i);
-    encoder->setVertexBuffer(buffer->buffer, 0, slot);
+
+    if (command.VertexOffsets.empty())
+      encoder->setVertexBuffer(buffer->buffer, 0, slot);
+    else
+      encoder->setVertexBuffer(buffer->buffer, command.VertexOffsets[i], slot);
   }
 
   // submit the draw call.
-  MetalBuffer* indexBuffer = buffers.Get(command.IndexBuffer);
-  MTL::IndexType indexType = IndexTypeToMTLIndexType(command.IndexType);
-  encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, command.NumVertices, indexType,
-                                 indexBuffer->buffer, command.IndexOffset);
+  if (command.IndexBuffer)
+  {
+    MetalBuffer* indexBuffer = buffers.Get(command.IndexBuffer);
+    MTL::IndexType indexType = IndexTypeToMTLIndexType(command.IndexType);
+    encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, command.NumVertices, indexType,
+                                   indexBuffer->buffer, command.IndexOffset);
+  }
+  else
+  {
+    encoder->drawPrimitives(MTL::PrimitiveTypeTriangle, NS::UInteger(0), command.NumVertices);
+  }
 }
 
 // compute API
