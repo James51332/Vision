@@ -78,6 +78,23 @@ void ImGuiRenderer::End()
   vboOffset = 0;
   iboOffset = 0;
 
+  // Ensure that our VBO and IBO are large enough.
+  if (maxVertices < drawData->TotalVtxCount)
+  {
+    while (maxVertices < drawData->TotalVtxCount)
+      maxVertices *= 2;
+
+    device->ResizeBuffer(vbo, maxVertices * sizeof(ImDrawVert));
+  }
+
+  if (maxIndices < drawData->TotalIdxCount)
+  {
+    while (maxVertices < drawData->TotalIdxCount)
+      maxIndices *= 2;
+
+    device->ResizeBuffer(vbo, maxIndices * sizeof(ImDrawIdx));
+  }
+
   for (std::size_t i = 0; i < drawData->CmdListsCount; i++)
   {
     const ImDrawList* cmdList = drawData->CmdLists[i];
