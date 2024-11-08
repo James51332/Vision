@@ -1,6 +1,7 @@
 #include "MetalDevice.h"
 
 #include <SDL.h>
+#include <dispatch/dispatch.h>
 #include <iostream>
 #include <spirv_msl.hpp>
 
@@ -10,6 +11,21 @@
 
 namespace Vision
 {
+
+// Dispatch Semaphore
+
+struct DispatchSemaphore
+{
+  DispatchSemaphore(int value) { semaphore = dispatch_semaphore_create(value); }
+
+  void Signal() { dispatch_semaphore_signal(semaphore); }
+  void Wait() { dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER); }
+
+private:
+  dispatch_semaphore_t semaphore;
+};
+
+// Metal Device
 
 MetalDevice::MetalDevice(MTL::Device* device, CA::MetalLayer* l, float w, float h)
     : gpuDevice(device->retain()), layer(l->retain()), width(w), height(h)
@@ -21,6 +37,8 @@ MetalDevice::MetalDevice(MTL::Device* device, CA::MetalLayer* l, float w, float 
   depthTexture = new MetalTexture(gpuDevice, width, height, PixelType::Depth32Float,
                                   MinMagFilter::Linear, MinMagFilter::Linear,
                                   EdgeAddressMode::ClampToEdge, EdgeAddressMode::ClampToEdge);
+
+  dispatchSemaphore = std::make_shared<DispatchSemaphore>(maxFramesInFlight);
 }
 
 MetalDevice::~MetalDevice()
@@ -44,15 +62,24 @@ ID MetalDevice::CreateRenderPipeline(const RenderPipelineDesc& desc)
 ID MetalDevice::CreateBuffer(const BufferDesc& desc)
 {
   ID id = currentID++;
-  MetalBuffer* buffer = new MetalBuffer(gpuDevice, desc);
+  MetalBuffer* buffer = new MetalBuffer(this, desc);
   buffers.Add(id, buffer);
   return id;
+}
+
+void MetalDevice::SetBufferData(ID buffer, void* data, std::size_t size, std::size_t offset)
+{
+  // This doesn't do anything if we are already in flight. Otherwise, it waits until the next buffer
+  // to safely write to is done on the GPU.
+  BeginFrameInFlight();
+
+  buffers.Get(buffer)->SetData(this, size, data, offset);
 }
 
 void MetalDevice::MapBufferData(ID id, void** data, std::size_t size)
 {
   MetalBuffer* buffer = buffers.Get(id);
-  (*data) = buffer->buffer->contents();
+  (*data) = buffer->GetActiveBuffer()->contents();
 }
 
 void MetalDevice::FreeBufferData(ID id, void** data)
@@ -64,12 +91,12 @@ void MetalDevice::BindBuffer(ID buffer, std::size_t block, std::size_t offset, s
 {
   if (encoder)
   {
-    encoder->setVertexBuffer(buffers.Get(buffer)->buffer, offset, block);
-    encoder->setFragmentBuffer(buffers.Get(buffer)->buffer, offset, block);
+    encoder->setVertexBuffer(buffers.Get(buffer)->GetActiveBuffer(), offset, block);
+    encoder->setFragmentBuffer(buffers.Get(buffer)->GetActiveBuffer(), offset, block);
   }
   else if (computeEncoder)
   {
-    computeEncoder->setBuffer(buffers.Get(buffer)->buffer, offset, block);
+    computeEncoder->setBuffer(buffers.Get(buffer)->GetActiveBuffer(), offset, block);
   }
 }
 
@@ -166,6 +193,10 @@ void MetalDevice::BeginRenderPass(ID pass)
       {
         drawable = layer->nextDrawable()->retain();
         drawablePresented = false;
+
+        // Also track our in flight frame.
+        inFlightFrame = (inFlightFrame + 1) % maxFramesInFlight;
+        inFlight = false;
       }
 
       rpDesc->colorAttachments()->object(0)->setTexture(drawable->texture());
@@ -203,6 +234,7 @@ void MetalDevice::BeginCommandBuffer()
 {
   SDL_assert(!cmdBuffer);
 
+  BeginFrameInFlight();
   cmdBuffer = queue->commandBuffer();
 }
 
@@ -211,6 +243,12 @@ void MetalDevice::SubmitCommandBuffer(bool await)
   SDL_assert(cmdBuffer);
   NS::AutoreleasePool* pool = NS::AutoreleasePool::alloc()->init();
   {
+    // If we are presenting our drawable, we are going to schedule the end to the frame
+    // in flight.
+    if (drawablePresented)
+      cmdBuffer->addCompletedHandler([&](MTL::CommandBuffer* buffer)
+                                     { dispatchSemaphore->Signal(); });
+
     cmdBuffer->commit();
     if (await)
       cmdBuffer->waitUntilCompleted();
@@ -220,6 +258,9 @@ void MetalDevice::SubmitCommandBuffer(bool await)
     {
       drawable->release();
       drawable = nullptr; // free the drawable only if presented.
+
+      // We are no longer working on this render pass, so we end our in flight frame.
+      inFlightFrame = false;
     }
   }
   pool->release();
@@ -274,9 +315,9 @@ void MetalDevice::Submit(const DrawCommand& command)
     std::size_t slot = shaderStageBindings.at(i);
 
     if (command.VertexOffsets.empty())
-      encoder->setVertexBuffer(buffer->buffer, 0, slot);
+      encoder->setVertexBuffer(buffer->GetActiveBuffer(), 0, slot);
     else
-      encoder->setVertexBuffer(buffer->buffer, command.VertexOffsets[i], slot);
+      encoder->setVertexBuffer(buffer->GetActiveBuffer(), command.VertexOffsets[i], slot);
   }
 
   // submit the draw call.
@@ -285,7 +326,7 @@ void MetalDevice::Submit(const DrawCommand& command)
     MetalBuffer* indexBuffer = buffers.Get(command.IndexBuffer);
     MTL::IndexType indexType = IndexTypeToMTLIndexType(command.IndexType);
     encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, command.NumVertices, indexType,
-                                   indexBuffer->buffer, command.IndexOffset);
+                                   indexBuffer->GetActiveBuffer(), command.IndexOffset);
   }
   else
   {
@@ -293,7 +334,8 @@ void MetalDevice::Submit(const DrawCommand& command)
   }
 }
 
-// compute API
+// Compute API
+
 ID MetalDevice::CreateComputePipeline(const ComputePipelineDesc& desc)
 {
   ID id = currentID++;
@@ -356,6 +398,18 @@ void MetalDevice::UpdateSize(float w, float h)
   width = w;
   height = h;
   depthTexture->Resize(gpuDevice, width, height);
+}
+
+void MetalDevice::BeginFrameInFlight()
+{
+  if (inFlight)
+    return;
+
+  // It may seem like a problem to wait on this semaphore, but if we are waiting on this semaphore,
+  // our program seriously is GPU bound, so the performance impact should be negligible.
+  dispatchSemaphore->Wait();
+  inFlightFrame = (inFlightFrame + 1) % maxFramesInFlight;
+  inFlight = true;
 }
 
 } // namespace Vision

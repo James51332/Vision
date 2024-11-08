@@ -74,26 +74,13 @@ void ImGuiRenderer::End()
   glm::vec2 clipOff = {drawData->DisplayPos.x, drawData->DisplayPos.y};
   glm::vec2 clipScale = {drawData->FramebufferScale.x, drawData->FramebufferScale.y};
 
-  // Reset our VBO and IBO Offsets
+  // Reset our VBO and IBO offsets.
   vboOffset = 0;
   iboOffset = 0;
 
   for (std::size_t i = 0; i < drawData->CmdListsCount; i++)
   {
     const ImDrawList* cmdList = drawData->CmdLists[i];
-
-    // Ensure our buffers are big enough for the draw data
-    while (vboOffset + cmdList->VtxBuffer.Size > maxVertices)
-    {
-      maxVertices *= 2;
-      device->ResizeBuffer(vbo, maxVertices * sizeof(ImDrawVert));
-    }
-
-    while (iboOffset + cmdList->IdxBuffer.Size > maxIndices)
-    {
-      maxIndices *= 2;
-      device->ResizeBuffer(ibo, maxIndices * sizeof(ImDrawIdx));
-    }
 
     // Copy the draw data into our buffers at the offsets.
     device->SetBufferData(vbo, cmdList->VtxBuffer.Data,

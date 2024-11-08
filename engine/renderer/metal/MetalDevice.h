@@ -7,13 +7,16 @@
 #include "renderer/primitive/ObjectCache.h"
 
 #include "MetalBuffer.h"
-#include "MetalPipeline.h"
-#include "MetalTexture.h"
-#include "MetalRenderPass.h"
 #include "MetalFramebuffer.h"
+#include "MetalPipeline.h"
+#include "MetalRenderPass.h"
+#include "MetalTexture.h"
 
 namespace Vision
 {
+
+// Forward-declared and defined in source file. Contains a macOS semaphore for frames-in-flight.
+struct DispatchSemaphore;
 
 class MetalDevice : public RenderDevice
 {
@@ -24,18 +27,22 @@ public:
   ID CreateRenderPipeline(const RenderPipelineDesc& desc);
   void DestroyPipeline(ID id) { pipelines.Destroy(id); }
 
-  ID CreateBuffer(const BufferDesc &desc);
-  void SetBufferData(ID buffer, void *data, std::size_t size, std::size_t offset) { buffers.Get(buffer)->SetData(size, data, offset); }
+  ID CreateBuffer(const BufferDesc& desc);
+  void SetBufferData(ID buffer, void* data, std::size_t size, std::size_t offset);
   void MapBufferData(ID buffer, void** data, std::size_t size);
-  void FreeBufferData(ID id, void **data);
-  void ResizeBuffer(ID buffer, std::size_t size) { buffers.Get(buffer)->Reset(gpuDevice, size); }
-  void BindBuffer(ID buffer, std::size_t binding = 0, std::size_t offset = 0, std::size_t range = 0);  
+  void FreeBufferData(ID id, void** data);
+  void ResizeBuffer(ID buffer, std::size_t size) { buffers.Get(buffer)->Reset(this, size); }
+  void BindBuffer(ID buffer, std::size_t binding = 0, std::size_t offset = 0,
+                  std::size_t range = 0);
   void DestroyBuffer(ID id) { buffers.Destroy(id); }
 
   ID CreateTexture2D(const Texture2DDesc& desc);
-  void ResizeTexture2D(ID id, float width, float height) { textures.Get(id)->Resize(gpuDevice, width, height); }
+  void ResizeTexture2D(ID id, float width, float height)
+  {
+    textures.Get(id)->Resize(gpuDevice, width, height);
+  }
   void SetTexture2DData(ID id, uint8_t* data) { textures.Get(id)->SetData(data); }
-  void SetTexture2DDataRaw(ID id, void *data) { textures.Get(id)->SetDataRaw(data); }
+  void SetTexture2DDataRaw(ID id, void* data) { textures.Get(id)->SetDataRaw(data); }
   void BindTexture2D(ID id, std::size_t binding = 0);
   void DestroyTexture2D(ID id) { textures.Destroy(id); }
 
@@ -76,11 +83,19 @@ public:
   void BeginComputePass();
   void EndComputePass();
 
-  void BindImage2D(ID texture, std::size_t binding = 0, ImageAccess access = ImageAccess::ReadWrite);
+  void BindImage2D(ID texture, std::size_t binding = 0,
+                   ImageAccess access = ImageAccess::ReadWrite);
 
-  void DispatchCompute(ID pipeline, const std::string& kernel, const glm::ivec3 &threadgroups);
+  void DispatchCompute(ID pipeline, const std::string& kernel, const glm::ivec3& threadgroups);
 
   RenderAPI GetRenderAPI() const { return RenderAPI::Metal; }
+
+  void BeginFrameInFlight();
+  std::size_t GetInFlightFrame() const { return inFlightFrame; }
+  std::size_t GetMaxFramesInFlight() const { return maxFramesInFlight; }
+  bool IsInFlight() const { return inFlight; }
+
+  MTL::Device* GetDevice() { return gpuDevice; }
 
 private:
   // metal requires a little bit of set up in order to adjust to resizes.
@@ -97,7 +112,7 @@ private:
   CA::MetalLayer* layer;
   CA::MetalDrawable* drawable = nullptr;
   bool drawablePresented = false;
-  
+
   // depth texture (for now depth format is always depth32)
   MetalTexture* depthTexture;
   glm::vec2 depthSize;
@@ -117,6 +132,11 @@ private:
   MTL::CommandBuffer* cmdBuffer = nullptr;
   MTL::RenderCommandEncoder* encoder = nullptr;
   MTL::ComputeCommandEncoder* computeEncoder = nullptr;
+
+  // frames-in-flight
+  std::size_t maxFramesInFlight = 3, inFlightFrame = 0;
+  bool inFlight = false;
+  std::shared_ptr<DispatchSemaphore> dispatchSemaphore;
 };
 
-}
+} // namespace Vision
