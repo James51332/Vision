@@ -92,7 +92,7 @@ void ImGuiRenderer::End()
     while (maxVertices < drawData->TotalIdxCount)
       maxIndices *= 2;
 
-    device->ResizeBuffer(vbo, maxIndices * sizeof(ImDrawIdx));
+    device->ResizeBuffer(ibo, maxIndices * sizeof(ImDrawIdx));
   }
 
   for (std::size_t i = 0; i < drawData->CmdListsCount; i++)

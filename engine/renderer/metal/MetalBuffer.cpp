@@ -35,7 +35,7 @@ MetalBuffer::MetalBuffer(MetalDevice* device, const BufferDesc& desc)
     std::string name = desc.DebugName;
     if (buffers.size() > 1)
       name = name + " (" + std::to_string(i) + ")";
-    buffer->setLabel(NS::String::alloc()->init(desc.DebugName.c_str(), NS::UTF8StringEncoding));
+    buffer->setLabel(NS::String::alloc()->init(name.c_str(), NS::UTF8StringEncoding));
 
     // Add our buffer to the array.
     buffers[i] = buffer;
@@ -56,7 +56,7 @@ void MetalBuffer::SetData(MetalDevice* device, std::size_t s, void* data, std::s
   if (isDynamicBuffer)
     bufferIndex = device->GetInFlightFrame();
 
-  char* bufferAddr = static_cast<char*>(buffers[device->GetInFlightFrame()]->contents());
+  char* bufferAddr = static_cast<char*>(buffers[bufferIndex]->contents());
   std::memcpy(bufferAddr + offset, data, s);
 }
 

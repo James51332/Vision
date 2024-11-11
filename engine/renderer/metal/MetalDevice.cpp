@@ -195,8 +195,7 @@ void MetalDevice::BeginRenderPass(ID pass)
         drawablePresented = false;
 
         // Also track our in flight frame.
-        inFlightFrame = (inFlightFrame + 1) % maxFramesInFlight;
-        inFlight = false;
+        BeginFrameInFlight();
       }
 
       rpDesc->colorAttachments()->object(0)->setTexture(drawable->texture());
@@ -234,7 +233,6 @@ void MetalDevice::BeginCommandBuffer()
 {
   SDL_assert(!cmdBuffer);
 
-  BeginFrameInFlight();
   cmdBuffer = queue->commandBuffer();
 }
 
@@ -260,7 +258,7 @@ void MetalDevice::SubmitCommandBuffer(bool await)
       drawable = nullptr; // free the drawable only if presented.
 
       // We are no longer working on this render pass, so we end our in flight frame.
-      inFlightFrame = false;
+      inFlight = false;
     }
   }
   pool->release();
