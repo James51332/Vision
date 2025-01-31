@@ -1,11 +1,11 @@
 #include "ShaderCompiler.h"
 
+#include <SDL.h>
 #include <iostream>
 #include <sstream>
-#include <SDL.h>
 
-#include <glslang/Public/ShaderLang.h>
 #include <glslang/Public/ResourceLimits.h>
+#include <glslang/Public/ShaderLang.h>
 
 #include <SPIRV/GlslangToSpv.h>
 #include <spirv_glsl.hpp>
@@ -24,8 +24,7 @@ static EShLanguage ShaderStageToEShLanguage(ShaderStage stage)
     case ShaderStage::Domain: return EShLangTessEvaluation;
     case ShaderStage::Geometry: return EShLangGeometry;
     case ShaderStage::Compute: return EShLangCompute;
-    default: 
-      break;
+    default: break;
   }
 
   return EShLangVertex;
@@ -55,7 +54,8 @@ ShaderSPIRV ShaderCompiler::CompileSource(const ShaderSource& shaderSource)
   }
 
   // Parse the shader
-  if (!shader.parse(GetDefaultResources(), 100, false, static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgSpvRules)))
+  if (!shader.parse(GetDefaultResources(), 100, false,
+                    static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgSpvRules)))
   {
     std::cout << "Failed to compile shader:" << shaderSource.Name << std::endl;
     std::cout << shader.getInfoLog() << std::endl;
@@ -72,7 +72,8 @@ ShaderSPIRV ShaderCompiler::CompileSource(const ShaderSource& shaderSource)
   glslang::TProgram program;
   program.addShader(&shader);
 
-  if (!program.link(static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgSpvRules)) || !program.mapIO())
+  if (!program.link(static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgSpvRules)) ||
+      !program.mapIO())
   {
     std::cout << "Failed to link program:" << std::endl;
     std::cout << program.getInfoLog() << std::endl;
@@ -83,7 +84,7 @@ ShaderSPIRV ShaderCompiler::CompileSource(const ShaderSource& shaderSource)
   glslang::GlslangToSpv(*program.getIntermediate(language), spirv, &logger, &options);
   glslang::FinalizeProcess();
 
-  return { shaderSource.Stage, shaderSource.Name, std::move(spirv) };
+  return {shaderSource.Stage, shaderSource.Name, std::move(spirv)};
 }
 
 std::vector<ShaderSPIRV> ShaderCompiler::CompileFile(const std::string& filePath)
@@ -93,13 +94,33 @@ std::vector<ShaderSPIRV> ShaderCompiler::CompileFile(const std::string& filePath
   return shaderSPIRVs;
 }
 
-void ShaderCompiler::CompileFile(const std::string &filePath, std::vector<ShaderSPIRV>& destination)
+void ShaderCompiler::CompileFile(const std::string& filePath, std::vector<ShaderSPIRV>& destination)
 {
   ShaderParser parser;
   std::vector<ShaderSource> shaderSources = parser.ParseFile(filePath);
 
-  for (auto &source : shaderSources)
+  for (auto& source : shaderSources)
     destination.push_back(CompileSource(source));
 }
 
+std::unordered_map<std::string, ShaderSPIRV>
+ShaderCompiler::CompileFileToMap(const std::string& filePath)
+{
+  // Compile file as normal, then unpack into a map
+  std::vector<ShaderSPIRV> shaderSPIRVs = ShaderCompiler::CompileFile(filePath);
+  std::unordered_map<std::string, ShaderSPIRV> map;
+
+  // Then iterate
+  for (ShaderSPIRV& spirv : shaderSPIRVs)
+  {
+    if (map.find(spirv.Name) == map.end())
+      map[spirv.Name] = spirv;
+    else
+      std::cout << "Warning: File (" << filePath
+                << ") contains multiple shaders with name: " << spirv.Name << std::endl;
+  }
+
+  return map;
 }
+
+} // namespace Vision
