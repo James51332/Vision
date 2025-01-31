@@ -244,7 +244,7 @@ glm::vec3 PerspectiveCamera::GetMouseDirectionInWorldSpace() const
   glm::vec4 mouseCoord4 = m_ViewProjectionInverse * glm::vec4(mouseCoordinates, 0.0f, 1.0f);
   
   // Step 3: Normalize Direction
-  glm::vec3 mouseDir = glm::vec3(mouseCoord4.x, mouseCoord4.y, mouseCoord4.z) / mouseCoord4.z;
+  glm::vec3 mouseDir = glm::vec3(mouseCoord4.x, mouseCoord4.y, mouseCoord4.z) / mouseCoord4.w;
   return mouseDir;
 }
 
