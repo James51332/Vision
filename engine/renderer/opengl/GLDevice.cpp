@@ -199,9 +199,21 @@ void GLDevice::Submit(const DrawCommand& command)
     GLBuffer* indexBuffer = buffers.Get(command.IndexBuffer);
     indexBuffer->Bind();
 
-    // TODO: Vtx Offsets
-    glDrawElements(primitive, command.NumVertices, indexType,
-                   reinterpret_cast<void*>(command.IndexOffset));
+    // Unfortunately, vertex offsets aren't sophisticated in OpenGL. We only set a constant to add
+    // to all indices rather than an offset in bytes for each vertex buffer. For most purposes this
+    // is sufficient. This means we'll only acknowledge the first vertex offset, and use it for all.
+    if (!command.VertexOffsets.empty())
+    {
+      std::size_t offsetBytes = static_cast<GLint>(command.VertexOffsets[0]);
+      std::size_t bytesPerVertex = buffers.Get(command.VertexBuffers[0])->GetLayout().Stride;
+
+      glDrawElementsBaseVertex(primitive, command.NumVertices, indexType,
+                               reinterpret_cast<void*>(command.IndexOffset),
+                               static_cast<GLint>(offsetBytes / bytesPerVertex));
+    }
+    else
+      glDrawElements(primitive, command.NumVertices, indexType,
+                     reinterpret_cast<void*>(command.IndexOffset));
   }
   else
   {
