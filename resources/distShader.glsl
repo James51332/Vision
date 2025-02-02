@@ -1,10 +1,10 @@
 #type vertex
 #version 450 core
 
-layout (location = 0) in vec3 a_Position;
-layout (location = 1) in vec3 a_Normal;
-layout (location = 2) in vec4 a_Color;
-layout (location = 3) in vec2 a_UV;
+layout(location = 0) in vec3 a_Position;
+layout(location = 1) in vec3 a_Normal;
+layout(location = 2) in vec4 a_Color;
+layout(location = 3) in vec2 a_UV;
 
 out vec2 v_UV;
 
@@ -23,13 +23,14 @@ layout(vertices = 4) out;
 
 out vec2 UV[];
 
-layout (binding = 0) uniform sampler2D heightMap;
+layout(binding = 0) uniform sampler2D heightMap;
 
-layout (push_constant) uniform pushConstants
+layout(push_constant) uniform pushConstants
 {
   mat4 u_View;
   mat4 u_Projection;
   mat4 u_ViewProjection;
+  mat4 u_ViewInverse;
   vec2 u_ViewportSize;
   float u_Time;
 };
@@ -48,27 +49,27 @@ float distanceTess(vec4 p0, vec4 p1, vec2 t0, vec2 t1)
 
   // transform points to eye space
   vec4 sc0 = u_View * center;
-	vec4 sc1 = sc0;
-	sc0.x -= radius;
-	sc1.x += radius;
-  
-	// project to clip space
-	vec4 clip0 = u_Projection * sc0;
-	vec4 clip1 = u_Projection * sc1;
+  vec4 sc1 = sc0;
+  sc0.x -= radius;
+  sc1.x += radius;
+
+  // project to clip space
+  vec4 clip0 = u_Projection * sc0;
+  vec4 clip1 = u_Projection * sc1;
 
   // normalize
-	clip0 /= clip0.w;
-	clip1 /= clip1.w;
+  clip0 /= clip0.w;
+  clip1 /= clip1.w;
 
   // convert to pixel space
-	clip0.xy *= u_ViewportSize;
-	clip1.xy *= u_ViewportSize;
+  clip0.xy *= u_ViewportSize;
+  clip1.xy *= u_ViewportSize;
 
   // find distance
-	float d = distance(clip0, clip1);
+  float d = distance(clip0, clip1);
 
-	// g_tessellatedTriWidth is desired pixels per tri edge
-	return clamp(d / g_TriangleTargetWidth, 0,64);
+  // g_tessellatedTriWidth is desired pixels per tri edge
+  return clamp(d / g_TriangleTargetWidth, 0, 64);
 }
 
 void main()
@@ -80,10 +81,14 @@ void main()
   // only run the tesselation computation for one vertex in the patch
   if (gl_InvocationID == 0)
   {
-    gl_TessLevelOuter[1] = distanceTess(gl_in[0].gl_Position, gl_in[1].gl_Position, v_UV[0], v_UV[1]);
-    gl_TessLevelOuter[2] = distanceTess(gl_in[1].gl_Position, gl_in[2].gl_Position, v_UV[1], v_UV[2]);
-    gl_TessLevelOuter[3] = distanceTess(gl_in[2].gl_Position, gl_in[3].gl_Position, v_UV[2], v_UV[3]);
-    gl_TessLevelOuter[0] = distanceTess(gl_in[3].gl_Position, gl_in[0].gl_Position, v_UV[3], v_UV[0]);
+    gl_TessLevelOuter[1] =
+        distanceTess(gl_in[0].gl_Position, gl_in[1].gl_Position, v_UV[0], v_UV[1]);
+    gl_TessLevelOuter[2] =
+        distanceTess(gl_in[1].gl_Position, gl_in[2].gl_Position, v_UV[1], v_UV[2]);
+    gl_TessLevelOuter[3] =
+        distanceTess(gl_in[2].gl_Position, gl_in[3].gl_Position, v_UV[2], v_UV[3]);
+    gl_TessLevelOuter[0] =
+        distanceTess(gl_in[3].gl_Position, gl_in[0].gl_Position, v_UV[3], v_UV[0]);
 
     // take average of opposite edges to get inside
     gl_TessLevelInner[0] = (gl_TessLevelOuter[1] + gl_TessLevelOuter[3]) * 0.5;
@@ -98,16 +103,17 @@ layout(quads, fractional_odd_spacing, ccw) in;
 
 in vec2 UV[];
 
-layout (push_constant) uniform pushConstants
+layout(push_constant) uniform pushConstants
 {
   mat4 u_View;
   mat4 u_Projection;
   mat4 u_ViewProjection;
+  mat4 u_ViewInverse;
   vec2 u_ViewportSize;
   float u_Time;
 };
 
-layout (binding = 0) uniform sampler2D heightMap;
+layout(binding = 0) uniform sampler2D heightMap;
 
 out float height;
 

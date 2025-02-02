@@ -1,16 +1,17 @@
 #type vertex
 #version 410 core
 
-layout (location = 0) in vec3 a_Position;
-layout (location = 1) in vec3 a_Normal;
-layout (location = 2) in vec4 a_Color;
-layout (location = 3) in vec2 a_UV;
+layout(location = 0) in vec3 a_Position;
+layout(location = 1) in vec3 a_Normal;
+layout(location = 2) in vec4 a_Color;
+layout(location = 3) in vec2 a_UV;
 
-layout (push_constant) uniform pushConstants
+layout(push_constant) uniform pushConstants
 {
   mat4 u_View;
   mat4 u_Projection;
   mat4 u_ViewProjection;
+  mat4 u_ViewInverse;
   vec2 u_ViewportSize;
   float u_Time;
 };
@@ -22,7 +23,7 @@ out mat4 v_ViewProjection;
 vec3 unprojectPoint(vec2 xy, float z, mat4 viewProj)
 {
   vec4 worldPos = inverse(viewProj) * vec4(xy, z, 1); // unproject the point
-  return worldPos.xyz / worldPos.w; // return the normalized vector
+  return worldPos.xyz / worldPos.w;                   // return the normalized vector
 }
 
 void main()
@@ -60,7 +61,7 @@ vec4 grid(vec3 worldPos)
 void main()
 {
   // Step 3: Math
-  float t = -v_NearPos.y / (v_FarPos.y - v_NearPos.y); // solve using parametric eq. w/ y = 0
+  float t = -v_NearPos.y / (v_FarPos.y - v_NearPos.y);    // solve using parametric eq. w/ y = 0
   vec3 worldPos = v_NearPos + t * (v_FarPos - v_NearPos); // cast ray to find world space plane
 
   // Step 4: Grid

@@ -1,16 +1,17 @@
 #type vertex
 #version 410 core
 
-layout (location = 0) in vec3 a_Position;
-layout (location = 1) in vec3 a_Normal;
-layout (location = 2) in vec4 a_Color;
-layout (location = 3) in vec2 a_UV;
+layout(location = 0) in vec3 a_Position;
+layout(location = 1) in vec3 a_Normal;
+layout(location = 2) in vec4 a_Color;
+layout(location = 3) in vec2 a_UV;
 
-layout (push_constant) uniform pushConstants
+layout(push_constant) uniform pushConstants
 {
   mat4 u_View;
   mat4 u_Projection;
   mat4 u_ViewProjection;
+  mat4 u_ViewInverse;
   vec2 u_ViewportSize;
   float u_Time;
 };
@@ -24,7 +25,7 @@ void main()
 {
   gl_Position = u_ViewProjection * vec4(v_WorldPos, 1.0);
   gl_Position.w = 0.5f;
-  
+
   v_UV = a_UV;
   v_Normal = a_Normal;
   v_CameraPos = -vec3(u_View[3]);
@@ -52,7 +53,7 @@ void main()
   float specular = pow(max(dot(reflect(camDir, v_Normal), -lightDir), 0), 32) * 0.2;
 
   vec3 color = vec3(1.0);
-  //color += 0.5f * v_Normal + 0.5f;
+  // color += 0.5f * v_Normal + 0.5f;
   float light = specular + diffuse + ambient;
   FragColor = vec4(1.0);
 }

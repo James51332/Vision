@@ -23,12 +23,22 @@ public:
   void Bind();
   void Unbind();
 
+  ID GetColorID() const { return colorID; }
+  ID GetDepthID() const { return depthID; }
+  void SetColorID(ID id) { colorID = id; }
+  void SetDepthID(ID id) { depthID = id; }
+
 private:
   GLuint framebufferID;
   FramebufferDesc desc;
 
+  // In order to use the bound textures for this framebuffer, we store them as objects in the
+  // GLDevice's object cache. This assigns these pointers to an ID. Therefore, even though the
+  // pointers are stored here, these textures are considered to be owned by the device, and are not
+  // deleted by the framebuffer;
+  ID colorID, depthID;
   GLTexture2D* colorAttachment;
   GLTexture2D* depthStencilAttachment;
 };
 
-}
+} // namespace Vision

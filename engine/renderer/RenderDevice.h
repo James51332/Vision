@@ -46,6 +46,8 @@ public:
   virtual void DestroyCubemap(ID id) = 0;
 
   virtual ID CreateFramebuffer(const FramebufferDesc& desc) = 0;
+  virtual ID GetFramebufferColorTex(ID id) = 0;
+  virtual ID GetFramebufferDepthTex(ID id) = 0;
   virtual void ResizeFramebuffer(ID id, float width, float height) = 0;
   virtual void DestroyFramebuffer(ID id) = 0;
 

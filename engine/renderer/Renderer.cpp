@@ -14,13 +14,14 @@ struct PushConstant
   glm::mat4 view;
   glm::mat4 proj;
   glm::mat4 viewProj;
+  glm::mat4 viewInverse;
   glm::vec2 viewSize;
   float time;
   float dummy = 0.0f; // metal requires 16 byte alignment
 };
 
 Renderer::Renderer(float width, float height, float displayScale)
-  : m_Width(width), m_Height(height), m_PixelDensity(displayScale)
+    : m_Width(width), m_Height(height), m_PixelDensity(displayScale)
 {
   // TODO: Push constants will probably be parts of pipeline states.
   {
@@ -30,7 +31,7 @@ Renderer::Renderer(float width, float height, float displayScale)
     desc.Size = sizeof(PushConstant);
     desc.Data = nullptr;
     desc.DebugName = "Renderer Data";
-    
+
     pushConstants = App::GetDevice()->CreateBuffer(desc);
   }
 }
@@ -68,7 +69,7 @@ void Renderer::DrawMesh(Mesh* mesh, ID pipeline, const glm::mat4& transform)
 
   DrawCommand command;
   command.RenderPipeline = pipeline;
-  command.VertexBuffers = { mesh->m_VertexBuffer };
+  command.VertexBuffers = {mesh->m_VertexBuffer};
   command.IndexBuffer = mesh->m_IndexBuffer;
   command.NumVertices = mesh->GetNumIndices() == 0 ? mesh->GetNumVertices() : mesh->GetNumIndices();
   command.IndexType = IndexType::U32;
@@ -88,19 +89,22 @@ void Renderer::Submit(const DrawCommand& command)
     time += curTime - lastTime;
   lastTime = curTime;
 
-  // upload push constants
-  // which we are gonna write as a uniform buffer for opengl.
-  PushConstant data;
-  data.view = m_Camera->GetViewMatrix();
-  data.proj = m_Camera->GetProjectionMatrix();
-  data.viewProj = m_Camera->GetViewProjectionMatrix();
-  data.viewSize = { m_Width, m_Height};
-  data.time = time;
-  App::GetDevice()->SetBufferData(pushConstants, &data, sizeof(PushConstant));
-  App::GetDevice()->BindBuffer(pushConstants, 0);
-  
+  // If we have a camera, we upload it's data for use in the shader.
+  if (m_Camera)
+  {
+    PushConstant data;
+    data.view = m_Camera->GetViewMatrix();
+    data.proj = m_Camera->GetProjectionMatrix();
+    data.viewProj = m_Camera->GetViewProjectionMatrix();
+    data.viewInverse = glm::inverse(data.view);
+    data.viewSize = {m_Width, m_Height};
+    data.time = time;
+    App::GetDevice()->SetBufferData(pushConstants, &data, sizeof(PushConstant));
+    App::GetDevice()->BindBuffer(pushConstants, 0);
+  }
+
   // device submit
   App::GetDevice()->Submit(command);
 }
 
-}
+} // namespace Vision

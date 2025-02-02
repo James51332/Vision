@@ -12,9 +12,6 @@ GLFramebuffer::GLFramebuffer(const FramebufferDesc& desc): framebufferID(0), des
 
 GLFramebuffer::~GLFramebuffer()
 {
-  delete colorAttachment;
-  delete depthStencilAttachment;
-
   glDeleteFramebuffers(1, &framebufferID);
 }
 
@@ -22,8 +19,9 @@ void GLFramebuffer::Resize(float width, float height)
 {
   if (framebufferID)
   {
-    delete colorAttachment;
-    delete depthStencilAttachment;
+    // GLDevice handles this since our attachments are owned by it.
+    // delete colorAttachment;
+    // delete depthStencilAttachment;
 
     glDeleteFramebuffers(1, &framebufferID);
   }

@@ -96,7 +96,42 @@ ID GLDevice::CreateFramebuffer(const FramebufferDesc& desc)
   ID id = currentID++;
   GLFramebuffer* fb = new GLFramebuffer(desc);
   framebuffers.Add(id, fb);
+
+  // After we create the framebuffers, we assign the textures ID's and cache them.
+  ID colorID = currentID++;
+  textures.Add(colorID, fb->GetColorAttachment());
+  fb->SetColorID(colorID);
+
+  ID depthID = currentID++;
+  textures.Add(depthID, fb->GetDepthAttachment());
+  fb->SetDepthID(depthID);
+
   return id;
+}
+
+void GLDevice::ResizeFramebuffer(ID id, float width, float height)
+{
+  // Since we maintain a reference to our own images, we have to delete them from the cache.
+  GLFramebuffer* fb = framebuffers.Get(id);
+  ID colorID = fb->GetColorID();
+  ID depthID = fb->GetDepthID();
+
+  // Delete the images so we can readd the new ones.
+  textures.Destroy(colorID);
+  textures.Destroy(depthID);
+
+  fb->Resize(width, height);
+  textures.Add(colorID, fb->GetColorAttachment());
+  textures.Add(depthID, fb->GetDepthAttachment());
+}
+
+void GLDevice::DestroyFramebuffer(ID id)
+{
+  // We must first delete the textures assigned to this framebuffer.
+  GLFramebuffer* fb = framebuffers.Get(id);
+  textures.Destroy(fb->GetColorID());
+  textures.Destroy(fb->GetDepthID());
+  framebuffers.Destroy(id);
 }
 
 ID GLDevice::CreateRenderPass(const RenderPassDesc& desc)
@@ -120,9 +155,8 @@ void GLDevice::BeginRenderPass(ID pass)
   if (fbID != 0) // don't bind a the default framebuffer.
     framebuffers.Get(fbID)->Bind();
 
-  if (rp->LoadOp == LoadOp::DontCare)
-    return;
-  if (rp->LoadOp == LoadOp::Clear)
+  // We are gonna clear even if we don't care to make sure that depth buffer is reset.
+  if (rp->LoadOp == LoadOp::Clear || rp->LoadOp == LoadOp::DontCare)
   {
     glm::vec4& col = rp->ClearColor;
     glClearColor(col.r, col.g, col.b, col.a);
