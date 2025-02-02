@@ -51,8 +51,10 @@ public:
   void DestroyCubemap(ID id) { cubemaps.Destroy(id); }
 
   ID CreateFramebuffer(const FramebufferDesc& desc);
+  ID GetFramebufferColorTex(ID id) { return framebuffers.Get(id)->GetColorID(); }
+  ID GetFramebufferDepthTex(ID id) { return framebuffers.Get(id)->GetDepthID(); }
   void ResizeFramebuffer(ID id, float width, float height);
-  void DestroyFramebuffer(ID id) { framebuffers.Destroy(id); }
+  void DestroyFramebuffer(ID id);
 
   ID CreateRenderPass(const RenderPassDesc& desc);
   void BeginRenderPass(ID pass);

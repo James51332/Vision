@@ -5,36 +5,26 @@
 namespace Vision
 {
 
-MetalFramebuffer::MetalFramebuffer(MTL::Device* device, const FramebufferDesc& desc)
-  : pixelType(desc.ColorFormat)
+MetalFramebuffer::MetalFramebuffer(MTL::Device* device, const FramebufferDesc& descriptor)
+    : desc(descriptor)
 {
-  Resize(device, desc.Width, desc.Height);
-}
-
-MetalFramebuffer::~MetalFramebuffer()
-{
-  texture->release();
+  Resize(device, descriptor.Width, descriptor.Height);
 }
 
 void MetalFramebuffer::Resize(MTL::Device* device, float width, float height)
 {
-  if (texture)
-    texture->release();
+  // Resize the descriptor as well
+  desc.Width = width;
+  desc.Height = height;
 
-  MTL::TextureDescriptor *descriptor;
-  MTL::PixelFormat format = PixelTypeToMTLPixelFormat(pixelType);
+  // We rely on the MetalDevice to delete these textures before we recreate.
+  colorTexture = new MetalTexture(device, width, height, desc.ColorFormat, MinMagFilter::Linear,
+                                  MinMagFilter::Linear, EdgeAddressMode::ClampToEdge,
+                                  EdgeAddressMode::ClampToEdge);
 
-  descriptor = MTL::TextureDescriptor::alloc()->texture2DDescriptor(format, width, height, false);
-  descriptor->setUsage(MTL::TextureUsageRenderTarget);
-
-  texture = device->newTexture(descriptor);
-
-  descriptor->release();
+  depthTexture = new MetalTexture(device, width, height, desc.DepthType, MinMagFilter::Linear,
+                                  MinMagFilter::Linear, EdgeAddressMode::ClampToEdge,
+                                  EdgeAddressMode::ClampToEdge);
 }
 
-MTL::Texture* MetalFramebuffer::GetTexture()
-{
-  return texture;
-}
-
-}
+} // namespace Vision

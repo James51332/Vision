@@ -155,15 +155,43 @@ void MetalDevice::BindCubemap(ID id, std::size_t binding)
 
 ID MetalDevice::CreateFramebuffer(const FramebufferDesc& desc)
 {
+  // Creating the framebuffer object is easy.
   ID id = currentID++;
   MetalFramebuffer* fb = new MetalFramebuffer(gpuDevice, desc);
   framebuffers.Add(id, fb);
+
+  // Now, we assign the textures to IDs.
+  ID colorID = currentID++;
+  textures.Add(colorID, fb->GetColorTexture());
+  fb->SetColorID(colorID);
+
+  ID depthID = currentID++;
+  textures.Add(depthID, fb->GetDepthTexture());
+  fb->SetDepthID(depthID);
+
   return id;
 }
 
 void MetalDevice::ResizeFramebuffer(ID id, float width, float height)
 {
-  framebuffers.Get(id)->Resize(gpuDevice, width, height);
+  // First, we delete the old textures.
+  MetalFramebuffer* fb = framebuffers.Get(id);
+  textures.Destroy(fb->GetColorID());
+  textures.Destroy(fb->GetDepthID());
+
+  // Now, we resize and reset the textures.
+  fb->Resize(gpuDevice, width, height);
+  textures.Add(fb->GetColorID(), fb->GetColorTexture());
+  textures.Add(fb->GetDepthID(), fb->GetDepthTexture());
+}
+
+void MetalDevice::DestroyFramebuffer(ID id)
+{
+  // Delete the textures, since we are the owner of them.
+  MetalFramebuffer* fb = framebuffers.Get(id);
+  textures.Destroy(fb->GetColorID());
+  textures.Destroy(fb->GetDepthID());
+  framebuffers.Destroy(id);
 }
 
 ID MetalDevice::CreateRenderPass(const RenderPassDesc& desc)
@@ -198,15 +226,19 @@ void MetalDevice::BeginRenderPass(ID pass)
         BeginFrameInFlight();
       }
 
+      // Bind the window color buffer and the device's depth buffer.
       rpDesc->colorAttachments()->object(0)->setTexture(drawable->texture());
+      rpDesc->depthAttachment()->setTexture(depthTexture->GetTexture());
     }
     else
     {
+      // Bind the proper attachments.
       MetalFramebuffer* fb = framebuffers.Get(renderpass->GetTarget());
-      rpDesc->colorAttachments()->object(0)->setTexture(fb->GetTexture());
+      rpDesc->colorAttachments()->object(0)->setTexture(fb->GetColorTexture()->GetTexture());
+      rpDesc->depthAttachment()->setTexture(fb->GetDepthTexture()->GetTexture());
     }
 
-    rpDesc->depthAttachment()->setTexture(depthTexture->GetTexture());
+    // As of now, we always clear the depth buffer.
     rpDesc->depthAttachment()->setLoadAction(MTL::LoadActionClear);
     rpDesc->depthAttachment()->setStoreAction(MTL::StoreActionStore);
 
