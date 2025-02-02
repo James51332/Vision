@@ -1,7 +1,7 @@
 #include "GLCompiler.h"
 
-#include <spirv_glsl.hpp>
 #include <iostream>
+#include <spirv_glsl.hpp>
 
 #include "GLTypes.h"
 
@@ -10,12 +10,15 @@ namespace Vision
 
 GLuint GLCompiler::Compile(const ShaderSPIRV& shader, uint32_t version)
 {
-  // Decompile to GLSL
+  // We'd love to directly send the SPIRV to the GPU. However, AMD drivers for OpenGL have bugs
+  // which seem to have existed since launch for this feature. We'll have to decompile and
+  // recompile. Hopefully, this isn't a huge bottleneck in our shader pipeline.
   spirv_cross::CompilerGLSL decompiler(shader.SPIRV);
-  
+
   spirv_cross::CompilerGLSL::Options options;
   options.version = version;
   options.enable_420pack_extension = false;
+  options.vulkan_semantics = true;
   decompiler.set_common_options(options);
 
   std::string glsl = decompiler.compile();
@@ -42,4 +45,4 @@ GLuint GLCompiler::Compile(const ShaderSPIRV& shader, uint32_t version)
   return shaderID;
 }
 
-}
+} // namespace Vision
