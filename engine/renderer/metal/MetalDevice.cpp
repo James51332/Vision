@@ -276,8 +276,12 @@ void MetalDevice::SubmitCommandBuffer(bool await)
     // If we are presenting our drawable, we are going to schedule the end to the frame
     // in flight.
     if (drawablePresented)
-      cmdBuffer->addCompletedHandler([&](MTL::CommandBuffer* buffer)
-                                     { dispatchSemaphore->Signal(); });
+      cmdBuffer->addCompletedHandler(
+          [&](MTL::CommandBuffer* buffer)
+          {
+            if (dispatchSemaphore)
+              dispatchSemaphore->Signal();
+          });
 
     cmdBuffer->commit();
     if (await)
