@@ -18,7 +18,6 @@ GLuint GLCompiler::Compile(const ShaderSPIRV& shader, uint32_t version)
   spirv_cross::CompilerGLSL::Options options;
   options.version = version;
   options.enable_420pack_extension = false;
-  options.vulkan_semantics = true;
   decompiler.set_common_options(options);
 
   std::string glsl = decompiler.compile();

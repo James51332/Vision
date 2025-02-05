@@ -75,6 +75,19 @@ ShaderSPIRV ShaderCompiler::CompileSource(const ShaderSource& shaderSource)
   options.generateDebugInfo = true;
   options.optimizeSize = true;
 
+  // Each program only has one shader
+  glslang::TProgram program;
+  program.addShader(&shader);
+
+  if (!program.link(
+          static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgVulkanRules)) ||
+      !program.mapIO())
+  {
+    std::cout << "Failed to link program:" << std::endl;
+    std::cout << program.getInfoLog() << std::endl;
+    return {};
+  }
+
   // Finalize and Compile
   glslang::GlslangToSpv(*shader.getIntermediate(), spirv, &logger, &options);
   glslang::FinalizeProcess();

@@ -1,7 +1,6 @@
 #include "Renderer2D.h"
 
 #include <glad/glad.h>
-#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -370,7 +369,29 @@ layout (binding = 0) uniform sampler2D u_Textures[16];
 
 void main()
 {
-  FragColor = v_Color * texture(u_Textures[v_TextureID], v_UV.st);
+  vec4 texColor = v_Color;
+
+  switch(int(v_TextureID))
+	{
+		case  0: texColor *= texture(u_Textures[ 0], v_UV.st); break;
+		case  1: texColor *= texture(u_Textures[ 1], v_UV.st); break;
+		case  2: texColor *= texture(u_Textures[ 2], v_UV.st); break;
+		case  3: texColor *= texture(u_Textures[ 3], v_UV.st); break;
+		case  4: texColor *= texture(u_Textures[ 4], v_UV.st); break;
+		case  5: texColor *= texture(u_Textures[ 5], v_UV.st); break;
+		case  6: texColor *= texture(u_Textures[ 6], v_UV.st); break;
+		case  7: texColor *= texture(u_Textures[ 7], v_UV.st); break;
+		case  8: texColor *= texture(u_Textures[ 8], v_UV.st); break;
+		case  9: texColor *= texture(u_Textures[ 9], v_UV.st); break;
+		case 10: texColor *= texture(u_Textures[10], v_UV.st); break;
+		case 11: texColor *= texture(u_Textures[11], v_UV.st); break;
+		case 12: texColor *= texture(u_Textures[12], v_UV.st); break;
+		case 13: texColor *= texture(u_Textures[13], v_UV.st); break;
+		case 14: texColor *= texture(u_Textures[14], v_UV.st); break;
+		case 15: texColor *= texture(u_Textures[15], v_UV.st); break;
+	}
+
+  FragColor = texColor;
 })";
 
 const char* pointVertex = R"(
